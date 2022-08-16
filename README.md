@@ -17,7 +17,7 @@ fall 2022. If you would like to participate in the beta, please contact us.
 [//]: # (todo: update this to new paper when it's published?)
 Publication information coming soon.
 
-##Installation
+## Installation
 
 ### Beta installation
 
@@ -116,13 +116,13 @@ Run the linux_install script to set up the virtual environment, or run
 [//]: # (After installing the above dependencies, you can directly install the python package tarball with pip.)
 
 # Running SACCHARIS
-###GUI
+### GUI
 You can launch the gui from the command line via `saccharis-gui` or it can be launched from the anaconda navigator 
 (if navigator is installed).
 
 [//]: # (todo: add start menu and/or desktop shortcuts to gui install?)
 
-###CLI
+### CLI
 In terminal follow usage as given by
   - `saccharis -h` or `saccharis --help`
 
