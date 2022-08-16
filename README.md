@@ -135,3 +135,8 @@ In terminal follow usage as given by
 
   [//]: # (- The third party programs and scripts used by SACCHARIS are covered by the terms of their respective licenses)
 
+# Developer Contact
+
+You can contact Alex Fraser at alexander.fraser@alumni.ubc.ca for information about beta access. 
+
+If you encounter bugs, please use the github tools to submit bug reports instead of emailing me, as it is easier to track that way.
