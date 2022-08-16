@@ -1,6 +1,5 @@
-#SACCHARIS 2.0
 ![logo](logo_caps_light-dark.png)
-
+# SACCHARIS 2.0
 Sequence Analysis and Clustering of CarboHydrate Active enzymes for Rapid Informed 
 prediction of Specificity (SACCHARIS), is a python based pipeline designed to improve 
 functional predictions of uncharacterized sequences for any CAZyme or CBM family 
