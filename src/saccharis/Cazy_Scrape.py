@@ -6,14 +6,16 @@
 # License: GPL v3
 ###############################################################################
 import math
-import sys
 import time
 from enum import Enum
-from html.parser import HTMLParser
 import re
 import os
 import csv
 import json
+# ignore warnings that these parsers aren't used by IDE, they ARE used
+# noinspection PyUnresolvedReferences
+from html.parser import HTMLParser
+# noinspection PyUnresolvedReferences
 import lxml
 import requests
 from bs4 import BeautifulSoup
