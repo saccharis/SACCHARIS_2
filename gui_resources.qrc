@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="images">
+    <file>logo_caps.png</file>
+    <file>512px-Feedbin-Icon-settings.png</file>
+  </qresource>
+</RCC>
