@@ -1,4 +1,7 @@
 from setuptools import setup
+import yaml
+with open('conda-recipe/meta.yaml', 'r') as file:
+    meta_yaml_data = yaml.safe_load(file)
 
 # todo: match all relevant data labels to the standard metadata format
 #  https://packaging.python.org/en/latest/specifications/core-metadata/
@@ -23,8 +26,10 @@ setup(name='saccharis',
       # - First bugfix to public release might be "2.0.1"
       # - The first public release after 2.0.* that breaks anything reliant on 2.0.* will be 2.1.0
 
-      version="2.0.0.dev18",
-      build=0,
+      # version="2.0.0.dev18",
+      version=meta_yaml_data["package"]["version"],
+      # build=0,
+      build=meta_yaml_data["build"]["number"],
       description='Bioinformatics tool for automated CAZyme phylogeny construction',
       long_description="This is SACCHARIS 2, a bioinformatics tool for using phylogenetic inference to infer CAZyme "
                        "functionality in genetic sequences.",
@@ -81,7 +86,7 @@ setup(name='saccharis',
           'setuptools',
           'psutil',
           'pyqt5',
-          'PyQt5-sip'
+          'PyQt5-sip',
       ],
       python_requires='>=3.8',
       zip_safe=False
