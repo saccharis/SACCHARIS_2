@@ -7,7 +7,7 @@
 import sys
 
 
-def ask_yes_no(ask_msg: str, yes_msg: str, no_msg: str):
+def ask_yes_no(ask_msg: str, yes_msg: str | None, no_msg: str | None):
     if not ask_msg.__contains__("y/n"):
         ask_msg += " (y/n):"
     try:

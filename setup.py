@@ -23,8 +23,8 @@ setup(name='saccharis',
       # - First bugfix to public release might be "2.0.1"
       # - The first public release after 2.0.* that breaks anything reliant on 2.0.* will be 2.1.0
 
-      version="2.0.0.dev17",
-      build=1,
+      version="2.0.0.dev18",
+      build=0,
       description='Bioinformatics tool for automated CAZyme phylogeny construction',
       long_description="This is SACCHARIS 2, a bioinformatics tool for using phylogenetic inference to infer CAZyme "
                        "functionality in genetic sequences.",
@@ -46,12 +46,12 @@ setup(name='saccharis',
       include_package_data=True,
       entry_points={
           "console_scripts": [
-              "saccharis = saccharis.SACCHARIS2:cli_main",
-              "saccharis.make_family_files = saccharis2.utils.FamilyCategories:cli_main",
-              "saccharis.add_family_category = saccharis2.utils.FamilyCategories:cli_append_user_family",
-              "saccharis.rename_user_file = saccharis2.utils.UserFastaRename:cli_main",
-              "saccharis.prune_seqs = saccharis2.ExtractAndPruneCAZymes:cli_prune_seqs",
-              "saccharis.screen_cazome = saccharis2.ScreenUserFile:cli_cazome",
+              "saccharis = saccharis.CLI:cli_main",
+              "saccharis.make_family_files = saccharis.utils.FamilyCategories:cli_main",
+              "saccharis.add_family_category = saccharis.utils.FamilyCategories:cli_append_user_family",
+              "saccharis.rename_user_file = saccharis.utils.UserFastaRename:cli_main",
+              "saccharis.prune_seqs = saccharis.ExtractAndPruneCAZymes:cli_prune_seqs",
+              "saccharis.screen_cazome = saccharis.ScreenUserFile:cli_cazome",
               "saccharis.show_family_categories = saccharis.utils.FamilyCategories:show_categories",
               "saccharis-gui = saccharis.gui.PipelineGUI:main"
             ]

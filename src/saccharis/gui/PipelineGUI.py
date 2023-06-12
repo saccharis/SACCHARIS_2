@@ -4,9 +4,11 @@
 # Original author: Alexander Fraser, https://github.com/AlexSCFraser
 # License: GPL v3
 ###############################################################################
+import io
 import math
 import os
 import re
+import subprocess
 import sys
 import logging
 from types import SimpleNamespace
@@ -14,7 +16,7 @@ from io import TextIOWrapper
 from typing import IO
 
 import psutil
-from PyQt5.QtCore import QEvent, QObject, QThread, pyqtSignal
+from PyQt5.QtCore import QEvent, QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QApplication, QListWidgetItem
 from PyQt5.QtWidgets import QMainWindow
@@ -35,7 +37,7 @@ from saccharis.gui import ScreenDialog
 from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
 from saccharis.ScreenUserFile import extract_families_hmmer
 from saccharis.Pipeline import single_pipeline
-from saccharis.Pipeline import get_version
+from CLI import get_version
 from saccharis.utils.FamilyCategories import get_category_list, load_family_list_from_file
 from saccharis.utils.FamilyCategories import get_user_categories
 from saccharis.utils.FamilyCategories import get_default_family_categories
@@ -121,6 +123,8 @@ class BadInputException(Exception):
 class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
     kill_signal = pyqtSignal()
     wait_signal = pyqtSignal()
+    send_text = pyqtSignal(str)
+    send_red_text = pyqtSignal(str)
 
     def __init__(self):
         super(self.__class__, self).__init__()
@@ -165,11 +169,25 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
         self.run_button.clicked.connect(self.toggle_logic_thread)
         self.run_button.setCheckable(True)
 
+        # connect text redirection streams
+        self.send_text.connect(self.update_text_browser)
+        self.console_redirect = TextSignalRedirector(self.send_text)
+        sys.stdout = self.console_redirect
+        self.send_red_text.connect(self.update_text_browser_red)
+        self.err_redirect = TextSignalRedirector(self.send_text)
+        # self.err_redirect = TextSignalWrapper(sys.stderr.buffer, self.send_red_text)
+
+        sys.stderr = self.err_redirect
+        logger.handlers[0].stream = self.err_redirect
+
     def closeEvent(self, event):
         print("INFO: GUI close event")
         reply = ask_user_yes_no("Are you sure to quit?", None, None, self)
 
         if reply == True:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            logger.handlers[0].stream = sys.__stderr__
             event.accept()
         else:
             event.ignore()
@@ -445,7 +463,8 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
             run_queue = scr_dialog.fams_to_run
             self.queue = run_queue
             try:
-                self.run()
+                self.run_button.setChecked(True)  # simulates the button having been pressed
+                self.toggle_logic_thread()
             except UserError as error:
                 if error.detail_msg:
                     tell_user(error.msg, error.detail_msg)
@@ -548,13 +567,18 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
             # disable buttons and connect reenable for completion
             self.set_user_interaction(False)
 
-    def update_text_browser(self, string):
+    @pyqtSlot(str)
+    def update_text_browser_red(self, string):
+        self.update_text_browser(string, QtGui.QColor("Red"))
+
+    def update_text_browser(self, string, color: QtGui.QColor = QtGui.QColor("Black")):
         self.console_output_textBrowser.moveCursor(QtGui.QTextCursor.End)
         self.console_output_textBrowser.ensureCursorVisible()
+        self.console_output_textBrowser.setTextColor(color)
         self.console_output_textBrowser.insertPlainText(string)
 
     def toggle_logic_thread(self):
-        print(self.run_button.isChecked())
+        logger.debug(f"Run button isChecked: {self.run_button.isChecked()}")
         if self.run_button.isChecked():
             # Starting a new run
             try:
@@ -562,12 +586,19 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
                 self.run()
             except UserError as error:
                 self.run_button.setChecked(False)
+                self.run_button.setText("Run SACCHARIS")
                 if error.detail_msg:
                     tell_user(error.msg, error.detail_msg)
                 else:
                     tell_user(error.msg)
         else:
             # terminating a run
+            # sys.stdout.detach()
+            print("SACCHARIS pipeline terminated early.")
+            logger.warning("SACCHARIS pipeline terminated early.")
+            sys.stdout = sys.__stdout__
+            # sys.stderr = sys.__stderr__
+
             for child in psutil.Process().children(recursive=False):
                 logger.debug(f"process name(before termination): {child.name()}")
                 # if child.name() in ["diamond.exe", "diamond", "wsl.exe", "hmmscan"]:
@@ -584,8 +615,7 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
             logger.debug("AFTER logic thread terminate signal")
             # self.wait_signal.emit()
             # self.thread.terminate()
-            logger.warning("SACCHARIS pipeline terminated early.")
-            print("SACCHARIS pipeline terminated early.")
+
             for child in psutil.Process().children(recursive=False):
                 logger.debug(f"process name(after termination): {child.name()}")
             curr_fam_item = self.remaining_family_listWidget.findItems("In progress", Qt.Qt.MatchContains).pop()
@@ -963,13 +993,16 @@ class CazomeScreenThread(QThread):
     send_count_dict = pyqtSignal(dict)
     send_status_dict = pyqtSignal(dict)
     send_text = pyqtSignal(str)
+    # send_red_text = pyqtSignal(str)
     send_dialog = pyqtSignal(str, str)
 
     def __init__(self, args, settings):
         super().__init__()
         self.args = args
         self.settings = settings
-        self.console_redirect = StdOutRedirector(sys.__stdout__.buffer, self.send_text)
+        # self.console_redirect = StdOutRedirector(sys.stdout.buffer, self.send_text)
+        self.console_redirect = TextSignalRedirector(self.send_text)
+        # self.err_redirect = TextSignalRedirector(self.send_red_text)
 
     def run(self):
         file_list = self.args.fasta_file_paths
@@ -977,6 +1010,7 @@ class CazomeScreenThread(QThread):
 
         file_status = {file: 0 for file in file_list}
         fasta_count_dict = {}
+        # sys.stderr = self.err_redirect
 
         for fasta_file in file_list:
             # if sys.platform.__contains__("win") and not sys.gettrace():
@@ -997,7 +1031,7 @@ class CazomeScreenThread(QThread):
                                                      self.settings["hmm_eval"], self.settings["hmm_cov"])
                 hmmer_file = os.path.join(cazome_folder, "hmmer.out")
                 ren_file = os.path.join(cazome_folder, f"{os.path.splitext(os.path.basename(fasta_file))[0]}_hmmer.out")
-                os.rename(hmmer_file, ren_file)
+                os.replace(hmmer_file, ren_file)
                 os.remove(os.path.join(cazome_folder, "overview.txt"))
                 os.remove(os.path.join(cazome_folder, "uniInput"))
 
@@ -1034,6 +1068,7 @@ class CazomeScreenThread(QThread):
             # noinspection PyUnresolvedReferences
             self.send_status_dict.emit(file_status)
 
+        # sys.stderr = sys.__stderr__
         # noinspection PyUnresolvedReferences
         self.send_count_dict.emit(fasta_count_dict)
         # noinspection PyUnresolvedReferences
@@ -1048,12 +1083,15 @@ class PipelineThread(QThread):
     progress_step = pyqtSignal(int)
     progress_family = pyqtSignal(dict)
     send_text = pyqtSignal(str)
+    # send_red_text = pyqtSignal(str)
     send_dialog = pyqtSignal(str, str)
 
     def __init__(self, args):
         super().__init__()
         self.args = args
-        self.console_redirect = StdOutRedirector(sys.stdout.buffer, self.send_text)
+        # self.console_redirect = StdOutRedirector(sys.stdout.buffer, self.send_text)
+        self.console_redirect = TextSignalRedirector(self.send_text)
+        # self.err_redirect = TextSignalRedirector(self.send_red_text)
 
     def run(self):
         if self.args.explore:
@@ -1067,6 +1105,8 @@ class PipelineThread(QThread):
             fam_list = get_category_list(self.args.family_category)
         else:
             fam_list = self.args.family_list
+
+        # sys.stderr = self.err_redirect
 
         fam_status = {family: 0 for family in fam_list}
         for fam in fam_list:
@@ -1132,6 +1172,7 @@ class PipelineThread(QThread):
                 sys.stdout = sys.__stdout__
             # self.progress_step.emit(i + 1)
 
+        # sys.stderr = sys.__stderr__
         # noinspection PyUnresolvedReferences
         self.progress_family.emit(fam_status)
         # noinspection PyUnresolvedReferences
@@ -1139,16 +1180,20 @@ class PipelineThread(QThread):
 
 
 class PipelineWorker(QObject):
+    # todo: figure out why this class is here. Why am I not using pipelineworker, did i mean to delete this?
+    #  did i mean to switch to QObject instead of QThread?
     finished = pyqtSignal()
     progress_step = pyqtSignal(int)
     progress_family = pyqtSignal(dict)
     send_text = pyqtSignal(str)
-    # show_error_signal = pyqtSignal(str)
+    send_red_text = pyqtSignal(str)
 
     def __init__(self, args):
         super().__init__()
         self.args = args
-        self.console_redirect = StdOutRedirector(sys.stdout.buffer, self.send_text)
+        # self.console_redirect = StdOutRedirector(sys.stdout.buffer, self.send_text)
+        self.console_redirect = TextSignalRedirector(self.send_text)
+        # self.err_redirect = TextSignalRedirector(self.send_red_text)
 
     def run_pipeline(self):
         if self.args.explore:
@@ -1158,6 +1203,8 @@ class PipelineWorker(QObject):
             fam_list = get_category_list(self.args.family_category)
         else:
             fam_list = self.args.family_list
+
+        # sys.stderr = self.err_redirect
 
         fam_status = {family: 0 for family in fam_list}
         for fam in fam_list:
@@ -1205,14 +1252,48 @@ class PipelineWorker(QObject):
                 sys.stdout = sys.__stdout__
             # self.progress_step.emit(i + 1)
 
+        # sys.stderr = sys.__stderr__
         # noinspection PyUnresolvedReferences
         self.progress_family.emit(fam_status)
         # noinspection PyUnresolvedReferences
         self.finished.emit()
 
 
-class StdOutRedirector(TextIOWrapper):
-    def __init__(self, buffer: IO[bytes], update_ui: pyqtSignal):
+class TextSignalRedirector(io.StringIO):
+    def __init__(self, update_ui: pyqtSignal, subprocess_file_descriptor=None):
+        # super().__init__(buffer)
+        super().__init__()
+        self.update_ui = update_ui
+        self.file_descriptor = subprocess_file_descriptor
+
+    def write(self, string):
+        # noinspection PyUnresolvedReferences
+        self.update_ui.emit(string)
+        # self.text_browser.moveCursor(QtGui.QTextCursor.End)
+        # self.text_browser.ensureCursorVisible()
+        # self.text_browser.insertPlainText(string)
+
+        # self.text_browser.append(string)
+        # self.console_window.moveCursor(QtGui.QTextCursor.End)
+        # self.console_window.ensureCursorVisible()
+        # self.console_window.insertPlainText(text)
+
+    def close(self) -> None:
+        # this is here so that you can put a breakpoint on the close call for easier debugging
+        super().close()
+
+    def fileno(self):
+        # return a file descriptor passed in when this object was created for subprocesses to write to when the
+        #  stream cannot be redirected to gui textbox
+        if self.file_descriptor:
+            return self.file_descriptor
+        else:
+            return os.open(os.devnull, os.O_RDWR)
+
+
+class TextSignalWrapper(io.TextIOWrapper):
+    def __init__(self, buffer, update_ui: pyqtSignal):
+        # super().__init__(buffer)
         super().__init__(buffer)
         self.update_ui = update_ui
 
@@ -1227,6 +1308,10 @@ class StdOutRedirector(TextIOWrapper):
         # self.console_window.moveCursor(QtGui.QTextCursor.End)
         # self.console_window.ensureCursorVisible()
         # self.console_window.insertPlainText(text)
+
+    def close(self) -> None:
+        # this is here so that you can put a breakpoint on the close call for easier debugging
+        super().close()
 
 
 def tell_user(string, detail_string=None):

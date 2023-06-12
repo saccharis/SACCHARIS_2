@@ -6,9 +6,10 @@ package:
   version: {{ data.get('version') }}
 
 source:
-  path: ./..
-  # git_url: https://github.com/AlexSCFraser/saccharis2.git 
-  # git_depth: 1 # only grab most recent commit on branch
+#  path: ./..
+  # git_url: https://github.com/AlexSCFraser/saccharis2.git
+  git_url: https://github.com/saccharis/SACCHARIS_2.git
+  git_depth: 1 # only grab most recent commit on branch
 
 build:
   noarch: python
@@ -16,7 +17,7 @@ build:
   script: {{ PYTHON }} setup.py install
   preserve_egg_dir: True # added because the entry points below seem to be causing a build error
   entry_points:
-    - saccharis = saccharis.Pipeline:cli_main
+    - saccharis = saccharis.CLI:cli_main
     - saccharis.make_family_files = saccharis.utils.FamilyCategories:cli_main
     - saccharis.add_family_category = saccharis.utils.FamilyCategories:cli_append_user_family
     - saccharis.rename_user_file = saccharis.utils.UserFastaRename:cli_main
@@ -72,8 +73,8 @@ test:
     - saccharis.make_family_files
 
 about:
-  home: https://github.com/AlexSCFraser/SACCHARIS_2
-  dev_url: https://github.com/AlexSCFraser/SACCHARIS_2
+  home: https://github.com/saccharis/SACCHARIS_2
+  dev_url: https://github.com/saccharis/SACCHARIS_2
   description: Bioinformatics pipeline to automate phylogenetic analysis of CAZyme families in FASTA sequences
   license: GPL v3
   license_file: LICENSE

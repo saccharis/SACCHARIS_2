@@ -51,7 +51,7 @@ def download_database():
             subprocess.run(["diamond", "makedb", "--in", os.path.join(db_install_folder, "CAZyDB.08062022.fa"), "-d",
                             os.path.join(db_install_folder, "CAZy")])
         # subprocess.run(["rm", os.path.join(db_install_folder, "CAZyDB.08062022.fa")]) todo: remove this line after checking below works
-        os.remove(os.path.join(db_install_folder, "CAZyDB.08062022.fa")) # 1 gigabyte file not needed, no point keeping
+        os.remove(os.path.join(db_install_folder, "CAZyDB.08062022.fa"))  # 1 gigabyte file not needed, no point keeping
     if not os.path.exists(os.path.join(db_install_folder, "dbCAN.txt")):
         print("dbCAN2 file 2/6 not found, downloading...")
         wget.download("https://bcb.unl.edu/dbCAN2/download/Databases/V11/dbCAN-HMMdb-V11.txt", db_install_folder)
@@ -262,8 +262,8 @@ def main(fasta_filepath, family, output_folder, mode, force_update=False, prune=
     if not (os.path.exists(hmmer_filepath) and os.path.exists(ecami_filepath) and os.path.exists(diamond_filepath)) \
             or force_update:
         run_dbcan.run(fasta_filepath, "protein", outDir=output_folder, dbDir=get_db_folder(), dia_cpu=threads,
-                  hmm_cpu=threads, tf_cpu=threads, stp_cpu=threads, eCAMI_jobs=threads, hmm_cov=hmm_cov,
-                  hmm_eval=hmm_eval)
+                      hmm_cpu=threads, tf_cpu=threads, stp_cpu=threads, eCAMI_jobs=threads, hmm_cov=hmm_cov,
+                      hmm_eval=hmm_eval)
 
     print("Extract Sequences that hit family:", family)
 

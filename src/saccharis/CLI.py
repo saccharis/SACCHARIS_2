@@ -5,18 +5,27 @@
 # License: GPL v3
 ###############################################################################
 import argparse
+import importlib.metadata
 import math
 import os
 import sys
+from importlib.metadata import version
 
 import Cazy_Scrape
 import ChooseAAModel
 from Parse_User_Sequences import concatenate_multiple_fasta
-from Pipeline import get_version, single_pipeline
+from Pipeline import single_pipeline
 from ScreenUserFile import choose_families_from_fasta
 from utils.AdvancedConfig import MultilineFormatter
 from utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
 from utils.PipelineErrors import UserError, PipelineException, NewUserFile
+
+
+def get_version():
+    try:
+        return version("SACCHARIS")
+    except importlib.metadata.PackageNotFoundError:
+        return "dev-build"
 
 
 def cli_main():
@@ -294,3 +303,7 @@ def cli_main():
                 print("ERROR:", pipe_error.msg)
                 print(f"ERROR: Something went wrong running the SACCHARIS pipeline on family: {family_arg}")
                 print("\t Continuing to run SACCHARIS pipeline on remaining families...")
+
+
+if __name__ == "__main__":
+    cli_main()

@@ -5,18 +5,15 @@
 # License: GPL v3
 ###############################################################################
 import datetime
-import importlib.metadata
 import json
 import math
 import os
 import shutil
 import sys
 import time
-from importlib.metadata import version
 
 from PyQt5.QtCore import pyqtSignal
 
-from saccharis.CLI import cli_main
 from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.PipelineErrors import PipelineException, UserError
 from saccharis import Cazy_Scrape
@@ -30,13 +27,6 @@ from saccharis.utils.AdvancedConfig import get_user_settings
 from saccharis.utils.AdvancedConfig import save_to_file
 from utils.FamilyCategories import check_deleted_families
 from utils.Formatting import make_metadata_dict, format_time
-
-
-def get_version():
-    try:
-        return version("SACCHARIS")
-    except importlib.metadata.PackageNotFoundError:
-        return "dev-build"
 
 
 def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mode = Cazy_Scrape.Mode.ALL_CAZYMES,
@@ -335,7 +325,3 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
     print(f"Finished Cazy pipeline analysis for group: {scrape_mode.name} of family {family}")
     print("==============================================================================")
     print("==============================================================================\n")
-
-
-if __name__ == "__main__":
-    cli_main()
