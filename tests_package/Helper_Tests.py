@@ -1,5 +1,5 @@
 import unittest
-from utils.Formatting import format_time
+from saccharis.utils.Formatting import format_time
 
 
 class HelperTestCase(unittest.TestCase):

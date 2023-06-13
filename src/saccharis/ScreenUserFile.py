@@ -25,7 +25,7 @@ from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.FamilyCategories import get_category_list
 from saccharis.utils.FamilyCategories import get_user_categories
 from saccharis.utils.PipelineErrors import UserError
-from utils.UserInput import ask_yes_no
+from saccharis.utils.UserInput import ask_yes_no
 from saccharis.utils.FamilyCategories import save_family_iterable_json
 from saccharis.utils.AdvancedConfig import get_db_folder
 

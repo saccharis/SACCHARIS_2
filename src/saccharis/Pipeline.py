@@ -25,8 +25,8 @@ from saccharis import Parse_User_Sequences
 from saccharis import RAxML_Build
 from saccharis.utils.AdvancedConfig import get_user_settings
 from saccharis.utils.AdvancedConfig import save_to_file
-from utils.FamilyCategories import check_deleted_families
-from utils.Formatting import make_metadata_dict, format_time
+from saccharis.utils.FamilyCategories import check_deleted_families
+from saccharis.utils.Formatting import make_metadata_dict, format_time
 
 
 def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mode = Cazy_Scrape.Mode.ALL_CAZYMES,

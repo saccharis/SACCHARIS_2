@@ -19,7 +19,7 @@ from Bio.SeqIO import parse, write
 from saccharis.utils.PipelineErrors import FileError
 from saccharis.utils.PipelineErrors import UserError
 from saccharis.utils.PipelineErrors import NewUserFile
-from utils.UserInput import ask_yes_no
+from saccharis.utils.UserInput import ask_yes_no
 from saccharis.utils.UserFastaRename import rename_fasta_file
 
 buf_size = 1048576  # 1 megabyte chunks

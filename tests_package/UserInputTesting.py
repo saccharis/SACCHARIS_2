@@ -13,7 +13,7 @@ from unittest import mock
 
 from saccharis.ScreenUserFile import get_user_selection
 from saccharis.ScreenUserFile import extract_families_hmmer
-from utils.UserInput import ask_yes_no
+from saccharis.utils.UserInput import ask_yes_no
 
 tests_folder = os.path.dirname(getsourcefile(lambda: 0))
 testfiles_folder = os.path.join(tests_folder, "test_files")

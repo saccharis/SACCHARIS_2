@@ -16,9 +16,9 @@ import ChooseAAModel
 from Parse_User_Sequences import concatenate_multiple_fasta
 from Pipeline import single_pipeline
 from ScreenUserFile import choose_families_from_fasta
-from utils.AdvancedConfig import MultilineFormatter
-from utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
-from utils.PipelineErrors import UserError, PipelineException, NewUserFile
+from saccharis.utils.AdvancedConfig import MultilineFormatter
+from saccharis.utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
+from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile
 
 
 def get_version():

@@ -13,7 +13,7 @@ from subprocess import run, CalledProcessError
 from dotenv import load_dotenv
 import textwrap as _textwrap
 # Internal imports
-from utils.UserInput import ask_yes_no
+from saccharis.utils.UserInput import ask_yes_no
 
 home_dir = os.path.expanduser('~')
 folder_saccharis_user = os.path.join(home_dir, "saccharis")
