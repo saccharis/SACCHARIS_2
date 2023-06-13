@@ -13,8 +13,8 @@ import re
 import sys
 from json import JSONDecodeError
 # Internal Imports
-from utils.PipelineErrors import PipelineException
-from utils.UserInput import ask_yes_no
+from saccharis.utils.PipelineErrors import PipelineException
+from saccharis.utils.UserInput import ask_yes_no
 from saccharis.utils.PipelineErrors import UserError
 from saccharis.utils.AdvancedConfig import get_config_folder
 
