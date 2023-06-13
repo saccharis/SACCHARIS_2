@@ -1,5 +1,5 @@
-{% set name = "SACCHARIS" %}
-{% set data = load_setup_py_data(setup_file='../setup.py', from_recipe_dir=True) %}
+#{% set data = load_setup_py_data(setup_file='../setup.py', from_recipe_dir=True) %}
+  {% set name = "SACCHARIS" %}
 
 package:
   name: "{{ name|lower }}"
@@ -15,7 +15,7 @@ source:
 build:
   noarch: python
 #  number: {{ data.get('build') }}
-  number: 0
+  number: 1
   script: {{ PYTHON }} setup.py install
   preserve_egg_dir: True # added because the entry points below seem to be causing a build error
   entry_points:
@@ -72,7 +72,9 @@ app:
 
 test:
   commands:
+    - saccharis -v
     - saccharis.make_family_files
+    - saccharis.show_family_categories
 
 about:
   home: https://github.com/saccharis/SACCHARIS_2

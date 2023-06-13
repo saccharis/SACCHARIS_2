@@ -28,14 +28,14 @@ setup(name='saccharis',
 
       version="2.0.0.dev18",
       # version=meta_yaml_data["package"]["version"],
-      build=0,
+      build=1,
       # build=meta_yaml_data["build"]["number"],
       description='Bioinformatics tool for automated CAZyme phylogeny construction',
       long_description="This is SACCHARIS 2, a bioinformatics tool for using phylogenetic inference to infer CAZyme "
                        "functionality in genetic sequences.",
       author='Alexander Fraser',
       author_email='alexander.fraser@alumni.ubc.ca',
-      url='https://github.com/AlexSCFraser/SACCHARIS_2',
+      url='https://github.com/saccharis/SACCHARIS_2',
       classifiers=[
           # Uncomment the release status below which best describes the state of this release.
           'Development Status :: 3 - Alpha',

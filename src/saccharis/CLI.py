@@ -11,11 +11,11 @@ import os
 import sys
 from importlib.metadata import version
 
-import Cazy_Scrape
-import ChooseAAModel
-from Parse_User_Sequences import concatenate_multiple_fasta
-from Pipeline import single_pipeline
-from ScreenUserFile import choose_families_from_fasta
+from saccharis.Cazy_Scrape import Mode, Domain
+from saccharis.ChooseAAModel import TreeBuilder
+from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
+from saccharis.Pipeline import single_pipeline
+from saccharis.ScreenUserFile import choose_families_from_fasta
 from saccharis.utils.AdvancedConfig import MultilineFormatter
 from saccharis.utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
 from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile
@@ -142,7 +142,7 @@ def cli_main():
     args = parser.parse_args()
 
     # validate args
-    cazyme_mode = Cazy_Scrape.Mode[args.cazyme_mode.upper()]
+    cazyme_mode = Mode[args.cazyme_mode.upper()]
     fragments = args.fragments
     verbose_arg = args.verbose
     refresh = args.fresh
@@ -153,15 +153,15 @@ def cli_main():
         if args.domain.upper() == "ALL":
             domain_val = 0b11111
         else:
-            domain_val |= Cazy_Scrape.Domain[args.domain.upper()].value
+            domain_val |= Domain[args.domain.upper()].value
     else:
         for item in args.domain:
             if item.upper() == "ALL":
                 domain_val = 0b11111
                 break
-            domain_val |= Cazy_Scrape.Domain[item.upper()].value
+            domain_val |= Domain[item.upper()].value
     prune = not args.skip_prune
-    tree_prog = ChooseAAModel.TreeBuilder[args.tree.upper()]
+    tree_prog = TreeBuilder[args.tree.upper()]
     rename = args.rename_user
 
     # set output path
