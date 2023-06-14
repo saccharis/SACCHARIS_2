@@ -28,7 +28,7 @@ setup(name='saccharis',
 
       version="2.0.0.dev18",
       # version=meta_yaml_data["package"]["version"],
-      build=2,
+      build=0,
       # build=meta_yaml_data["build"]["number"],
       description='Bioinformatics tool for automated CAZyme phylogeny construction',
       long_description="This is SACCHARIS 2, a bioinformatics tool for using phylogenetic inference to infer CAZyme "

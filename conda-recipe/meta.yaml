@@ -15,7 +15,7 @@ source:
 build:
   noarch: python
 #  number: {{ data.get('build') }}
-  number: 2
+  number: 0
   script: {{ PYTHON }} setup.py install
   preserve_egg_dir: True # added because the entry points below seem to be causing a build error
   entry_points:
