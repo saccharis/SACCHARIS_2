@@ -65,6 +65,7 @@ setup(name='saccharis',
           # If any package or subpackage contains *.txt or *.rst files, include
           # them:
           "": ["*.png"],
+          "": ["*.yaml"],
           # # Include any *.msg files found in the "hello" package (but not in its
           # # subpackages):
           # "hello": ["*.msg"],
