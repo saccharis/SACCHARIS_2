@@ -34,6 +34,8 @@ class Matcher:
         pass
 
     def valid_cazy_family(self, family_string_to_test):
+        if family_string_to_test in _DELETEDFAMILYLIST:
+            return False
         return bool(self.cazy_fam_regex.fullmatch(family_string_to_test))
 
     def extract_cazy_family(self, string_to_extract_from):
@@ -93,14 +95,18 @@ def get_default_family_categories():
 def get_user_categories():
     #   Check for category file and create if necessary
     if not os.path.isfile(default_fam_lists_file_path):
-        print("Default family category config file not found, creating it...")
-        try:
-            write_family_files()
-        except IOError as error:
-            print("ERROR:", error.args[0])
-            print("ERROR: Cannot create default family_categories config file.\n"
-                  "Check that you have proper filesystem permissions.")
-            sys.exit(1)
+        #     todo: might want to uncomment this after setting the write_family_files()
+        #      function to be skipped during a test in the bioconda test harness
+        # print("Default family category config file not found, creating it...")
+        # try:
+        #     write_family_files()
+        # except IOError as error:
+        #     print("ERROR:", error.args[0])
+        #     print("ERROR: Cannot create default family_categories config file.\n"
+        #           "Check that you have proper filesystem permissions.")
+        #     sys.exit(1)
+        print("Default family category config file not found, using default...")
+        return get_default_family_categories()
 
     # load existing JSON which we will get list from
     try:
@@ -241,7 +247,7 @@ def cli_append_user_family():
             sys.exit(3)
 
     if not os.path.isfile(default_fam_lists_file_path):
-        print("Default family category config file not found, creating it...")
+        print("Family category config file not found, creating it...")
         try:
             write_family_files()
         except IOError as error:
