@@ -30,6 +30,17 @@ from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.PipelineErrors import PipelineException
 from saccharis.utils.AdvancedConfig import get_db_folder
 
+urls_and_process = [("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb"),
+                    ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz", "tar"),
+                    ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tcdb.fa", "diamond"),
+                    ("https://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08252022.tsv", None),
+                    ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_07-01-2022.xlsx", None),
+                    ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_07-01-2022.txt", None),
+                    ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-1.hmm", "hmmpress"),
+                    ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-2.hmm", "hmmpress"),
+                    ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/stp.hmm", "hmmpress"),
+                    ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN_sub.hmm", "hmmpress")]
+
 
 def convert_path_wsl(path):
     return subprocess.run(["wsl", "wslpath", "'" + path + "'"], capture_output=True, check=True).stdout.decode().strip()
@@ -63,25 +74,16 @@ def download_and_process(url, output_folder, process=None):
 
 def download_database():
     db_install_folder = get_db_folder()
-    urls_and_process = [("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb"),
-                        ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz", "tar"),
-                        ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tcdb.fa", "diamond"),
-                        ("https://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08252022.tsv", None),
-                        ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_07-01-2022.xlsx", None),
-                        ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_07-01-2022.txt", None),
-                        ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-1.hmm", "hmmpress"),
-                        ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-2.hmm", "hmmpress"),
-                        ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/stp.hmm", "hmmpress"),
-                        ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN_sub.hmm", "hmmpress")]
 
     # set up folder and download dbCAN2 database files if not already present
     if not os.path.isdir(db_install_folder):
         os.makedirs(db_install_folder, 0o755)
+
     if not os.path.exists(os.path.join(db_install_folder, "CAZy.dmnd")):
         print("dbCAN2 file 1/12 not found, downloading...")
         wget.download("http://bcb.unl.edu/dbCAN2/download/Databases/V11/CAZyDB.08062022.fa", db_install_folder)
         if sys.platform.__contains__("win"):
-            # todo: change this to occur when command is missing?? kind of unnecessary, since diamond is availabe on windwos via manual install
+            # todo: change this to occur when command is missing?? kind of unnecessary, since diamond is availabe on windows via manual install
             diamond_db_inpath = convert_path_wsl(os.path.join(db_install_folder, "CAZyDB.08062022.fa"))
             diamond_db_outpath = convert_path_wsl(os.path.join(db_install_folder, "CAZy"))
             subprocess.run(["wsl", "diamond", "makedb", "--in", diamond_db_inpath, "-d", diamond_db_outpath])
