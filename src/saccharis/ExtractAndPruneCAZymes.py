@@ -9,6 +9,7 @@
 import argparse
 import csv
 import math
+import pathlib
 import shutil
 import subprocess
 import os
@@ -30,34 +31,69 @@ from saccharis.utils.PipelineErrors import PipelineException
 from saccharis.utils.AdvancedConfig import get_db_folder
 
 
+def convert_path_wsl(path):
+    return subprocess.run(["wsl", "wslpath", "'" + path + "'"], capture_output=True, check=True).stdout.decode().strip()
+
+
+def download_and_process(url, output_folder, process=None):
+    output_path = os.path.join(output_folder, os.path.basename(url))
+    if not os.path.exists(output_path):
+        print("dbCAN file not found, downloading...")
+        wget.download(url, output_folder)
+        assert(os.path.isfile(output_path))
+        if process == "hmmpress":
+            if sys.platform.__contains__("win"):
+                win_hmmpress_path = convert_path_wsl(output_path)
+                subprocess.run(["wsl", "hmmpress", win_hmmpress_path], check=True)
+            else:
+                subprocess.run(["hmmpress", output_path], check=True)
+        elif process == "tar":
+            if sys.platform.__contains__("win"):
+                win_tar_path = convert_path_wsl(output_path)
+                subprocess.run(["wsl", "tar", "xvf", win_tar_path], check=True)
+            else:
+                subprocess.run(["tar", "xvf", output_path], check=True)
+        elif process == "makeblastdb":
+            subprocess.run(["makeblastdb", "-in", output_path, "-dbtype", "prot"], check=True)
+        elif process == "diamond":
+            output_path_obj = pathlib.PurePath(output_path)
+            diamond_output_path = output_path_obj.parent / output_path_obj.stem
+            subprocess.run(["diamond", "makedb", "--in", output_path, "-d", diamond_output_path], check=True)
+
+
 def download_database():
     db_install_folder = get_db_folder()
+    urls_and_process = [("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb"),
+                        ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz", "tar"),
+                        ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tcdb.fa", "diamond"),
+                        ("https://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08252022.tsv", None),
+                        ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_07-01-2022.xlsx", None),
+                        ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_07-01-2022.txt", None),
+                        ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-1.hmm", "hmmpress"),
+                        ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-2.hmm", "hmmpress"),
+                        ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/stp.hmm", "hmmpress"),
+                        ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN_sub.hmm", "hmmpress")]
+
     # set up folder and download dbCAN2 database files if not already present
     if not os.path.isdir(db_install_folder):
         os.makedirs(db_install_folder, 0o755)
     if not os.path.exists(os.path.join(db_install_folder, "CAZy.dmnd")):
-        print("dbCAN2 file 1/6 not found, downloading...")
+        print("dbCAN2 file 1/12 not found, downloading...")
         wget.download("http://bcb.unl.edu/dbCAN2/download/Databases/V11/CAZyDB.08062022.fa", db_install_folder)
         if sys.platform.__contains__("win"):
             # todo: change this to occur when command is missing?? kind of unnecessary, since diamond is availabe on windwos via manual install
-            diamond_db_inpath = subprocess.run(
-                ["wsl", "wslpath", "'" + os.path.join(db_install_folder, "CAZyDB.08062022.fa") + "'"],
-                capture_output=True, check=True).stdout.decode().strip()
-            diamond_db_outpath = subprocess.run(
-                ["wsl", "wslpath", "'" + os.path.join(db_install_folder, "CAZy") + "'"],
-                capture_output=True, check=True).stdout.decode().strip()
+            diamond_db_inpath = convert_path_wsl(os.path.join(db_install_folder, "CAZyDB.08062022.fa"))
+            diamond_db_outpath = convert_path_wsl(os.path.join(db_install_folder, "CAZy"))
             subprocess.run(["wsl", "diamond", "makedb", "--in", diamond_db_inpath, "-d", diamond_db_outpath])
         else:
             subprocess.run(["diamond", "makedb", "--in", os.path.join(db_install_folder, "CAZyDB.08062022.fa"), "-d",
                             os.path.join(db_install_folder, "CAZy")])
-        # subprocess.run(["rm", os.path.join(db_install_folder, "CAZyDB.08062022.fa")]) todo: remove this line after checking below works
         os.remove(os.path.join(db_install_folder, "CAZyDB.08062022.fa"))  # 1 gigabyte file not needed, no point keeping
+
     if not os.path.exists(os.path.join(db_install_folder, "dbCAN.txt")):
-        print("dbCAN2 file 2/6 not found, downloading...")
+        print("dbCAN2 file 2 not found, downloading...")
         wget.download("https://bcb.unl.edu/dbCAN2/download/Databases/V11/dbCAN-HMMdb-V11.txt", db_install_folder)
         shutil.move(os.path.join(db_install_folder, "dbCAN-HMMdb-V11.txt"), os.path.join(db_install_folder, "dbCAN.txt"))
-        # subprocess.run(["mv", "-T", os.path.join(db_install_folder, "dbCAN-HMMdb-V11.txt"),
-        #                 os.path.join(db_install_folder, "dbCAN.txt")])
         if sys.platform.__contains__("win"):
             win_hmmpress_path = subprocess.run(
                 ["wsl", "wslpath", "'" + os.path.join(db_install_folder, "dbCAN.txt") + "'"],
@@ -65,27 +101,9 @@ def download_database():
             subprocess.run(["wsl", "hmmpress", win_hmmpress_path])
         else:
             subprocess.run(["hmmpress", os.path.join(db_install_folder, "dbCAN.txt")])
-    if not os.path.exists(os.path.join(db_install_folder, "tcdb.fa")):
-        print("dbCAN2 file 3/6 not found, downloading...")
-        wget.download("http://bcb.unl.edu/dbCAN2/download/Databases/V11/tcdb.fa", db_install_folder)
-        # todo
-        subprocess.run(["diamond", "makedb", "--in", os.path.join(db_install_folder, "tcdb.fa"), "-d",
-                        os.path.join(db_install_folder, "tcdb")])
-    if not os.path.exists(os.path.join(db_install_folder, "tf-1.hmm")):
-        print("dbCAN2 file 4/6 not found, downloading...")
-        wget.download("http://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-1.hmm", db_install_folder)
-        # todo
-        subprocess.run(["hmmpress", os.path.join(db_install_folder, "tf-1.hmm")])
-    if not os.path.exists(os.path.join(db_install_folder, "tf-2.hmm")):
-        print("dbCAN2 file 5/6 not found, downloading...")
-        wget.download("http://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-2.hmm", db_install_folder)
-        # todo
-        subprocess.run(["hmmpress", os.path.join(db_install_folder, "tf-2.hmm")])
-    if not os.path.exists(os.path.join(db_install_folder, "stp.hmm")):
-        print("dbCAN2 file 6/6 not found, downloading...")
-        wget.download("http://bcb.unl.edu/dbCAN2/download/Databases/V11/stp.hmm", db_install_folder)
-        # todo
-        subprocess.run(["hmmpress", os.path.join(db_install_folder, "stp.hmm")])
+
+    for url, process_type in urls_and_process:
+        download_and_process(url, db_install_folder, process_type)
 
 
 def filter_prune(fasta_filepath, bounds_file, family, output_folder, source, prune=True, accession_dict=None):
