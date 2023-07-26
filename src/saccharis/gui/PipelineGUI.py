@@ -1245,6 +1245,7 @@ class TextSignalRedirector(io.StringIO):
         super().__init__()
         self.update_ui = update_ui
         self.file_descriptor = subprocess_file_descriptor
+        self.null_file_descriptor = os.open(os.devnull, os.O_RDWR)
 
     def write(self, string):
         # noinspection PyUnresolvedReferences
@@ -1259,7 +1260,7 @@ class TextSignalRedirector(io.StringIO):
         # self.console_window.insertPlainText(text)
 
     def close(self) -> None:
-        # this is here so that you can put a breakpoint on the close call for easier debugging
+        os.close(self.null_file_descriptor)
         super().close()
 
     def fileno(self):
@@ -1268,7 +1269,7 @@ class TextSignalRedirector(io.StringIO):
         if self.file_descriptor:
             return self.file_descriptor
         else:
-            return os.open(os.devnull, os.O_RDWR)
+            return self.null_file_descriptor
 
 
 class TextSignalWrapper(io.TextIOWrapper):
