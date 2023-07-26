@@ -53,13 +53,13 @@ def download_and_process(url, output_folder, process=None):
         wget.download(url, output_folder)
         assert(os.path.isfile(output_path))
         if process == "hmmpress":
-            if sys.platform.__contains__("win"):
+            if sys.platform.startswith("win"):
                 win_hmmpress_path = convert_path_wsl(output_path)
                 subprocess.run(["wsl", "hmmpress", win_hmmpress_path], check=True)
             else:
                 subprocess.run(["hmmpress", output_path], check=True)
         elif process == "tar":
-            if sys.platform.__contains__("win"):
+            if sys.platform.startswith("win"):
                 win_tar_path = convert_path_wsl(output_path)
                 subprocess.run(["wsl", "tar", "xvf", win_tar_path], check=True)
             else:
@@ -82,7 +82,7 @@ def download_database():
     if not os.path.exists(os.path.join(db_install_folder, "CAZy.dmnd")):
         print("dbCAN2 file 1/12 not found, downloading...")
         wget.download("http://bcb.unl.edu/dbCAN2/download/Databases/V11/CAZyDB.08062022.fa", db_install_folder)
-        if sys.platform.__contains__("win"):
+        if sys.platform.startswith("win"):
             # todo: change this to occur when command is missing?? kind of unnecessary, since diamond is availabe on windows via manual install
             diamond_db_inpath = convert_path_wsl(os.path.join(db_install_folder, "CAZyDB.08062022.fa"))
             diamond_db_outpath = convert_path_wsl(os.path.join(db_install_folder, "CAZy"))
@@ -96,7 +96,7 @@ def download_database():
         print("dbCAN2 file 2 not found, downloading...")
         wget.download("https://bcb.unl.edu/dbCAN2/download/Databases/V11/dbCAN-HMMdb-V11.txt", db_install_folder)
         shutil.move(os.path.join(db_install_folder, "dbCAN-HMMdb-V11.txt"), os.path.join(db_install_folder, "dbCAN.txt"))
-        if sys.platform.__contains__("win"):
+        if sys.platform.startswith("win"):
             win_hmmpress_path = subprocess.run(
                 ["wsl", "wslpath", "'" + os.path.join(db_install_folder, "dbCAN.txt") + "'"],
                 capture_output=True, check=True).stdout.decode().strip()

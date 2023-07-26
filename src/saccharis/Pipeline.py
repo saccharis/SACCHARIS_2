@@ -6,6 +6,7 @@
 ###############################################################################
 import datetime
 import json
+import logging
 import math
 import os
 import shutil
@@ -15,7 +16,7 @@ import time
 from PyQt5.QtCore import pyqtSignal
 
 from saccharis.utils.FamilyCategories import Matcher
-from saccharis.utils.PipelineErrors import PipelineException, UserError
+from saccharis.utils.PipelineErrors import PipelineException, UserError, make_logger
 from saccharis import Cazy_Scrape
 from saccharis import ChooseAAModel
 from saccharis.ExtractAndPruneCAZymes import main as extract_pruned
@@ -23,7 +24,7 @@ from saccharis import FastTree_Build
 from saccharis import Muscle_Alignment
 from saccharis import Parse_User_Sequences
 from saccharis import RAxML_Build
-from saccharis.utils.AdvancedConfig import get_user_settings
+from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder
 from saccharis.utils.AdvancedConfig import save_to_file
 from saccharis.utils.FamilyCategories import check_deleted_families
 from saccharis.utils.Formatting import make_metadata_dict, format_time
@@ -33,17 +34,21 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
                     domain_mode: int = 0b11111, threads: int = math.ceil(os.cpu_count() * 0.75),
                     tree_program: ChooseAAModel.TreeBuilder = ChooseAAModel.TreeBuilder.FASTTREE,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
-                    force_update: bool = False, user_file=None, auto_rename: bool = False, settings: dict = None,
-                    gui_step_signal: pyqtSignal = None, merged_dict: dict = None):
+                    force_update: bool = False, user_file=None, genbank_genomes=None, genbank_genes=None,
+                    auto_rename: bool = False, settings: dict = None, gui_step_signal: pyqtSignal = None,
+                    merged_dict: dict = None, logger: logging.Logger = None):
 
     # todo: remove windows block once WSL support is fully implemented
     if sys.gettrace():
         print("Debug is active")
     # else:
-    #     if sys.platform.__contains__("win"):
+    #     if sys.platform.startswith("win"):
     #         raise UserWarning("Windows support is not yet fully implemented. It should be implemented soon, "
     #                           "for now you can install SACCHARIS through WSL and use the CLI, or possibly run the GUI"
     #                           " through WSL on Windows 11, or use a linux OS to run the GUI.")
+
+    if logger is None:
+        logger = make_logger("PipelineLogger", get_log_folder(), "pipeline_logs.txt")
 
     matcher = Matcher()
     if not matcher.valid_cazy_family(family):
@@ -140,9 +145,9 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
     #######################################
     # Step Two - Combine User and Cazy
     #######################################
-    fasta_with_user_file = ""   #
-    user_run_id = None                # These lines to suppress warnings from undeclared variables being accessed
-    user_t = None               #
+    fasta_with_user_file = ""       #
+    user_run_id = None              # These lines to suppress warnings from undeclared variables being accessed
+    user_t = None                   #
     if user_file is not None:
         user_folder = os.path.join(domain_folder, "user")
         if not os.path.isdir(user_folder):
@@ -150,13 +155,16 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
         try:
             fasta_with_user_file, user_count, user_run_id = Parse_User_Sequences.run(user_file, fasta_file, user_folder,
                                                                                      verbose, force_update, auto_rename)
+
         except UserWarning as error:
-            print(error.args[0])
-            answer = input("Would you like to continue anyway, without user sequences in the analysis? ")
+            logger.warning(error.args[0])
+            answer = input("Would you like to continue anyway, without user sequences in the analysis?")
             if answer.lower() == "y" or answer.lower() == "yes":
                 print("Continuing...")
+                logger.info("Continuing...")
             else:
                 print("Exiting...")
+                logger.info("Exiting...")
                 sys.exit()
         user_t = time.time()
         print("Added user sequences to CAZy family sequences")
@@ -257,7 +265,7 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
     print(f"ModelTest-NG tree modeling of {os.path.split(aligned_path)[1]} is underway\n")
     aa_model = ChooseAAModel.compute_best_model(aligned_path, pruned_list, family, prottest_folder, cazyme_module_count,
                                                 scrape_mode, "MF", threads, tree_program, force_update, user_run_id,
-                                                use_modelTest=True)
+                                                use_modelTest=True, logger=logger)
     prottest_t = time.time()
     print("Best model found via ModelTest")
     print("==============================================================================\n")

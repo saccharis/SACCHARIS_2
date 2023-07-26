@@ -119,9 +119,9 @@ def parse_best_model(outpath, tree_program, modeltest=False):
 
 # todo: rename "MF" to something more descriptive
 # better todo: delete "MF" because it seems totally pointless, confirm before deleting it
-def compute_best_model(muscle_input_file, pruned_list, family, output_folder, number_seqs, scrape_mode, MF, num_threads=4,
-                       tree_program=TreeBuilder.FASTTREE, force_update=False, user_run=None,
-                       prottest_folder="/usr/local/prottest-3.4.2", use_modelTest=True):
+def compute_best_model(muscle_input_file, pruned_list, family, output_folder, number_seqs, scrape_mode, MF,
+                       num_threads=4, tree_program=TreeBuilder.FASTTREE, force_update=False, user_run=None,
+                       prottest_folder="/usr/local/prottest-3.4.2", use_modelTest=True, logger=None):
     # Create Directory for prottest and change to this directory
     if user_run:
         prot_file_path = os.path.join(output_folder, f"{family}_{tree_program.name}_{user_run:05d}model.txt")
@@ -183,40 +183,9 @@ def compute_best_model(muscle_input_file, pruned_list, family, output_folder, nu
                   f"Exiting...")
             exit()
 
-        # if tree_program == TreeBuilder.RAXML:
-        #     try:
-        #         if use_modelTest:
-        #             subprocess.run(["modeltest-ng", "-d", "aa", "-i", muscle_input_file, "-o", outpath,
-        #                             "-h", "uigf", "-p",
-        #                             f"{num_threads}"], check=True)
-        #         #     todo: pick starting topology for modeltest?
-        #         else:
-        #             subprocess.run(["java", "-jar", prottest_path, "-i", muscle_input_file, "-o", outpath,
-        #                             "-S", "0", "-all-distributions", "-AIC", "-AICC", "-BIC", "-DT", "-threads",
-        #                             f"{num_threads}"], check=True)
-        #     except subprocess.CalledProcessError as error:
-        #         # print("ERROR:", error.args[0])
-        #         raise AAModelError("Prottest failed for an unknown reason.") from error
-        # else:   # tree_program == TreeBuilder.FASTTREE
-        #     # fasttree can only use JTT, WAG, or LG matrices by default, so no point computing others
-        #     try:
-        #         if use_modelTest:
-        #             args = ["modeltest-ng", "-d", "aa", "-i", muscle_input_file, "-o", outpath,
-        #                     "-h", "uigf", "-p", f"{num_threads}", "-m", "JTT,LG,WAG"]
-        #
-        #             subprocess.run(args, check=True)
-        #             #     todo: pick starting topology for modeltest?
-        #         else:
-        #             subprocess.run(["java", "-jar", prottest_path, "-i", muscle_input_file, "-o", outpath,
-        #                             "-S", "0", "-all-distributions", "-AIC", "-AICC", "-BIC", "-DT", "-threads",
-        #                             f"{num_threads}", "-JTT", "-LG", "-WAG"], check=True)
-        #     except subprocess.CalledProcessError as error:
-        #         # print("ERROR:", error.args[0])
-        #         raise AAModelError("Prottest failed for an unknown reason.") from error
-
         if use_modelTest:
             #     todo: pick starting topology for modeltest?
-            if sys.platform.__contains__("win"):
+            if sys.platform.startswith("win"):
                 try:
                     win_muscle_input_file = subprocess.run(["wsl", "wslpath", "'" + muscle_input_file + "'"],
                                                            capture_output=True, check=True)
@@ -251,12 +220,15 @@ def compute_best_model(muscle_input_file, pruned_list, family, output_folder, nu
 
         try:
             # subprocess.run(args, check=True)
+            logger.debug("modeltest args: ", ' '.join(args))
             main_proc = subprocess.Popen(args)
             atexit.register(main_proc.kill)
             main_proc.wait()
             atexit.unregister(main_proc.kill)
             if main_proc.returncode != 0:
-                raise AAModelError("modeltest process did not return correctly.")
+                retcode_msg = f"modeltest process did not return correctly. Process return code: {main_proc.returncode}"
+                logger.error(retcode_msg)
+                raise AAModelError(retcode_msg)
         except subprocess.CalledProcessError as error:
             raise AAModelError("modeltest failed for an unknown reason. Check that it is installed. If you are using"
                                "a windows Operating system, note that modeltest-ng is not compatible with windows, and"

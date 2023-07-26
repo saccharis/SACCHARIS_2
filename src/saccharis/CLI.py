@@ -6,19 +6,23 @@
 ###############################################################################
 import argparse
 import importlib.metadata
+import logging
 import math
 import os
 import sys
 from importlib.metadata import version
 
+from Bio.Entrez import efetch
+
+from saccharis.NCBIQueries import download_proteins_from_genomes
 from saccharis.Cazy_Scrape import Mode, Domain
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
 from saccharis.Pipeline import single_pipeline
 from saccharis.ScreenUserFile import choose_families_from_fasta
-from saccharis.utils.AdvancedConfig import MultilineFormatter
+from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder
 from saccharis.utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
-from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile
+from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile, make_logger
 
 
 def get_version():
@@ -29,6 +33,7 @@ def get_version():
 
 
 def cli_main():
+    logger = make_logger("CLILogger", get_log_folder(), "cli_logs.txt")
     parser = argparse.ArgumentParser(description=f'SACCHARIS version: {get_version()}\n'
                                                  f' SACCHARIS 2 is a tool to analyze CAZyme families.',
                                      formatter_class=MultilineFormatter,
@@ -98,6 +103,20 @@ def cli_main():
                         "this run - this is your chance.  Sequences MUST be in FASTA FORMAT - if they are not the "
                         "script will fail.  Make sure to include path with filename. Multiple FASTA files are "
                         "supported and will be merged together, with metadata of source files saved for future use.")
+    # genbank_group = parser.add_argument_group(required=False)
+    # genbank_group.add_argument("--ncbi_genome", "-g", nargs='+', type=str, help="If you would like to add sequences "
+    #                            "from a genbank genome, this is the argument to do so. Just add the genome assembly ID "
+    #                            "(these start with GCA_ or GCF_) and the protein coding sequences will be downloaded in "
+    #                            "FASTA format and added as user sequences to your results. Multiple genomes are "
+    #                            "supported, each id separated with a space, and will be merged together with all the "
+    #                            "user sequences into the resultant screening/tree, with metadata of source saved for "
+    #                            "future use.")
+    # todo: implement gene fasta download
+    # genbank_group.add_argument("--ncbi_genes", "-n", nargs='+', type=str, help="If you would like to add sequences "
+    #                            "from a list of genbank gene IDs, this is the argument to do so. Just add the GenBank "
+    #                            "gene IDs as a space separated list to this argument and the protein sequences will be "
+    #                            "downloaded in FASTA format and merged together with all the user sequences into the "
+    #                            "resultant screening/tree, with metadata of source saved for future use.")
     parser.add_argument("--rename_user", "-u", action="store_true", help="This is a boolean value flag that by default "
                         "is set to False, which means the program will not automatically rename user sequence headers "
                         "to conform with the user sequence ID format. When this argument is included, this will occur "
@@ -129,15 +148,6 @@ def cli_main():
                         "building program. FastTree is the default because it is substantially faster than RAxML. "
                         "RAxML may take days or even weeks to build large trees, but sometimes builds slightly higher "
                         "quality trees than FastTree.")
-
-    # Note about queries
-    # Note: Limit the number of accession numbers in query to 350.
-    #       Going above that results in unstable behaviour from the NCBI API.
-    # Database gives unstable results when querying more than 350 accession numbers at a time
-    # NOTE: Queries now seem to fail above 200(?).
-    #   100 always seems to work. 200 seems to work, but sometimes there is strange behaviour on error checking at 200
-    #   At 350, NCBI returns an incomplete list of FASTA output, usually somewhere between 150 and 280 entries.
-    # NOTE: Now queries are failing at 200. Dropped query size to 100.
 
     args = parser.parse_args()
 
@@ -187,10 +197,21 @@ def cli_main():
         user_path = None
         user_merged_dict = None
     elif type(args.seqfile) == list:
+        # todo: don't handle genbank fasta download here for both genome and genes, delete the code that did this
+        #  in the following function call because it's not easily extensible
         user_path, user_merged_dict = concatenate_multiple_fasta(args.seqfile, output_folder=output_path)
     else:
         raise Exception("Error parsing user sequence file(s) from command line. This shouldn't happen, "
                         "please report as a bug through github.")
+
+    if args.ncbi_genome is not None:
+        ncbi_genome = args.ncbi_genome
+    #     todo: this probably shouldn't even be here tbh
+        # Download seqs from NCBI for given genomes
+        genome_storage_dir = os.path.join(os.path.expanduser('~'), "saccharis", "ncbi_downloads")
+        genome_seqs, genome_source = download_proteins_from_genomes(ncbi_genome, out_dir=genome_storage_dir, logger=logger)
+        # origin_dict += genome_source
+        # all_seqs += genome_seqs
 
     matcher = Matcher()
     if args.family:
@@ -263,23 +284,31 @@ def cli_main():
         raise Exception("Something has gone wrong with command line input parsing while reading family information.")
 
     if args.family:
+        # todo: Refactor this section to only have one single_pipeline call. This whole section of try and excepts is
+        #  awful, normal flow control using the NewUserFile exception was a bad idea and bad practice. Single family
+        #  should just go into the fam_list and user file control flow should not be exception based. But this
+        #  refactoring will take some time and is low priority right now. Probably have to make some kind of wrapper
+        #  function for the pipeline to get rid of the exception control flow or something else tbd.
         try:
             single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                             tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
-                            force_update=refresh, user_file=user_path, auto_rename=rename, merged_dict=user_merged_dict)
+                            force_update=refresh, user_file=user_path, auto_rename=rename, merged_dict=user_merged_dict,
+                            logger=logger)
         except NewUserFile as file_msg:
             user_path = file_msg.msg
             try:
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
                                 force_update=refresh, user_file=user_path, auto_rename=rename,
-                                merged_dict=user_merged_dict)
+                                merged_dict=user_merged_dict, logger=logger)
             except PipelineException as pipe_error:
-                print("ERROR:", pipe_error.msg)
-                print(f"ERROR: Something went wrong running the SACCHARIS pipeline on family: {family_arg}")
+                logger.error(pipe_error.msg)
+                logger.debug(pipe_error.__traceback__)
+                logger.error(f"Something went wrong running the SACCHARIS pipeline on family: {family_arg}")
         except PipelineException as pipe_error:
-            print("ERROR:", pipe_error.msg)
-            print(f"ERROR: Something went wrong running the SACCHARIS pipeline on family: {family_arg}")
+            logger.error(pipe_error.msg)
+            logger.debug(pipe_error.__traceback__)
+            logger.error(f"Something went wrong running the SACCHARIS pipeline on family: {family_arg}")
     else:
         print("Beginning multiple pipeline runs for each of the following families:", fam_list)
         for family_arg in fam_list:
@@ -287,22 +316,26 @@ def cli_main():
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
                                 force_update=refresh, user_file=user_path, auto_rename=rename,
-                                merged_dict=user_merged_dict)
+                                merged_dict=user_merged_dict, logger=logger)
             except NewUserFile as file_msg:
                 user_path = file_msg.msg
                 try:
                     single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                     tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune,
                                     verbose=verbose_arg, force_update=refresh, user_file=user_path, auto_rename=rename,
-                                    merged_dict=user_merged_dict)
+                                    merged_dict=user_merged_dict, logger=logger)
                 except PipelineException as pipe_error:
-                    print("ERROR:", pipe_error.msg)
-                    print(f"ERROR: Something went wrong running the SACCHARIS pipeline on family: {family_arg}")
+                    logger.error(pipe_error.msg)
+                    logger.debug(pipe_error.__traceback__)
+                    logger.error(f"Something went wrong running the SACCHARIS pipeline on family: {family_arg}")
                     print("\t Continuing to run SACCHARIS pipeline on remaining families...")
+                    logger.info("\t Continuing to run SACCHARIS pipeline on remaining families...")
             except PipelineException as pipe_error:
-                print("ERROR:", pipe_error.msg)
-                print(f"ERROR: Something went wrong running the SACCHARIS pipeline on family: {family_arg}")
+                logger.error(pipe_error.msg)
+                logger.debug(pipe_error.__traceback__)
+                logger.error(f"Something went wrong running the SACCHARIS pipeline on family: {family_arg}")
                 print("\t Continuing to run SACCHARIS pipeline on remaining families...")
+                logger.info("\t Continuing to run SACCHARIS pipeline on remaining families...")
 
 
 if __name__ == "__main__":

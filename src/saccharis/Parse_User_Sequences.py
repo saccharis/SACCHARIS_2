@@ -6,6 +6,7 @@
 # Built in libraries
 import argparse
 import json
+import logging
 import os
 import re
 import hashlib
@@ -16,6 +17,7 @@ import datetime
 from Bio.SeqIO import parse, write
 
 # Internal imports
+from saccharis.NCBIQueries import download_proteins_from_genomes
 from saccharis.utils.PipelineErrors import FileError
 from saccharis.utils.PipelineErrors import UserError
 from saccharis.utils.PipelineErrors import NewUserFile
@@ -102,7 +104,8 @@ def calculate_user_run_id(input_file, output_folder):
     return user_run
 
 
-def concatenate_multiple_fasta(fasta_filenames: list[str], output_folder: str) -> [str, dict]:
+def concatenate_multiple_fasta(fasta_filenames: list[str], output_folder: str, logger: logging.Logger = None)\
+                                                                                                        -> [str, dict]:
     origin_dict = {}
     all_seqs = []
     if len(fasta_filenames) == 1:
@@ -194,27 +197,6 @@ def run(user_file_path, file_to_append, output_folder, verbose=False, force_upda
         family_seqs = list(parse(file_to_append, 'fasta'))
     except FileNotFoundError:
         raise UserWarning("ERROR: Filename for file to append is invalid!")
-
-    #  Append user seqs to family seqs
-    # #   re.compile("U[0-9]{1,9}]") #  this was the regex in the original perl??? todo: ask why 9 instead of 8
-    # uid_checker = re.compile('U[0-9]{1,9}')
-    # uid_list = {}
-    # user_seq_count = 0
-    # fasta_string = ""
-    # for record in parsed_user:
-    #     if verbose:
-    #         print(record.id)
-    #     if uid_checker.match(record.id) is not None and record.id not in uid_list:
-    #         user_seq_count += 1
-    #         fasta_string += record.format("fasta")
-    #         uid_list[record.id] = True
-    #         new_seqs.append(record)
-    #     else:
-    #         if record.id in uid_list:
-    #             raise UserWarning(f"ERROR: Duplicate UIDs found: {record.id} \n"
-    #                               f"Please add UNIQUE UIDs to entries with this uid.")
-    #         else:
-    #             raise UserWarning(f"ERROR: Invalid UIDs. Please add a valid uid to entry: {record.description}")
 
     #  Append user seqs to family seqs
     new_seqs = family_seqs + user_seqs

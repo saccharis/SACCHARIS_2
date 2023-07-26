@@ -158,7 +158,7 @@ def validate_settings(settings):
         raise UserWarning("genbank_query_size max value is 500!")
 
     try:
-        # if sys.platform.__contains__("win"):
+        # if sys.platform.startswith("win"):
         #     try:
         #         rax_info = run(["wsl", settings["raxml_command"], "-v"], capture_output=True, check=True)
         #     except FileNotFoundError:
@@ -228,7 +228,9 @@ def save_to_file(settings_dict, settings_path=default_settings_path, email=None,
 def cli_config():
     parser = argparse.ArgumentParser(description="A utility to configure advanced settings. If you need deeper "
                                                  "explanations of a setting, refer to the documentation of the "
-                                                 "underlying tool, if any.", formatter_class=MultilineFormatter)
+                                                 "underlying tool, if any. Any settings changed here are stored for "
+                                                 "use in future runs in the config folder: ~/saccharis/config",
+                                     formatter_class=MultilineFormatter)
     parser.add_argument('--hmm_eval', default=None, type=float, help='HMMER E Value for dbcan2')
     parser.add_argument('--hmm_cov', default=None, type=float, help='HMMER Coverage val for dbcan2')
     parser.add_argument("--querysize", "-q", default=None, type=int, help="Number of accession numbers to query genbank"

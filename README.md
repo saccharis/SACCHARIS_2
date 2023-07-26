@@ -8,9 +8,8 @@ phylogenetic methods.
 
 ## Beta information
 
-SACCHARIS 2.0 is currently under active development and is currently in closed beta. 
-Public release will be available through the bioconda channel of the conda package manager 
-fall 2022. If you would like to participate in the beta, please contact us.
+SACCHARIS 2.0 is currently under active development and is currently in open beta. 
+Public release is available through the bioconda channel of the conda package manager.
 
 ## Citation
 
@@ -21,34 +20,51 @@ Publication information coming soon.
 
 ### Beta installation
 
-Run the linux_install script to set up the virtual environment, or run 
-``conda install --use-local /path/to/conda_package.tar.gz``
+[//]: # (Run the linux_install script to set up the virtual environment, or run )
 
-[//]: # (###Installation option 1: Conda Install)
+[//]: # (``conda install --use-local /path/to/conda_package.tar.gz``)
 
-[//]: # (This is the preferred method for most users, since installation should be simple.)
+#### Installation option 1: Conda CLI Install
+
+This is the preferred method for most users, since installation should be simple.
+
+
+First make sure you have installed conda. I recommend downloading a version appropriate to your OS from 
+https://www.anaconda.com/products/distribution#Downloads
+
+Once conda is installed, you have to add the bioconda channel to be able to download SACCHARIS, instructions are here:
+https://bioconda.github.io/
+
+It's recommended to install SACCHARIS into a dedicated virtual environment to avoid compatibility issues with other 
+software. You can learn more about using the conda package manager and virtual environments here:
+
+https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html
+
+With conda installed and the bioconda channel set up, you can easily install SACCHARIS directly into a dedicated virtual environment on the command 
+line with:
+
+``conda create -n saccharis_env saccharis``
+
+Alternately, you can activate an environment of your choice then download and install SACCHARIS with:
+
+``conda install saccharis``
+
+
+Once SACCHARIS is installed you can start the software from command line with `saccharis` and you can start the gui with
+`saccharis-gui`.
+
+#### Installation option 2: Anacaonda navigator GUI installation
+If you prefer to use a GUI to install and launch SACCHARIS, you can install SACCHARIS through the anaconda navigator
+GUI. Install and launch navigator as per https://docs.anaconda.org/free/navigator/, then it's recommended to create a 
+new environment to install saccharis into in the environment tab at the left. You will need to add the bioconda channel
+to install SACCHARIS, which can easily be done by clicking the "channels" button near the top of the window. Then just 
+search the packages for SACCHARIS and you should be able to install it. Once installed, it should show up as a 
+launchable application in the Home tab with the environment it was installed into selected.
+
+
 
 [//]: # ()
-[//]: # (First make sure you have installed conda. I recommend downloading a version appropriate to your OS from https://www.anaconda.com/products/distribution#Downloads)
-
-[//]: # ()
-[//]: # (Then you can download and install SACCHARIS with:)
-
-[//]: # ()
-[//]: # (``conda install saccharis``)
-
-[//]: # ()
-[//]: # (This will attempt to automatically download and install all dependencies as well as SACCHARIS itself.)
-
-[//]: # (It will be automatically installed in the currently active conda environment. You can install it in the base environment, or on a dedicated envrionment for SACCHARIS.)
-
-[//]: # ()
-[//]: # (You can learn more about using the conda package manager and virtual environments here:)
-
-[//]: # (https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html)
-
-[//]: # ()
-[//]: # (###Installation option 2: Script installation to a virtual environment on a linux system)
+[//]: # (#### Installation option 2: Script installation to a virtual environment on a linux system)
 
 [//]: # ()
 [//]: # (If you have problems with the standard conda package install, you can use the environment.yaml file and the install_linux.sh script from this github repository to set up a virtual environment with the known working dependency versions.)

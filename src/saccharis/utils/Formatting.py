@@ -39,8 +39,8 @@ def make_metadata_dict(cazy_accession_dict, cazyme_module_list, bounds_dict, mer
 
         #     Note: merged dict should not typically be none. If source_file is None, we are either working with
         #     pre-release metadata(which should probably be discarded by the time anyone reads this) or something has
-        #     gone wrong, so consider change the above to simply at a later date:
-        # source_file = merged_dict[module_id]
+        #     gone wrong, so consider a change the above to simply at a later date:
+        #   source_file = merged_dict[module_id]
             if merged_dict and module_id not in merged_dict:
                 print("ERROR: bad loading of data from merged fasta dictionary.")
 

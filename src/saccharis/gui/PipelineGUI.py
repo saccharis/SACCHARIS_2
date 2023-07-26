@@ -46,7 +46,7 @@ from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.FamilyCategories import save_family_iterable_json
 from saccharis.utils.AdvancedConfig import get_user_settings, load_from_env, validate_settings, save_to_file, \
     get_default_settings, get_log_folder, get_output_folder
-from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile
+from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile, make_logger
 
 from saccharis.Cazy_Scrape import Mode
 from saccharis.Cazy_Scrape import Domain
@@ -71,27 +71,7 @@ from saccharis.ChooseAAModel import TreeBuilder
 #
 # sys.settrace(my_tracer)
 
-log_dir = get_log_folder()
-if not os.path.isdir(log_dir):
-    os.makedirs(log_dir)
-
-logger = logging.getLogger("GUILogger")
-c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler(os.path.join(log_dir, "gui_logs.txt"))
-logger.setLevel(logging.DEBUG)
-if sys.gettrace():
-    c_handler.setLevel(logging.DEBUG)
-else:
-    c_handler.setLevel(logging.WARNING)
-f_handler.setLevel(logging.DEBUG)
-c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-c_handler.setFormatter(c_format)
-f_handler.setFormatter(f_format)
-
-# Add handlers to the logger
-logger.addHandler(c_handler)
-logger.addHandler(f_handler)
+logger = make_logger("GUILogger", get_log_folder(), "gui_logs.txt")
 
 sys._excepthook = sys.excepthook  # save original excepthook
 
@@ -1013,7 +993,7 @@ class CazomeScreenThread(QThread):
         # sys.stderr = self.err_redirect
 
         for fasta_file in file_list:
-            # if sys.platform.__contains__("win") and not sys.gettrace():
+            # if sys.platform.startswith("win") and not sys.gettrace():
             #     test_dict_list = [{"PL9": 12, "PL9_1": 5, "PL9_4": 1, "GH1": 5, "GH5": 7, "GH16": 4, "AA5": 3},
             #                       {"PL9": 12, "PL7_1": 5, "PL7": 1, "GH2": 5, "GH15": 7, "GH26": 4, "AA1": 3},
             #                       {"PL9": 12, "PL8_1": 1, "GH3": 5, "GH25": 7, "GH36": 4, "AA2": 3}]
