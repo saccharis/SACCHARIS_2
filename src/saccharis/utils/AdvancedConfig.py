@@ -179,7 +179,8 @@ def validate_settings(settings):
 
     except (FileNotFoundError, CalledProcessError) as file_e:
         raise UserWarning(f"ERROR: cannot find command \"{settings['raxml_command']}\" on path. Check that RAxML is "
-                          f"available on path with this exact spelling. "
+                          f"available on path with this exact spelling. Alternately, if this is the wrong name for "
+                          f"your raxml command, consider changing it with "
                           # f"Alternatively, specify the full length "
                           # f"executable path as the RAxML argument like this: "
                           # f"\n\t\"--raxml </full/path/to/RAxML_executable_file>\""

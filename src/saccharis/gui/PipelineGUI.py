@@ -161,10 +161,11 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
         logger.handlers[0].stream = self.err_redirect
 
     def closeEvent(self, event):
-        print("INFO: GUI close event")
+        print("INFO: GUI close ask")
         reply = ask_user_yes_no("Are you sure to quit?", None, None, self)
 
         if reply == True:
+            print("INFO: GUI close accept")
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
             logger.handlers[0].stream = sys.__stderr__
@@ -296,7 +297,7 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
             args.__setattr__("fasta_file", None)
             args.__setattr__("fasta_source_dict", None)
         else:
-            user_merged_file, user_merged_dict = concatenate_multiple_fasta(user_files, output_folder=args.output_path)
+            user_merged_file, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_files, output_folder=args.output_path)
             args.__setattr__("fasta_file", user_merged_file)
             args.__setattr__("fasta_source_dict", user_merged_dict)
 

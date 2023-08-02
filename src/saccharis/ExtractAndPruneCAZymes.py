@@ -234,7 +234,7 @@ def parse_diamond_dict(file_path):
     with open(file_path, 'r') as file:
         iterator = DictReader(file, dialect="unix", delimiter="\t")
         for row in iterator:
-            diamond_data[row["Gene ID"]] = {"CAZy Predictions": row["CAZy ID"].split('|')}
+            diamond_data[row["Gene ID"]] = {"CAZyme Predictions": row["CAZy ID"].split('|')}
     return diamond_data
 
 

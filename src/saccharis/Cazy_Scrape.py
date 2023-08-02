@@ -12,6 +12,7 @@ import re
 import os
 import csv
 import json
+from logging import Logger, getLogger
 # ignore warnings that these parsers aren't used by IDE, they ARE used
 # noinspection PyUnresolvedReferences
 from html.parser import HTMLParser
@@ -23,6 +24,8 @@ from bs4 import BeautifulSoup
 from saccharis.NCBIQueries import valid_genbank_gene, ncbi_query
 from saccharis.utils.PipelineErrors import PipelineException
 from saccharis.utils.AdvancedConfig import load_from_env
+from saccharis.utils.PipelineErrors import NCBIException, CazyException
+from saccharis.utils.Formatting import CazymeMetadataRecord
 
 # count ncbi exceptions, so we can terminate if too many failures occur. Too many failures probably means NCBI is down.
 ncbi_exception_count = 0
@@ -43,16 +46,6 @@ class Domain(Enum):
     EUKARYOTA = 0b00100
     VIRUSES = 0b01000
     UNCLASSIFIED = 0b10000
-
-
-class NCBIException(PipelineException):
-    def __init__(self, msg):
-        super().__init__(msg)
-
-
-class CazyException(PipelineException):
-    def __init__(self, msg):
-        super().__init__(msg)
 
 
 class HTMLGetter:
@@ -87,7 +80,8 @@ class HTMLGetter:
         return clean_text
 
 
-def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_mode):
+def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_mode,
+               logger: Logger = getLogger("PipelineLogger")):
     print("Downloading", family, "Data from CAZy database...")
 
     url_cazy = "http://www.cazy.org/"+family+"_" + \
@@ -119,7 +113,7 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
     cazy_missing = 0
     cazy_added = 0
 
-    cazymes = {}
+    cazymes: dict[str, CazymeMetadataRecord] = {}
     genbank_duplicates = []
 
     # loop through all pages of characterized CAZymes for selected family
@@ -282,7 +276,10 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                     (get_fragments or not protein_name.__contains__("fragment")):
                 # todo: change cazymes from a dict of lists to a dict of dicts (or a dict of Namespace objects? or dict
                 #  of custom class?) to get named json categories in output. THIS WILL BREAK DATA IMPORT INTO R SCRIPT
-                cazymes[genbank] = [protein_name, ec_num, org_name, None, uniprot, pdb, subfamily]  # None is domain, filled later
+                # cazymes[genbank] = [protein_name, ec_num, org_name, None, uniprot, pdb, subfamily]  # None is domain, filled later
+                cazymes[genbank] = CazymeMetadataRecord(protein_name=protein_name, ec_num=ec_num, org_name=org_name,
+                                                        uniprot=uniprot, pdb=pdb, family=family, subfamily=subfamily,
+                                                        genbank=genbank, protein_id=genbank)
                 cazy_added += 1
             else:
                 if genbank is not None and genbank != '' and genbank in cazymes:
@@ -333,22 +330,36 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                     uncharacterized_added += 1
 
                     # genbank_query = requests.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/" + )
-                    all_cazymes[genbank] = [f"Uncharacterized {cazyme_class}", None, organism, domain, None, None, None]
+
+                    # all_cazymes[genbank] = [f"Uncharacterized {cazyme_class}", None, organism, domain, None, None, None]
+                    all_cazymes[genbank] = CazymeMetadataRecord(protein_name=f"Uncharacterized {cazyme_class}",
+                                                                org_name=organism, domain=domain, protein_id=genbank,
+                                                                genbank=genbank)
                 # we check genbank not in cazymes to prevent reporting characterized as duplicates
                 elif genbank not in cazymes:
                     uncharacterized_duplicate += 1
+                    msg = f"""DUPLICATE - UNCHARACTERIZED CAZYME NOT ADDED:\n
+                              Organism: {organism}\n
+                              Genbank: {genbank}\n
+                              File Line #: {entry_reader.line_num}\n
+                              \n"""
+                    logger.debug(msg)
                     if verbose:
-                        print("DUPLICATE - UNCHARACTERIZED CAZYME NOT ADDED:")
-                        print("Organism:", organism)
-                        print("Genbank:", genbank)
-                        print("File Line #:", entry_reader.line_num)
-                        print("\n")
+                        print(msg)
                 elif genbank in cazymes:
                     # add domain to characterized entry
                     unchar_char_duplicate += 1
-                    cazymes[genbank][3] = domain
+                    cazymes[genbank].domain = domain
                 else:
-                    print("ERROR: Uncharacterized entry not parsed correctly, please report this as a bug.")
+                    msg = f"""UNCHARACTERIZED CAZYME NOT PARSED CORRECTLY:\n
+                            Row data: {row}
+                            Organism: {organism}\n
+                            Genbank: {genbank}\n
+                            File Line #: {entry_reader.line_num}\n
+                            \n"""
+                    logger.error(msg)
+                    logger.error("Uncharacterized entry not parsed correctly, please report this as a bug on the "
+                                 "SACCHARIS github issue tracker.")
         cazymes = all_cazymes
         uncharacterized_retrieved = total_count-unchar_char_duplicate
     else:
@@ -363,18 +374,18 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                 # organism = row[2]
                 genbank = row[3]
                 if genbank in cazymes:
-                    cazymes[genbank][3] = domain
+                    cazymes[genbank].domain = domain
 
     # Filter for correct domain
     wrong_domain_characterized = 0
     wrong_domain_uncharacterized = 0
-    domain_cazymes = {}
+    domain_cazymes: dict[str, CazymeMetadataRecord] = {}
     for item in cazymes:
         # bitwise comparison against bitmask
-        if cazymes[item][3] and Domain[cazymes[item][3].upper()].value & domain_mode:
+        if cazymes[item].domain and Domain[cazymes[item].domain.upper()].value & domain_mode:
             domain_cazymes[item] = cazymes[item]
         else:  # invalid domain
-            if cazymes[item][1] or cazymes[item][4] or cazymes[item][5]:
+            if cazymes[item].ec_num or cazymes[item].uniprot or cazymes[item].pdb:
                 wrong_domain_characterized += 1
             else:
                 wrong_domain_uncharacterized += 1
@@ -386,6 +397,7 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
     cazy_added -= wrong_domain_characterized
     uncharacterized_added -= wrong_domain_uncharacterized
 
+    logger.debug("Done retrieving cazymes data from CAZy!")
     print("Done retrieving cazymes data from CAZy!")
     # stats = [cazy_retrieved, cazy_added, cazy_duplicate, cazy_fragments, cazy_missing,
     #          uncharacterized_retrieved, uncharacterized_added, uncharacterized_duplicate]
@@ -393,15 +405,15 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
              uncharacterized_retrieved, uncharacterized_added, uncharacterized_duplicate, wrong_domain_uncharacterized]
 
     if stats[0] != stats[1] + stats[2] + stats[3] + stats[4] + stats[5] or stats[6] != stats[7] + stats[8] + stats[9]:
-        print("WARNING / ERROR - Summary statistics on CAZy retrieval do not add up, the statistics are not reliable, "
-              "please file a bug report with the developer.")
+        logger.warning("Summary statistics on CAZy retrieval do not add up, the statistics are not reliable, "
+                       "please file a bug report with the developer.")
 
     return domain_cazymes, stats
 
 
 def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, force_update=False, ncbi_query_size=200,
-         domain_mode=0b11111, gui_active=False):
-    api_key, ncbi_email, ncbi_tool = load_from_env(skip_ask=gui_active)
+         domain_mode=0b11111, skip_ask=False, logger: Logger = getLogger()):
+    api_key, ncbi_email, ncbi_tool = load_from_env(skip_ask=skip_ask)
     # Folder and file output setup
     fasta_file = os.path.join(cazy_folder, f"{family}_{scrape_mode.name}_cazy.fasta")
     data_file = os.path.join(cazy_folder, f"{family}_{scrape_mode.name}_data.json")
@@ -410,6 +422,7 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
     if os.path.isfile(fasta_file) and not force_update:
         print("Loading data from previous run. \nIf you wish to run a new query to the CAZy database, run SACCHARIS 2"
               " with --fresh")
+        logger.info(f"Loading data from previous run. Data file: {data_file} ; Stats file: {stats_file}")
         with open(data_file, 'r', encoding='utf-8') as f:
             cazymes = json.loads(f.read())
         with open(stats_file, 'r', encoding='utf-8') as f:
@@ -425,25 +438,31 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
     retrieved = 0
     fasta_data = ""
     print("Querying NCBI...", end='')
+    logger.debug("Begin querying NCBI...")
     while queried < accession_count:
         # fasta_output, success_count = ncbi_query(accession_list[queried:queried+ncbi_query_size])
         try:
             fasta_output, success_count = ncbi_query(accession_list[queried:queried + ncbi_query_size], api_key,
-                                                     ncbi_email, ncbi_tool)
+                                                     ncbi_email, ncbi_tool, logger=logger)
             fasta_data += fasta_output
             retrieved += success_count
             queried += ncbi_query_size
             queried = min(queried, accession_count)
-            print("\rQuerying NCBI: %d/%d entries processed..." % (queried, len(accession_list)), end='')
+            msg = f"Querying NCBI: {queried}/{len(accession_list)} entries processed..."
+            print(f"\r{msg}", end='')
+            logger.info(msg)
         except NCBIException as error:
             global ncbi_exception_count
             ncbi_exception_count += 1
-            print("WARNING: MISSING FASTA DATA FROM NCBI")
-            print(error.msg)
+            logger.warning(error.msg)
+            logger.warning("MISSING FASTA DATA FROM NCBI")
             if ncbi_exception_count < NCBI_EXCEPTION_MAX_TRIES:
                 ncbi_query_size = math.ceil(ncbi_query_size/2)
-                print(f"INFO: Automatically reducing query size to {ncbi_query_size} and retrying...\n")
+                msg = f"Automatically reducing query size to {ncbi_query_size} and retrying..."
+                print(f"INFO: {msg}\n")
+                logger.info(msg)
             else:
+                logger.debug("Exceeded maximum failed NCBI query attempts.")
                 raise PipelineException("Exceeded maximum failed NCBI query attempts. This probably means NCBI servers "
                                         "are down or not responding. Consider waiting a while and trying again.\n"
                                         "\tIf this problem persists, please contact the developer to investigate.\n")
@@ -451,37 +470,46 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
     cazy_stats.append(queried)
     cazy_stats.append(retrieved)
 
-    # write standard fasta file
-    with open(fasta_file, 'w') as f:
-        f.write(fasta_data)
-    # write data file of all the ancillary data as a dict
-    with open(data_file, 'w', encoding='utf-8') as f:
-        json.dump(cazymes, f, ensure_ascii=False, indent=4)
-    # write stats file
-    with open(stats_file, 'w', encoding='utf-8') as f:
-        json.dump(cazy_stats, f, ensure_ascii=False, indent=4)
+    try:
+        # write standard fasta file
+        with open(fasta_file, 'w') as f:
+            f.write(fasta_data)
+        # write data file of all the ancillary data as a dict
+        with open(data_file, 'w', encoding='utf-8') as f:
+            json.dump(cazymes, f, ensure_ascii=False, indent=4)
+        # write stats file
+        with open(stats_file, 'w', encoding='utf-8') as f:
+            json.dump(cazy_stats, f, ensure_ascii=False, indent=4)
+    except IOError as e:
+        logger.error("IOError:", e)
+        logger.error(f"Failed to write cazyme files in output folder: {cazy_folder}")
+        raise PipelineException(f"Cannot write cazyme data to drive. Check that you have file write permissions in the "
+                                f"output folder: {cazy_folder}") from e
 
-    print("Characterized entries retrieved from CAZy database:", cazy_stats[0])
-    print("Characterized entries added to dataset:", cazy_stats[1])
+    summary_msg = ""
+    summary_msg += f"Characterized entries retrieved from CAZy database: {cazy_stats[0]}\n"
+    summary_msg += f"Characterized entries added to dataset: {cazy_stats[1]}\n"
     if cazy_stats[2] > 0:
-        print("Characterized entries with duplicate accessions not added:", cazy_stats[2])
+        summary_msg += f"Characterized entries with duplicate accessions not added: {cazy_stats[2]}\n"
     if cazy_stats[3] > 0:
-        print("Characterized entries that are fragments not added:", cazy_stats[3])
+        summary_msg += f"Characterized entries that are fragments not added: {cazy_stats[3]}\n"
     if cazy_stats[4] > 0:
-        print("Characterized entries with missing accession not added:", cazy_stats[4])
+        summary_msg += f"Characterized entries with missing accession not added: {cazy_stats[4]}\n"
     if cazy_stats[5] > 0:
-        print("Characterized entries with wrong domain not added:", cazy_stats[5])
+        summary_msg += f"Characterized entries with wrong domain not added: {cazy_stats[5]}\n"
     if scrape_mode == Mode.ALL_CAZYMES:
-        print("Uncharacterized entries retrieved from CAZy database:", cazy_stats[6])
-        print("Uncharacterized entries added to dataset:", cazy_stats[7])
+        summary_msg += f"Uncharacterized entries retrieved from CAZy database: {cazy_stats[6]}\n"
+        summary_msg += f"Uncharacterized entries added to dataset: {cazy_stats[7]}\n"
         if cazy_stats[7] > 0:
-            print("Uncharacterized entries with duplicate accessions not added:", cazy_stats[8])
+            summary_msg += f"Uncharacterized entries with duplicate accessions not added: {cazy_stats[8]}\n"
         if cazy_stats[8] > 0:
-            print("Uncharacterized entries with wrong domain not added:", cazy_stats[9])
-    print("Total number of queried accessions:", cazy_stats[10])
-    print("Total number of results from NCBI:", cazy_stats[11])
+            summary_msg += f"Uncharacterized entries with wrong domain not added: {cazy_stats[9]}\n"
+    summary_msg += f"Total number of queried accessions: {cazy_stats[10]}\n"
+    summary_msg += f"Total number of results from NCBI: {cazy_stats[11]}\n"
+    print(summary_msg)
+    logger.info(summary_msg)
     if cazy_stats[10] != cazy_stats[11]:
-        print("WARNING: MISSING DATA FROM NCBI. SOME FASTA RESULTS COULD NOT BE QUERIED!!!")
+        logger.warning("MISSING DATA FROM NCBI. SOME FASTA RESULTS COULD NOT BE QUERIED!!!")
     if cazy_stats[2] > 0 or cazy_stats[3] > 0 or cazy_stats[4] > 0 or cazy_stats[7] > 0 \
             or cazy_stats[8] != cazy_stats[9]:
         print("Details on duplicate/fragment/missing accessions printed above." if verbose else
@@ -492,6 +520,8 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
 
 
 if __name__ == "__main__":
+    # NOTE: this section is only used for testing and debugging purposes, this is not meant to be used!!!
+    print("This file is ONLY meant to be run for debugging and development purposes!!!")
     # test args
     # test_family = "PL9"
     # test_family = "CBM4"

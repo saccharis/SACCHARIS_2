@@ -61,3 +61,13 @@ def make_logger(name: str, log_dir: str, filename: str):
     logger.addHandler(c_handler)
     logger.addHandler(f_handler)
     return logger
+
+
+class NCBIException(PipelineException):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
+class CazyException(PipelineException):
+    def __init__(self, msg):
+        super().__init__(msg)

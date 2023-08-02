@@ -27,11 +27,11 @@ class CazyTestCase(unittest.TestCase):
     def helper_family_query(self, family: str, test_data: dict, mode: Mode, cazy_only=True):
         count = 0
         if cazy_only:
-            cazymes, stats = cazy_query(family, test_out_folder,
-                                        mode, get_fragments=True, verbose=True, domain_mode=all_domains)
+            cazymes, stats = cazy_query(family, test_out_folder, mode, get_fragments=True, verbose=True,
+                                        domain_mode=all_domains)
         else:
-            fasta_file, cazymes, cazy_stats = main(family, test_out_folder, mode, get_fragments=False,
-                                                   verbose=True, force_update=True, domain_mode=all_domains)
+            fasta_file, cazymes, cazy_stats = main(family, test_out_folder, mode, get_fragments=False, verbose=True,
+                                                   force_update=True, domain_mode=all_domains)
         for accession, data in test_data.items():
             if accession in cazymes:
                 count += 1

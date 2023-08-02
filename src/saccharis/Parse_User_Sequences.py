@@ -23,6 +23,7 @@ from saccharis.utils.PipelineErrors import UserError
 from saccharis.utils.PipelineErrors import NewUserFile
 from saccharis.utils.UserInput import ask_yes_no
 from saccharis.utils.UserFastaRename import rename_fasta_file
+from saccharis.utils.Formatting import CazymeMetadataRecord
 
 buf_size = 1048576  # 1 megabyte chunks
 dict_filename = "user_runs.json"
@@ -105,21 +106,30 @@ def calculate_user_run_id(input_file, output_folder):
 
 
 def concatenate_multiple_fasta(fasta_filenames: list[str], output_folder: str, logger: logging.Logger = None)\
-                                                                                                        -> [str, dict]:
-    origin_dict = {}
+                                                                                                        -> [str, dict, dict]:
+    metadata_dict = {}
     all_seqs = []
-    if len(fasta_filenames) == 1:
-        seqs = parse(fasta_filenames[0], 'fasta')
-        return fasta_filenames[0], {record.id: fasta_filenames[0] for record in seqs}
+    # if len(fasta_filenames) == 1:
+    #     seqs = parse(fasta_filenames[0], 'fasta')
+    #     return fasta_filenames[0], {record.id: CazymeMetadataRecord(source_file=fasta_filenames[0],
+    #                                                                 protein_id=record.id,
+    #                                                                 protein_name=record.name)
+    #                                                                 for record in seqs}, seqs
 
     for file in fasta_filenames:
         seqs = parse(file, 'fasta')
         for record in seqs:
-            if record.id in origin_dict:
+            if record.id in metadata_dict:
                 raise UserError(f"Multiple input files contain record id: '{record.id}'. Please rename record ids in "
                                 f"FASTA headers for uniqueness.")
-            origin_dict[record.id] = file
-            record.description += f" SACCHARIS merged record from {file}"
+            if len(fasta_filenames) == 1:
+                record.description += f" SACCHARIS merged record from {file}"
+            species_match = re.search(r'\[(.+)\]', record.description)
+            new_record = CazymeMetadataRecord(source_file=file,
+                                              protein_id=record.id,
+                                              protein_name=record.description,
+                                              org_name=species_match.group(1) if species_match else None)
+            metadata_dict[record.id] = new_record
             all_seqs.append(record)
 
     if not os.path.isdir(output_folder):
@@ -128,7 +138,7 @@ def concatenate_multiple_fasta(fasta_filenames: list[str], output_folder: str, l
     out_path = os.path.join(output_folder, filename)
     write(all_seqs, out_path, 'fasta')
 
-    return out_path, origin_dict
+    return out_path, metadata_dict, all_seqs
 
 
 def run(user_file_path, file_to_append, output_folder, verbose=False, force_update=False, auto_rename=False,

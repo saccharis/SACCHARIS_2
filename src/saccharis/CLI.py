@@ -148,6 +148,14 @@ def cli_main():
                         "building program. FastTree is the default because it is substantially faster than RAxML. "
                         "RAxML may take days or even weeks to build large trees, but sometimes builds slightly higher "
                         "quality trees than FastTree.")
+    parser.add_argument("--skip_user_ask", action="store_true", help="This is a boolean flag that by default is set to "
+                        "False which when true skips querying the user for input. If a question would be posed to the "
+                        "user, the question will be skipped and a reasonable default action will occur if possible or "
+                        "the program will exit if necessary. An example is that normally when no NCBI API key is "
+                        "detected the program prompts the user for their NCBI API key. If this setting is true, the "
+                        "program instead continues without an API key, slowing down queries but otherwise functioning. "
+                        "It is recommended to use this option when running SACCHARIS on a cluster or in automated "
+                        "fashion to prevent failed runs in environments where querying the user is not possible.")
 
     args = parser.parse_args()
 
@@ -156,6 +164,7 @@ def cli_main():
     fragments = args.fragments
     verbose_arg = args.verbose
     refresh = args.fresh
+    skip_user_ask = args.skip_user_ask
     num_threads = args.threads if args.threads <= os.cpu_count() else os.cpu_count()
 
     domain_val = 0b0
@@ -199,19 +208,19 @@ def cli_main():
     elif type(args.seqfile) == list:
         # todo: don't handle genbank fasta download here for both genome and genes, delete the code that did this
         #  in the following function call because it's not easily extensible
-        user_path, user_merged_dict = concatenate_multiple_fasta(args.seqfile, output_folder=output_path)
+        user_path, user_merged_dict, user_seqs = concatenate_multiple_fasta(args.seqfile, output_folder=output_path)
     else:
         raise Exception("Error parsing user sequence file(s) from command line. This shouldn't happen, "
                         "please report as a bug through github.")
 
-    if args.ncbi_genome is not None:
-        ncbi_genome = args.ncbi_genome
-    #     todo: this probably shouldn't even be here tbh
-        # Download seqs from NCBI for given genomes
-        genome_storage_dir = os.path.join(os.path.expanduser('~'), "saccharis", "ncbi_downloads")
-        genome_seqs, genome_source = download_proteins_from_genomes(ncbi_genome, out_dir=genome_storage_dir, logger=logger)
-        # origin_dict += genome_source
-        # all_seqs += genome_seqs
+    # if args.ncbi_genome is not None:
+    #     ncbi_genome = args.ncbi_genome
+    # #     todo: this probably shouldn't even be here tbh
+    #     # Download seqs from NCBI for given genomes
+    #     genome_storage_dir = os.path.join(os.path.expanduser('~'), "saccharis", "ncbi_downloads")
+    #     genome_seqs, genome_source = download_proteins_from_genomes(ncbi_genome, out_dir=genome_storage_dir, logger=logger)
+    #     # origin_dict += genome_source
+    #     # all_seqs += genome_seqs
 
     matcher = Matcher()
     if args.family:
@@ -283,6 +292,7 @@ def cli_main():
     else:
         raise Exception("Something has gone wrong with command line input parsing while reading family information.")
 
+
     if args.family:
         # todo: Refactor this section to only have one single_pipeline call. This whole section of try and excepts is
         #  awful, normal flow control using the NewUserFile exception was a bad idea and bad practice. Single family
@@ -293,14 +303,14 @@ def cli_main():
             single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                             tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
                             force_update=refresh, user_file=user_path, auto_rename=rename, merged_dict=user_merged_dict,
-                            logger=logger)
+                            logger=logger, skip_user_ask=skip_user_ask)
         except NewUserFile as file_msg:
             user_path = file_msg.msg
             try:
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
                                 force_update=refresh, user_file=user_path, auto_rename=rename,
-                                merged_dict=user_merged_dict, logger=logger)
+                                merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask)
             except PipelineException as pipe_error:
                 logger.error(pipe_error.msg)
                 logger.debug(pipe_error.__traceback__)
@@ -316,14 +326,14 @@ def cli_main():
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
                                 force_update=refresh, user_file=user_path, auto_rename=rename,
-                                merged_dict=user_merged_dict, logger=logger)
+                                merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask)
             except NewUserFile as file_msg:
                 user_path = file_msg.msg
                 try:
                     single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                     tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune,
                                     verbose=verbose_arg, force_update=refresh, user_file=user_path, auto_rename=rename,
-                                    merged_dict=user_merged_dict, logger=logger)
+                                    merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask)
                 except PipelineException as pipe_error:
                     logger.error(pipe_error.msg)
                     logger.debug(pipe_error.__traceback__)

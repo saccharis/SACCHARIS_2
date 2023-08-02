@@ -36,7 +36,7 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
                     force_update: bool = False, user_file=None, genbank_genomes=None, genbank_genes=None,
                     auto_rename: bool = False, settings: dict = None, gui_step_signal: pyqtSignal = None,
-                    merged_dict: dict = None, logger: logging.Logger = None):
+                    merged_dict: dict = None, logger: logging.Logger = None, skip_user_ask=False):
 
     # todo: remove windows block once WSL support is fully implemented
     if sys.gettrace():
@@ -133,7 +133,7 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
     print(f"Cazy Extract is proceeding for {scrape_mode.name} of family {family}...")
     fasta_file, cazymes, cazy_stats = Cazy_Scrape.main(family, cazy_folder, scrape_mode, get_fragments, verbose,
                                                        force_update, ncbi_query_size, domain_mode,
-                                                       gui_active=bool(gui_step_signal))
+                                                       skip_ask=bool(gui_step_signal) or skip_user_ask, logger=logger)
     cazy_t = time.time()
     print("Completed Cazy Extract")
     print("==============================================================================\n")
@@ -154,12 +154,14 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
             os.mkdir(user_folder, 0o755)
         try:
             fasta_with_user_file, user_count, user_run_id = Parse_User_Sequences.run(user_file, fasta_file, user_folder,
-                                                                                     verbose, force_update, auto_rename)
-
+                                                                                     verbose, force_update,
+                                                                                     auto_rename or skip_user_ask)
+        #     todo: replace this with functions that return seq and cazymemetadatarecord lists to more easily concat
+        #       mixtures of family(ies?), genbank genomes/genes, and user seqs
         except UserWarning as error:
             logger.warning(error.args[0])
             answer = input("Would you like to continue anyway, without user sequences in the analysis?")
-            if answer.lower() == "y" or answer.lower() == "yes":
+            if not skip_user_ask and (answer.lower() == "y" or answer.lower() == "yes"):
                 print("Continuing...")
                 logger.info("Continuing...")
             else:
@@ -202,7 +204,7 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
                                              ecami_dict, diamond_dict)
     try:
         with open(final_metadata_filepath, 'w', encoding="utf-8") as meta_json:
-            json.dump(final_metadata_dict, meta_json, ensure_ascii=False, indent=4)
+            json.dump(final_metadata_dict, meta_json, default=vars, ensure_ascii=False, indent=4)
     except IOError as error:
         raise UserWarning("Problem writing final module metadata information to file. Make sure you have access "
                           "permissions for your output folder, as this is a common source of write errors of this type."

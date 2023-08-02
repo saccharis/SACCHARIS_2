@@ -1,18 +1,23 @@
+###############################################################################
+# Functions to download and parse FASTA data from NCBI for use in the SACCHARIS 2.0 pipeline.
+# SACCHARIS 2.0 author: Alexander Fraser, https://github.com/AlexSCFraser
+# License: GPL v3
+###############################################################################
+# Built in libraries
 import io
 import logging
 import os
 import re
 import time
 from zipfile import ZipFile
-
+# Dependency imports
 import Bio.SeqIO
 from Bio.SeqRecord import SeqRecord
 import requests
 from bs4 import BeautifulSoup
 from ncbi.datasets import GenomeApi
-
-from saccharis.Cazy_Scrape import NCBIException
-from saccharis.utils.PipelineErrors import PipelineException
+# Internal imports
+from saccharis.utils.PipelineErrors import NCBIException, PipelineException
 
 NCBI_DEFAULT_DELAY = 0.3  # this is a delay time for ncbi queries. Without it, results may be incomplete
 
@@ -33,6 +38,7 @@ def valid_ncbi_genome(string_to_check: str, verbose: bool = False):
 
     if re.match(r"((GCA)|(GCF))_\w{9}\.\d+", string_to_check):
         return True
+
 
     if verbose:
         print(f"\"{string_to_check}\" is not a valid genbank gene/protein accession identifier. If this is in error "
@@ -123,7 +129,7 @@ def format_list(accession_list):
     return genbank_list
 
 
-def ncbi_query(accession_list, api_key, ncbi_email, ncbi_tool, verbose=False):
+def ncbi_query(accession_list, api_key, ncbi_email, ncbi_tool, verbose=False, logger=None):
     genbank_list = format_list(accession_list)
 
     # Set up the Query URL
@@ -145,7 +151,7 @@ def ncbi_query(accession_list, api_key, ncbi_email, ncbi_tool, verbose=False):
     # todo: consider catching specific exceptions here. These are intermittent and not repeatable, since they happen
     #  when the NCBI server has errors, so I am not sure which specific exceptions to catch.
     except Exception as e:
-        print(e.args[0])
+        logger.error("Error querying NCBI. Error message:", e.args[0])
         msg = "Error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #1.\n"
         raise NCBIException(msg) from e
 
@@ -157,6 +163,7 @@ def ncbi_query(accession_list, api_key, ncbi_email, ncbi_tool, verbose=False):
     # Remove accession numbers that were not found, count valid, rebuild the list for querying
     bad_accessions = result1.find_all('PhraseNotFound')
     for item in bad_accessions:
+        logger.debug("NCBI DATA MISSING. Genbank accession:", item.text)
         if verbose:
             print("\nWARNING: NCBI DATA MISSING")
             print("Genbank accession:", item.text, "\n")
@@ -189,11 +196,12 @@ def ncbi_query(accession_list, api_key, ncbi_email, ncbi_tool, verbose=False):
     # todo: consider catching specific exceptions here. These are intermittent and not repeatable, since they happen
     #  when the NCBI server has errors, so I'm not sure which specific exceptions to catch.
     except Exception as e:
-        print(e.args[0])
-        raise NCBIException("Error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #2")
+        logger.error("NCBI query #2 error:", e.args[0])
+        raise NCBIException("Error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #2") from e
 
     result2 = BeautifulSoup(esearch_result2.text, features='xml')
     if result2.find('QueryKey') is None and result2.find('querykey') is None:
+        logger.error("ERROR: NCBI query Key not found. Usually this means query size is too large.")
         raise NCBIException("ERROR: NCBI query Key not found. Usually this means query size is too large.")
     if result2.find('QueryKey') is None:
         query_key = result2.find('querykey').text
@@ -219,15 +227,16 @@ def ncbi_query(accession_list, api_key, ncbi_email, ncbi_tool, verbose=False):
     # todo: consider catching specific exceptions here. These are intermittent and not repeatable, since they happen
     #  when the NCBI server has errors, so I have no idea which specific exceptions to catch.
     except Exception as e:
-        print(e.args[0])
-        raise NCBIException("HTTP error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #3")
+        logger.warning("Failed NCBI request #3. Error:", e.args[0])
+        raise NCBIException("HTTP error querying NCBI. NCBI might be down, try again later.") from e
 
     if valid_accession_count != result_count:
+        logger.error(f"Incomplete NCBI query FASTA results: {result_count}/{valid_accession_count} returned")
         raise NCBIException(f"Incomplete NCBI query FASTA results: {result_count}/{valid_accession_count} returned")
 
     # Returns empty result if fetch failed
     if efetch_result.text.__contains__("<ERROR>Empty result - nothing to do</ERROR>"):
-        print("ERROR: NCBI Fetch failed.")
+        logger.error("NCBI Fetch failed.")
         return "", 0
 
     # Remove double newline between each of the sequences
@@ -255,9 +264,7 @@ def ncbi_query(accession_list, api_key, ncbi_email, ncbi_tool, verbose=False):
         fasta_out = fasta_fixed
 
     if fasta_out.__contains__('|'):
-        print(f"WARNING: Probable parsing error on accession containing a '|' character, "
-              f"Please report this as a bug to the developer/maintainer through github.")
+        logger.warning(f"Probable parsing error on accession containing a '|' character, "
+                       f"Please report this as a bug to the developer/maintainer through github.")
 
     return fasta_out, result_count
-
-
