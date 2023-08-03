@@ -12,6 +12,7 @@ import re
 import os
 import csv
 import json
+from json import JSONDecodeError
 from logging import Logger, getLogger
 # ignore warnings that these parsers aren't used by IDE, they ARE used
 # noinspection PyUnresolvedReferences
@@ -22,6 +23,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from saccharis.NCBIQueries import valid_genbank_gene, ncbi_query
+from saccharis.utils.UserInput import ask_yes_no
 from saccharis.utils.PipelineErrors import PipelineException
 from saccharis.utils.AdvancedConfig import load_from_env
 from saccharis.utils.PipelineErrors import NCBIException, CazyException
@@ -419,15 +421,32 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
     data_file = os.path.join(cazy_folder, f"{family}_{scrape_mode.name}_data.json")
     stats_file = os.path.join(cazy_folder, f"{family}_{scrape_mode.name}_stats.json")
 
-    if os.path.isfile(fasta_file) and not force_update:
-        print("Loading data from previous run. \nIf you wish to run a new query to the CAZy database, run SACCHARIS 2"
-              " with --fresh")
-        logger.info(f"Loading data from previous run. Data file: {data_file} ; Stats file: {stats_file}")
-        with open(data_file, 'r', encoding='utf-8') as f:
-            cazymes = json.loads(f.read())
-        with open(stats_file, 'r', encoding='utf-8') as f:
-            stats = json.loads(f.read())
-        return fasta_file, cazymes, stats
+    try:
+        if os.path.isfile(fasta_file) and not force_update:
+            print("Loading data from previous run. \nIf you wish to run a new query to the CAZy database, run "
+                  "SACCHARIS 2 with --fresh")
+            logger.info(f"Loading data from previous run. Data file: {data_file} ; Stats file: {stats_file}")
+            with open(data_file, 'r', encoding='utf-8') as f:
+                cazymes = json.loads(f.read())
+            with open(stats_file, 'r', encoding='utf-8') as f:
+                stats = json.loads(f.read())
+            return fasta_file, cazymes, stats
+    except (IOError, JSONDecodeError) as e:
+        logger.debug(e)
+        logger.warning(f"Error reading data from previous run... Data file: {data_file} Stats file: {stats_file}")
+        if skip_ask:
+            logger.warning("Continuing with fresh data download...")
+        else:
+            answer = ask_yes_no("An error occured while loading previous data. You can continue with a fresh download "
+                                "of data from CAZy and NCBI, but this will overwrite the old, possible corrupted "
+                                "files. Would you like to continue with fresh data?",
+                                "Continuing with fresh data...", "Exiting...")
+            if answer:
+                logger.debug("User chose to continue with fresh data.")
+            else:
+                msg = "User chose to exit pipeline due to corrupted data load from previous run."
+                logger.debug(msg)
+                raise PipelineException(msg)
 
     cazymes, cazy_stats = cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_mode)
 
@@ -476,7 +495,7 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
             f.write(fasta_data)
         # write data file of all the ancillary data as a dict
         with open(data_file, 'w', encoding='utf-8') as f:
-            json.dump(cazymes, f, ensure_ascii=False, indent=4)
+            json.dump(cazymes, f, default=vars, ensure_ascii=False, indent=4,)
         # write stats file
         with open(stats_file, 'w', encoding='utf-8') as f:
             json.dump(cazy_stats, f, ensure_ascii=False, indent=4)

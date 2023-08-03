@@ -15,7 +15,7 @@ import Bio.SeqIO
 from Bio.SeqRecord import SeqRecord
 import requests
 from bs4 import BeautifulSoup
-from ncbi.datasets import GenomeApi
+from ncbi.datasets import GenomeApi, GeneApi
 # Internal imports
 from saccharis.utils.PipelineErrors import NCBIException, PipelineException
 
@@ -112,6 +112,48 @@ def download_proteins_from_genomes(genome_list: list[str], out_dir: str = None, 
             logger.error(e.__traceback__)
             logger.error(msg)
             raise PipelineException(msg) from e
+    finally:
+        handle.close()
+        os.remove(handle.name)
+
+    return seqs, source_dict
+
+
+def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None, logger: logging.Logger = None,
+                            fresh: bool = False) -> (list[SeqRecord], dict[str:str]):
+    seqs = []
+    source_dict = {}
+    api = GeneApi()
+    if seq_type.lower() == "dna":
+        annot_type = ["FASTA_GENE", "FASTA_CDS"]
+        filename = "something.idk"
+    elif seq_type.lower().startswith("prot"):
+        annot_type = ["FASTA_PROTEIN"]
+        filename = "protein.faa"
+    else:
+        raise NCBIException("Invaid sequence type, seq_type should be 'dna' or 'protein'")
+    if out_dir:
+        if not fresh:
+            # todo: check for local seqs to load from each genome  instead of downloading from NCBI, if fresh == false
+            pass
+        outpath = os.path.join(out_dir, "ncbi_dataset.zip")
+        handle = api.download_gene_package(gene_list, include_annotation_type=annot_type, filename=outpath)
+    else:
+        handle = api.download_gene_package(gene_list, include_annotation_type=annot_type)
+    try:
+        with ZipFile(handle) as myzip:
+            for gene_id in gene_list:
+                with io.TextIOWrapper(myzip.open(f"ncbi_dataset/data/{gene_id}/{filename}"), encoding="utf-8") as myfile:
+                    gene_seqs = Bio.SeqIO.parse(myfile, "fasta")
+                    source_dict += dict.fromkeys(map(lambda seq: seq.id, gene_seqs), f"NCBI Gene")
+                    # todo: save seqs locally for later if out_dir is given
+                    seqs += gene_seqs
+    except Exception as e:
+        if logger:
+            msg = "Problem reading genome zip file downloaded from NCBI."
+            logger.error(e.__traceback__)
+            logger.error(msg)
+            raise NCBIException(msg) from e
     finally:
         handle.close()
         os.remove(handle.name)

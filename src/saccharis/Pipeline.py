@@ -24,6 +24,7 @@ from saccharis import FastTree_Build
 from saccharis import Muscle_Alignment
 from saccharis import Parse_User_Sequences
 from saccharis import RAxML_Build
+from saccharis.Rendering import render_phylogeny
 from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder
 from saccharis.utils.AdvancedConfig import save_to_file
 from saccharis.utils.FamilyCategories import check_deleted_families
@@ -325,6 +326,18 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
         raise UserWarning("Problem writing final tree outputs information to file. Make sure you have access "
                           "permissions for your output folder, as this is a common source of write errors of this type."
                           ) from error
+
+    #######################################
+    # Step Seven - Build Tree
+    #######################################
+    if gui_step_signal:
+        # noinspection PyUnresolvedReferences
+        gui_step_signal.emit(7)
+        if sys.gettrace():
+            time.sleep(2)  # this is only active while debugging, for gui testing on already run families
+
+    render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder)
+
 
     # Final Benchmark tests
     print("*********************************************")
