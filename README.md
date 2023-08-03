@@ -180,4 +180,4 @@ In terminal follow usage as given by
 
 You can contact Alex Fraser at alexander.fraser@alumni.ubc.ca for information about beta access. 
 
-If you encounter bugs, please use the github tools to submit bug reports instead of emailing me, as it is easier to track that way.
+If you encounter bugs, please use the github issue tracker tools to submit bug reports instead of emailing me, as it is easier to track that way.
