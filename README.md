@@ -167,14 +167,14 @@ You can launch the gui from the command line via `saccharis-gui` or it can be la
 In terminal follow usage as given by
   - `saccharis -h` or `saccharis --help`
 
-[//]: # (# License)
+# License
 
 
   [//]: # (todo: choose a license, are we still using GPL? Update to GPL 3?)
 
-  [//]: # (This software is distributed under the terms of the GPL, version 2 or later, excepting that:)
+  This software is distributed under the terms of the GPL, version 3, excepting that:
 
-  [//]: # (- The third party programs and scripts used by SACCHARIS are covered by the terms of their respective licenses)
+  - The third party programs and scripts used by SACCHARIS are covered by the terms of their respective licenses
 
 # Developer Contact
 
