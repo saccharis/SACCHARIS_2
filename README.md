@@ -18,15 +18,24 @@ Publication information coming soon.
 
 ## Installation
 
-### Beta installation
 
 [//]: # (Run the linux_install script to set up the virtual environment, or run )
 
 [//]: # (``conda install --use-local /path/to/conda_package.tar.gz``)
 
+#### Supported Platforms
+PLATFORMS: Currently, linux is the main target platform. It *may* also work on macOS **without** apple silicon (some of 
+the dependencies such as HMMER are not yet available for apple silicon, but you may get it working under a virtual 
+machine). Windows installation is possible using the CLI method inside a WSL2 linux environment. If you have a current 
+version of WSL2 and Windows 10/11, you can even launch the gui through WSL2 if graphics is enabled for your WSL2. 
+Installation on base windows is possible but requires several dependencies to be installed and available in the base 
+WSL2 environment (SACCHARIS won't be able to know anything about virtual environments in your WSL environment) and 
+should only be attempted by advanced users familiar with using a CLI, linux/WSL2, conda, bioconda, etc.
+### Beta installation
+
 #### Installation option 1: Conda CLI Install
 
-This is the preferred method for most users, since installation should be simple.
+This is the preferred method for most users, since installation should be relatively simple.
 
 
 First make sure you have installed conda. I recommend downloading a version appropriate to your OS from 
@@ -88,48 +97,64 @@ launchable application in the Home tab with the environment it was installed int
 [//]: # (https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html)
 
 [//]: # ()
-[//]: # (###Installation option 3: Manually install requirements and python package)
+#### Installation option 3: Manually install requirements and python package
 
-[//]: # (This is an advanced method of installing SACCHARIS that is not recommended for most users. I would not recommend this unless you )
+This is an advanced method of installing SACCHARIS that is not recommended for most users. I would not recommend this 
+unless you are installing in an environment that does not support conda package and environment management, such as a 
+computing cluster.
 
-[//]: # (are installing in an environment that does not support conda package and environment management, such as a computing cluster. )
+If you would prefer to install and manage dependencies through another method than the conda environment, this is the 
+explicit list of requirements SACCHARIS 2 needs to function.
 
-[//]: # ()
-[//]: # (If you would prefer to install and manage dependencies through another method than the conda environment, this is the explicit)
+All of the following programs installed and available on $PATH variable:
 
-[//]: # (list of requirements SACCHARIS 2 needs to function.)
+* Binary dependencies:
+  * DIAMOND  v2.0.15
+  * HMMER v3.3
+  * MUSCLE v5 or v3.8.1551
+  * ModelTest
+  * FastTree v2.1.11
+  * RAxML version 8.2.12
+* Python 3.10 with following python libraries 
+  (you can just run `pip install <latest tarball path under the release page>` ):
 
-[//]: # (All of the following programs installed and available on $PATH variable:)
+  * beautifulsoup4 v4.11.1
+  * biopython v1.79
+  * requests v2.28.0
+  * wget v1.20.3
+  * dbcan
+  * lxml
+  * ncbi-datasets-pylib
+  * python-dotenv
+  * setuptools
+  * psutil
+  * pyqt5
+  * PyQt5-sip
 
-[//]: # (* Python 3.10 with following python libraries:)
+After installing the binary dependencies, you can directly install the python package tarball with pip.
+This is a useful installation method in a scientific compute cluster where bioinformatics software is
+already available.
 
-[//]: # (  * beautifulsoup4 v4.11.1)
+Other versions of the above software may work, but have not been tested extensively.
 
-[//]: # (  * biopython v1.79)
+#### Installation option 4: Windows Installation
 
-[//]: # (  * requests v2.28.0)
+If you have WSL2, it is **STRONGLY RECOMMENDED** to simply install it on WSL2 with the CLI method above. If you enable 
+GUI support, you can even run the saccharis-gui through recent versions of WSL2. Microsoft has an introduction to 
+installing and using WSL2 here:
+https://learn.microsoft.com/en-us/windows/wsl/about
 
-[//]: # (  * wget v1.20.3)
+We are working on making this easier. Bioconda does not support windows officially at the moment, so we might release a 
+windows version on conda-forge at some point. Basically you have to manually install all the dependencies similar to 
+option 3, but on both your Windows environment AND WSL environment. Even this is slightly broken right now and requires 
+a lot of manual steps, so right now we simply do not recommend doing this. If you must do this because your 
+organization does not support updating to WSL2, please reach out to the developer for installation advice.
 
-[//]: # (  * run_dbcan v3.0.6)
 
-[//]: # (* DIAMOND  v2.0.15)
 
-[//]: # (* HMMER v3.3)
 
-[//]: # (* MUSCLE v5 or v3.8.1551)
 
-[//]: # (* ModelTest)
 
-[//]: # (* FastTree v2.1.11)
-
-[//]: # (* RAxML version 8.2.12)
-
-[//]: # ()
-[//]: # (Other versions of the above software may work, but have not been tested extensively.)
-
-[//]: # ()
-[//]: # (After installing the above dependencies, you can directly install the python package tarball with pip.)
 
 # Running SACCHARIS
 ### GUI
