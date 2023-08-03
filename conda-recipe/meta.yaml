@@ -66,9 +66,9 @@ app:
 
 test:
   commands:
-      #future todo: pipe test output to null for these tests, per https://bioconda.github.io/contributor/guidelines.html#tests
-    - saccharis -v
-    - saccharis.show_family_categories
+      # pipe test output to null for these tests, per https://bioconda.github.io/contributor/guidelines.html#tests
+    - saccharis -v > /dev/null
+    - saccharis.show_family_categories > /dev/null
 #    below tests need to be commented out for successful build on bioconda because there is no file write permission
     - saccharis.make_family_files
 
