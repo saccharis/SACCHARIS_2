@@ -112,7 +112,7 @@ All of the following programs installed and available on $PATH variable:
   * DIAMOND  v2.0.15
   * HMMER v3.3
   * MUSCLE v5 or v3.8.1551
-  * ModelTest
+  * ModelTest-NG
   * FastTree v2.1.11
   * RAxML version 8.2.12
 * Python 3.10 with following python libraries 
