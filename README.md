@@ -118,10 +118,10 @@ All of the following programs installed and available on $PATH variable:
 * Python 3.10 with following python libraries 
   (you can just run `pip install <latest tarball path under the release page>` ):
 
-  * beautifulsoup4 v4.11.1
-  * biopython v1.79
-  * requests v2.28.0
-  * wget v1.20.3
+  * beautifulsoup4
+  * biopython
+  * requests
+  * wget
   * dbcan
   * lxml
   * ncbi-datasets-pylib
