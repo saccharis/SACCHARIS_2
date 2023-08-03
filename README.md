@@ -115,6 +115,7 @@ All of the following programs installed and available on $PATH variable:
   * ModelTest-NG
   * FastTree v2.1.11
   * RAxML version 8.2.12
+  * R, with 'Rscript' available on PATH (optional, but needed to automatically rendering phylogenic trees)
 * Python 3.10 with following python libraries 
   (you can just run `pip install <latest tarball path under the release page>` ):
 
