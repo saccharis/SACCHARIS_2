@@ -38,8 +38,8 @@ class CazymeMetadataRecord:
     pdb: Optional[str] = None
     module_start: Optional[str] = None
     module_end: Optional[str] = None
-    diamond_prediction: Optional[str] = None
-    ecami_prediction: Optional[str] = None
+    diamond_prediction: Optional[dict] = None
+    ecami_prediction: Optional[dict] = None
     source_file: Optional[str] = None
 
 
