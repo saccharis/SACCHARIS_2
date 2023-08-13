@@ -51,6 +51,7 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
     if logger is None:
         logger = make_logger("PipelineLogger", get_log_folder(), "pipeline_logs.txt")
 
+    family = family.upper()
     matcher = Matcher()
     if not matcher.valid_cazy_family(family):
         raise UserError(f"Invalid CAZyme family: {family}")
@@ -290,14 +291,14 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
         fasttree_folder = os.path.join(domain_folder, "fasttree")
         if not os.path.isdir(fasttree_folder):
             os.mkdir(fasttree_folder, 0o755)
-        tree_path = FastTree_Build.main(aligned_fasttree, aa_model, fasttree_folder, force_update, user_run_id)
+        tree_path = FastTree_Build.main(aligned_fasttree, aa_model, fasttree_folder, force_update, user_run_id, logger)
     else:  # RAxML
         print(f"RaxML - Tree building of {os.path.split(aligned_ren_path)[1]} is underway")
         raxml_folder = os.path.join(domain_folder, "raxml")
         if not os.path.isdir(raxml_folder):
             os.mkdir(raxml_folder, 0o755)
-        tree_path = RAxML_Build.main(aligned_ren_path, aa_model, raxml_folder, raxml_cmd,
-                                     cazyme_module_count, threads, user_run_id)
+        tree_path = RAxML_Build.main(aligned_ren_path, aa_model, raxml_folder, raxml_cmd, cazyme_module_count, threads,
+                                     user_run_id, logger)
     print("Completed Building of Tree")
     print("==============================================================================\n")
     tree_t = time.time()

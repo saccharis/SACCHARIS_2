@@ -9,13 +9,14 @@
 import atexit
 import os
 import subprocess
+from logging import Logger, getLogger
 from math import ceil
 # Internal Imports
 from saccharis.utils.PipelineErrors import PipelineException
 
 
 def main(muscle_input_file, amino_model, output_dir, raxml_version, num_seqs, threads=4, force_update=False,
-         user_run=None):
+         user_run=None, logger: Logger = getLogger()):
     if user_run:
         rax_tree = f"RAxML_bipartitions.{user_run:05d}.A1"
     else:

@@ -27,7 +27,7 @@ setup(name='saccharis',
       # - The first public release after 2.0.* that breaks anything reliant on 2.0.* will be 2.1.0
 
       version="2.0.0.dev19",
-      build=1,
+      build=2,
       # version=meta_yaml_data["package"]["version"],
       # build=meta_yaml_data["build"]["number"],
       description='Bioinformatics tool for automated CAZyme phylogeny construction',
@@ -63,10 +63,9 @@ setup(name='saccharis',
             ]
       },
       package_data={
-          # If any package or subpackage contains *.txt or *.rst files, include
+          # If any package or subpackage contains *.txt or *.yaml files, include
           # them:
-          "": ["*.png"],
-          "": ["*.yaml"],
+          "": ["*.png", "*.yaml"],
           # # Include any *.msg files found in the "hello" package (but not in its
           # # subpackages):
           # "hello": ["*.msg"],

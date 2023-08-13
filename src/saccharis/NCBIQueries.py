@@ -5,13 +5,16 @@
 ###############################################################################
 # Built in libraries
 import io
-import logging
+import math
+from logging import Logger, getLogger
 import os
 import re
 import time
 from zipfile import ZipFile
 # Dependency imports
 import Bio.SeqIO
+from Bio import Entrez, SeqIO
+from Bio.Entrez import efetch
 from Bio.SeqRecord import SeqRecord
 import requests
 from bs4 import BeautifulSoup
@@ -20,6 +23,9 @@ from ncbi.datasets import GenomeApi, GeneApi
 from saccharis.utils.PipelineErrors import NCBIException, PipelineException
 
 NCBI_DEFAULT_DELAY = 0.3  # this is a delay time for ncbi queries. Without it, results may be incomplete
+# count ncbi exceptions, so we can terminate if too many failures occur. Too many failures probably means NCBI is down.
+ncbi_exception_count = 0
+NCBI_EXCEPTION_MAX_TRIES = 100
 
 
 def valid_ncbi_genome(string_to_check: str, verbose: bool = False):
@@ -85,7 +91,7 @@ def valid_genbank_gene(string_to_check: str, verbose: bool = False):
 
 
 # todo: call this function from gui, lol
-def download_proteins_from_genomes(genome_list: list[str], out_dir: str = None, logger: logging.Logger = None,
+def download_proteins_from_genomes(genome_list: list[str], out_dir: str = None, logger: Logger = None,
                                    fresh: bool = False) -> (list[SeqRecord], dict[str:str]):
     seqs = []
     source_dict = {}
@@ -119,7 +125,7 @@ def download_proteins_from_genomes(genome_list: list[str], out_dir: str = None, 
     return seqs, source_dict
 
 
-def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None, logger: logging.Logger = None,
+def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None, logger: Logger = None,
                             fresh: bool = False) -> (list[SeqRecord], dict[str:str]):
     seqs = []
     source_dict = {}
@@ -132,6 +138,7 @@ def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None
         filename = "protein.faa"
     else:
         raise NCBIException("Invaid sequence type, seq_type should be 'dna' or 'protein'")
+    # todo: put this whole thing in a loop to query NCBI one gene at a time???
     if out_dir:
         if not fresh:
             # todo: check for local seqs to load from each genome  instead of downloading from NCBI, if fresh == false
@@ -171,7 +178,95 @@ def format_list(accession_list):
     return genbank_list
 
 
-def ncbi_query(accession_list, api_key, ncbi_email, ncbi_tool, verbose=False, logger=None):
+def ncbi_query_dna_from_protein_accessions(accessions: list[str]):
+    nucleotide_to_accession = {}
+    idlist = ', '.join(accessions)
+    handle = efetch(db="protein", id=idlist, retmode="xml")
+    records = Entrez.read(handle)
+    dna_sources = []
+    for record in records:
+        feature_table = record["GBSeq_feature-table"]
+        for i, entry in enumerate(feature_table):
+            if entry["GBFeature_key"] == "CDS":
+                # dna_sources.append(entry["GBFeature_quals"][1]["GBQualifier_value"])
+                for j, inner_entry in enumerate(entry["GBFeature_quals"]):
+                    if inner_entry['GBQualifier_name'] == "coded_by":
+                        dna_sources.append(inner_entry['GBQualifier_value'])
+                        stripped_dna_coords = inner_entry['GBQualifier_value'].removeprefix("complement(").removesuffix(')')
+                        nucleotide_to_accession[stripped_dna_coords] = record['GBSeq_accession-version']
+                        break
+
+    fasta_sequences = []
+    for source in dna_sources:
+        try:
+            complement = False
+            # Handling complement format
+            if source.startswith('complement(') and source.endswith(')'):
+                source = source[len('complement('):-1]
+                complement = True
+            # Extract the start and end positions from the provided string
+            accession_id = source.split(":")[0]
+            start, end = map(int, source.split(":")[1].split(".."))
+            handle = Entrez.efetch(db="nucleotide", id=accession_id, rettype="fasta",
+                                   retmode="text", seq_start=start, seq_stop=end)
+            record = SeqIO.read(handle, "fasta")
+            handle.close()
+
+            record.id = nucleotide_to_accession[record.id.replace('-', '..')]
+
+            if complement:
+                record.seq = record.seq.reverse_complement()
+                fasta_sequences.append(record)
+            else:
+                fasta_sequences.append(record)
+        except Exception as e:
+            print(f"Error fetching sequence for source {source}: {e}")
+
+
+    return fasta_sequences
+
+def ncbi_protein_query(accession_list: list[str], api_key, ncbi_email, ncbi_tool, verbose=False, logger: Logger = getLogger(),
+                       ncbi_query_size=200) \
+        -> (str, int, int):
+    accession_count = len(accession_list)
+    queried = 0
+    retrieved = 0
+    fasta_data = ""
+    print("Querying NCBI...", end='')
+    logger.debug("Begin querying NCBI...")
+    while queried < accession_count:
+        # fasta_output, success_count = ncbi_query(accession_list[queried:queried+ncbi_query_size])
+        try:
+            fasta_output, success_count = ncbi_single_query(accession_list[queried:queried + ncbi_query_size], api_key,
+                                                            ncbi_email, ncbi_tool, logger=logger)
+            fasta_data += fasta_output
+            retrieved += success_count
+            queried += ncbi_query_size
+            queried = min(queried, accession_count)
+            msg = f"Querying NCBI: {queried}/{len(accession_list)} entries processed..."
+            print(f"\r{msg}", end='')
+            logger.info(msg)
+        except NCBIException as error:
+            global ncbi_exception_count
+            ncbi_exception_count += 1
+            logger.warning(error.msg)
+            logger.warning("MISSING FASTA DATA FROM NCBI")
+            if ncbi_exception_count < NCBI_EXCEPTION_MAX_TRIES:
+                ncbi_query_size = math.ceil(ncbi_query_size/2)
+                msg = f"Automatically reducing query size to {ncbi_query_size} and retrying..."
+                print(f"INFO: {msg}\n")
+                logger.info(msg)
+            else:
+                logger.debug("Exceeded maximum failed NCBI query attempts.")
+                raise PipelineException("Exceeded maximum failed NCBI query attempts. This probably means NCBI servers "
+                                        "are down or not responding. Consider waiting a while and trying again.\n"
+                                        "\tIf this problem persists, please contact the developer to investigate.\n")
+    print("\rQuerying NCBI...Done!                                  ")  # whitespace to overwrite "entries processed"
+
+    return fasta_data, queried, retrieved
+
+
+def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=None, verbose=False, logger=getLogger()):
     genbank_list = format_list(accession_list)
 
     # Set up the Query URL
@@ -259,7 +354,7 @@ def ncbi_query(accession_list, api_key, ncbi_email, ncbi_tool, verbose=False, lo
     #             . $web . '&rettype=fasta&retmode=text';
     # base_url = utils + '/efetch.fcgi?db=protein&email=' + ncbi_email + '&tool=' + ncbi_tool + '&api_key='+api_key
     # TODO: add email and tool fields to ncbi requests
-    base_url = utils + '/efetch.fcgi?db=protein' + api_key_string
+    base_url = utils + f'/efetch.fcgi?db=protein' + api_key_string
     efetch = base_url + '&query_key=' + query_key + '&WebEnv=' + web_env + '&rettype=fasta&retmode=text'
 
     try:

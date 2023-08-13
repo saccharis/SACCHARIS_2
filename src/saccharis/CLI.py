@@ -23,6 +23,7 @@ from saccharis.ScreenUserFile import choose_families_from_fasta
 from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder
 from saccharis.utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
 from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile, make_logger
+from saccharis.utils.Formatting import rename_header_ids
 
 
 def get_version():
@@ -292,7 +293,6 @@ def cli_main():
     else:
         raise Exception("Something has gone wrong with command line input parsing while reading family information.")
 
-
     if args.family:
         # todo: Refactor this section to only have one single_pipeline call. This whole section of try and excepts is
         #  awful, normal flow control using the NewUserFile exception was a bad idea and bad practice. Single family
@@ -306,6 +306,7 @@ def cli_main():
                             logger=logger, skip_user_ask=skip_user_ask)
         except NewUserFile as file_msg:
             user_path = file_msg.msg
+            user_merged_dict = rename_header_ids(user_path, user_merged_dict)
             try:
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
@@ -329,6 +330,7 @@ def cli_main():
                                 merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask)
             except NewUserFile as file_msg:
                 user_path = file_msg.msg
+                user_merged_dict = rename_header_ids(user_path, user_merged_dict)
                 try:
                     single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                     tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune,

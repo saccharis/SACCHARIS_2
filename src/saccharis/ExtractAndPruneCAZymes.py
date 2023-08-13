@@ -29,6 +29,7 @@ from saccharis.utils.PipelineErrors import UserError
 from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.PipelineErrors import PipelineException
 from saccharis.utils.AdvancedConfig import get_db_folder
+from saccharis.utils.Formatting import convert_path_wsl
 
 urls_and_process = [("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb"),
                     ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz", "tar"),
@@ -40,10 +41,6 @@ urls_and_process = [("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "m
                     ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-2.hmm", "hmmpress"),
                     ("https://bcb.unl.edu/dbCAN2/download/Databases/V11/stp.hmm", "hmmpress"),
                     ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN_sub.hmm", "hmmpress")]
-
-
-def convert_path_wsl(path):
-    return subprocess.run(["wsl", "wslpath", "'" + path + "'"], capture_output=True, check=True).stdout.decode().strip()
 
 
 def download_and_process(url, output_folder, process=None):
@@ -72,8 +69,7 @@ def download_and_process(url, output_folder, process=None):
             subprocess.run(["diamond", "makedb", "--in", output_path, "-d", diamond_output_path], check=True)
 
 
-def download_database():
-    db_install_folder = get_db_folder()
+def download_database(db_install_folder=get_db_folder()):
 
     # set up folder and download dbCAN2 database files if not already present
     if not os.path.isdir(db_install_folder):

@@ -9,12 +9,13 @@
 import os
 import subprocess
 import atexit
+from logging import getLogger, Logger
 
 # Internal Imports
 from saccharis.utils.PipelineErrors import PipelineException
 
 
-def main(muscle_input_path, amino_model, output_dir, force_update=False, user_run=None):
+def main(muscle_input_path, amino_model, output_dir, force_update=False, user_run=None, logger: Logger = getLogger()):
     out_filename = f"FastTree_bootstrap_UserRun{user_run:05d}.tree" if user_run else f"FastTree_bootstrap.tree"
     output_file_path = os.path.join(output_dir, out_filename)
     # parse the amino acid model to set proper flags in run
@@ -41,9 +42,11 @@ def main(muscle_input_path, amino_model, output_dir, force_update=False, user_ru
                 raise UserWarning("fasttree is not installed! Make sure it is available on path via the 'fasttree' "
                                   "command")
 
-        command = f"{command_name} {model[1]}{model[0]}-out {output_file_path} {muscle_input_path}"
+        command = f'{command_name} {model[1]}{model[0]}-out "{output_file_path}" "{muscle_input_path}"'
 
         # proc_out = subprocess.run(command, shell=True)
+        msg = f"FastTree command: {command}"
+        logger.debug(msg)
         proc_out = subprocess.Popen(command, shell=True)
         atexit.register(proc_out.kill)
         proc_out.wait()
@@ -52,7 +55,9 @@ def main(muscle_input_path, amino_model, output_dir, force_update=False, user_ru
         if proc_out.returncode == 0:
             print("FastTree has finished\n\n")
         else:
-            raise PipelineException("ERROR: FastTree did not return valid output. Exiting pipeline...")
+            msg = "ERROR: FastTree did not return valid output. Exiting pipeline..."
+            logger.error(msg)
+            raise PipelineException(msg)
 
     return output_file_path
 

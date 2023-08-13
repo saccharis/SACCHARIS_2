@@ -22,16 +22,12 @@ import lxml
 import requests
 from bs4 import BeautifulSoup
 
-from saccharis.NCBIQueries import valid_genbank_gene, ncbi_query
+from saccharis.NCBIQueries import valid_genbank_gene, ncbi_protein_query
 from saccharis.utils.UserInput import ask_yes_no
 from saccharis.utils.PipelineErrors import PipelineException
 from saccharis.utils.AdvancedConfig import load_from_env
 from saccharis.utils.PipelineErrors import NCBIException, CazyException
 from saccharis.utils.Formatting import CazymeMetadataRecord
-
-# count ncbi exceptions, so we can terminate if too many failures occur. Too many failures probably means NCBI is down.
-ncbi_exception_count = 0
-NCBI_EXCEPTION_MAX_TRIES = 100
 
 
 class Mode(Enum):
@@ -56,7 +52,7 @@ class HTMLGetter:
         self.fix_spaces = re.compile("> <")
         self.fix_white = re.compile("#FFFFFF")
 
-    def get_clean_html_text(self, url_cazy, tries=0):
+    def get_clean_html_text(self, url_cazy: str, tries: int = 0, logger: Logger = getLogger()):
         try:
             r = requests.get(url_cazy)
         except requests.ConnectionError as error:
@@ -64,15 +60,45 @@ class HTMLGetter:
         except requests.RequestException as error:
             raise PipelineException("HTTP request error, cazy.org might be down or overloaded right now.") from error
 
-        if r.status_code != 200 and tries < 3:
-            print(f"Bad http response {r.status_code} from CAZy.org, retrying...")
-            time.sleep(3)
-            return self.get_clean_html_text(url_cazy, tries+1)
+        if r.status_code == 503 and tries < 5:
+            # service unavailable, check for retry-after header and retry
+            try:
+                timeout = int(r.headers["retry-after"]) + 1
+                msg = f"CAZy.org is unavailable, expected to be back up in {timeout} seconds..."
+                logger.warning(msg)
+            except KeyError as err:
+                timeout = 60*tries
+                msg = f"CAZy.org is unavailable, no expected time when the website is back up returned. \n" \
+                      f"Retrying in {timeout} seconds..."
+
+            logger.warning(msg)
+            time.sleep(timeout)
+            return self.get_clean_html_text(url_cazy, tries + 1)
+        if r.status_code == 429 and tries < 5:
+            # too many requests, check for retry-after header and retry
+            try:
+                timeout = int(r.headers["retry-after"]) + 1
+                msg = f"Too many requests to CAZy.org, must wait {timeout} seconds before retrying..."
+            except KeyError:
+                timeout = 30*tries
+                msg = f"Too many requests to CAZy.org, no timeout present, waiting {timeout} seconds..."
+
+            logger.warning(msg)
+            time.sleep(timeout)
+            return self.get_clean_html_text(url_cazy, tries + 1)
+        if r.status_code != 200 and tries < 5:
+            timeout = 3*tries
+            msg = f"Bad http response {r.status_code} from CAZy.org, retrying in {timeout} seconds..."
+            logger.warning(msg)
+            time.sleep(timeout)
+            return self.get_clean_html_text(url_cazy, tries + 1)
         elif r.status_code != 200:
-            print(f"ERROR: HTTP response status code {r.status_code}")
-            print("Max tries to retrieve data from CAZy.org reached.")
-            print(f"CAZy.org might be down, or failing to fulfill requests to {url_cazy}")
-            print("Aborting current pipeline iteration...")
+            msg = f"ERROR: HTTP response status code {r.status_code}"
+            logger.error(msg)
+            logger.error("Max tries to retrieve data from CAZy.org reached.")
+            msg = f"CAZy.org might be down, or failing to fulfill requests to {url_cazy}"
+            logger.error(msg)
+            logger.error("Aborting current pipeline iteration...")
             raise PipelineException(f"Bad HTTP response code {r.status_code} from {url_cazy}, max tries exceeded.")
 
         # remove bad tag spacing and other tag fixes
@@ -123,7 +149,7 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
         if counted > 0:
             # load new page on second iteration and above
             url = url_cazy + f"?debut_FUNC={str(counted)}#pagination_FUNC"
-            clean_text = html_get.get_clean_html_text(url)
+            clean_text = html_get.get_clean_html_text(url, logger)
             soup = BeautifulSoup(clean_text, "html.parser")
 
         # find and filter table entries
@@ -427,7 +453,8 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
                   "SACCHARIS 2 with --fresh")
             logger.info(f"Loading data from previous run. Data file: {data_file} ; Stats file: {stats_file}")
             with open(data_file, 'r', encoding='utf-8') as f:
-                cazymes = json.loads(f.read())
+                cazyme_dict = json.loads(f.read())
+                cazymes = {id: CazymeMetadataRecord(**record) for id, record in cazyme_dict.items()}
             with open(stats_file, 'r', encoding='utf-8') as f:
                 stats = json.loads(f.read())
             return fasta_file, cazymes, stats
@@ -452,40 +479,10 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
 
     # Take the accession numbers from the dict, convert to list, and query genbank in batches
     accession_list = list(cazymes.keys())
-    accession_count = len(accession_list)
-    queried = 0
-    retrieved = 0
-    fasta_data = ""
-    print("Querying NCBI...", end='')
-    logger.debug("Begin querying NCBI...")
-    while queried < accession_count:
-        # fasta_output, success_count = ncbi_query(accession_list[queried:queried+ncbi_query_size])
-        try:
-            fasta_output, success_count = ncbi_query(accession_list[queried:queried + ncbi_query_size], api_key,
-                                                     ncbi_email, ncbi_tool, logger=logger)
-            fasta_data += fasta_output
-            retrieved += success_count
-            queried += ncbi_query_size
-            queried = min(queried, accession_count)
-            msg = f"Querying NCBI: {queried}/{len(accession_list)} entries processed..."
-            print(f"\r{msg}", end='')
-            logger.info(msg)
-        except NCBIException as error:
-            global ncbi_exception_count
-            ncbi_exception_count += 1
-            logger.warning(error.msg)
-            logger.warning("MISSING FASTA DATA FROM NCBI")
-            if ncbi_exception_count < NCBI_EXCEPTION_MAX_TRIES:
-                ncbi_query_size = math.ceil(ncbi_query_size/2)
-                msg = f"Automatically reducing query size to {ncbi_query_size} and retrying..."
-                print(f"INFO: {msg}\n")
-                logger.info(msg)
-            else:
-                logger.debug("Exceeded maximum failed NCBI query attempts.")
-                raise PipelineException("Exceeded maximum failed NCBI query attempts. This probably means NCBI servers "
-                                        "are down or not responding. Consider waiting a while and trying again.\n"
-                                        "\tIf this problem persists, please contact the developer to investigate.\n")
-    print("\rQuerying NCBI...Done!                                  ")  # whitespace to overwrite "entries processed"
+
+    fasta_data, queried, retrieved = ncbi_protein_query(accession_list, api_key, ncbi_email, ncbi_tool, False, logger,
+                                                        ncbi_query_size)
+
     cazy_stats.append(queried)
     cazy_stats.append(retrieved)
 

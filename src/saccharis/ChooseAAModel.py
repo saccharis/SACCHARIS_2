@@ -17,6 +17,7 @@ from Bio import SeqIO
 from saccharis.Cazy_Scrape import Mode
 from saccharis.Muscle_Alignment import main as muscle
 from saccharis.utils.PipelineErrors import AAModelError
+from utils.Formatting import convert_path_wsl
 
 
 class TreeBuilder(Enum):
@@ -187,12 +188,8 @@ def compute_best_model(muscle_input_file, pruned_list, family, output_folder, nu
             #     todo: pick starting topology for modeltest?
             if sys.platform.startswith("win"):
                 try:
-                    win_muscle_input_file = subprocess.run(["wsl", "wslpath", "'" + muscle_input_file + "'"],
-                                                           capture_output=True, check=True)
-                    win_muscle_input_file = str(win_muscle_input_file.stdout.decode().strip())
-                    win_outpath = subprocess.run(["wsl", "wslpath", "'" + modeltest_outpath[0:-4] + "'"],
-                                                 capture_output=True, check=True)
-                    win_outpath = str(win_outpath.stdout.decode().strip())
+                    win_muscle_input_file = convert_path_wsl(muscle_input_file)
+                    win_outpath = convert_path_wsl(modeltest_outpath[0:-4])
 
                     args = ["wsl", "modeltest-ng", "-d", "aa", "-i", win_muscle_input_file, "-o", win_outpath, "-h",
                             "uigf", "-p", f"{num_threads}"]
@@ -220,7 +217,8 @@ def compute_best_model(muscle_input_file, pruned_list, family, output_folder, nu
 
         try:
             # subprocess.run(args, check=True)
-            logger.debug("modeltest args: ", ' '.join(args))
+            msg = "modeltest args: ", ' '.join(args)
+            logger.debug(msg)
             main_proc = subprocess.Popen(args)
             atexit.register(main_proc.kill)
             main_proc.wait()
