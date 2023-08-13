@@ -92,11 +92,18 @@ def make_metadata_dict(cazy_accession_dict: dict[CazymeMetadataRecord], cazyme_m
         diamond_prediction = diamond_dict[module] if module in diamond_dict else None
 
         if merged_dict and module_id in merged_dict:
-            merged_dict[module_id].ecami_prediction = ecami_prediction
-            merged_dict[module_id].diamond_prediction = diamond_prediction
-            merged_dict[module_id].module_start = bounds_dict[module][0]
-            merged_dict[module_id].module_end = bounds_dict[module][1]
-            entry_item = merged_dict[module_id]
+            try:
+                merged_dict[module_id].ecami_prediction = ecami_prediction
+                merged_dict[module_id].diamond_prediction = diamond_prediction
+                merged_dict[module_id].module_start = bounds_dict[module][0]
+                merged_dict[module_id].module_end = bounds_dict[module][1]
+                entry_item = merged_dict[module_id]
+            except TypeError as err:
+                msg = "Type error on updating CazymeMetadataRecord objects. \n" \
+                      "PLEASE REPORT THIS ERROR TO THE DEVELOPER THROUGH GITHUB OR EMAIL, AS ITS INTERMITTENT AND " \
+                      "UNKNOWN WHAT TRIGGERS IT!!!!"
+                logger.error(msg)
+                raise PipelineException(msg) from err
         elif module_id in cazy_accession_dict:
             cazy_accession_dict[module_id].ecami_prediction = ecami_prediction
             cazy_accession_dict[module_id].diamond_prediction = diamond_prediction
@@ -109,26 +116,26 @@ def make_metadata_dict(cazy_accession_dict: dict[CazymeMetadataRecord], cazyme_m
             # todo: delete this whole code for instantiating new CazymeMetadataRecord objects here, it shouldn't run.
             #  I am keeping the code in for now as reference until loading data from the cazy_accession_dict and
             #  merged_dict is bug free and produces correct JSON files
-            entry_item = CazymeMetadataRecord(protein_name=protein_name,
-                                               # todo: add protein id field to capture protein id from user seqs. will be equal to
-                                               #  genbank for cazymes from cazy
-                                               protein_id=module_id,
-                                               genbank=genbank,
-                                               org_name=org_name,
-                                               domain=domain,
-                                               # todo: add family field to track family. This is sort of redundnant for simple
-                                               #  analyses, which is why it wasn't originally included
-                                               # family=family,
-                                               subfamily=subfamily,
-                                               ec_num=ec_num,
-                                               uniprot=uniprot,
-                                               pdb=pdb,
-                                               module_start=bounds_dict[module][0],
-                                               module_end=bounds_dict[module][1],
-                                               diamond_prediction=diamond_prediction,
-                                               ecami_prediction=ecami_prediction,
-                                               source_file=source_file
-                                              )
+            # entry_item = CazymeMetadataRecord(protein_name=protein_name,
+            #                                    # todo: add protein id field to capture protein id from user seqs. will be equal to
+            #                                    #  genbank for cazymes from cazy
+            #                                    protein_id=module_id,
+            #                                    genbank=genbank,
+            #                                    org_name=org_name,
+            #                                    domain=domain,
+            #                                    # todo: add family field to track family. This is sort of redundnant for simple
+            #                                    #  analyses, which is why it wasn't originally included
+            #                                    # family=family,
+            #                                    subfamily=subfamily,
+            #                                    ec_num=ec_num,
+            #                                    uniprot=uniprot,
+            #                                    pdb=pdb,
+            #                                    module_start=bounds_dict[module][0],
+            #                                    module_end=bounds_dict[module][1],
+            #                                    diamond_prediction=diamond_prediction,
+            #                                    ecami_prediction=ecami_prediction,
+            #                                    source_file=source_file
+            #                                   )
         # old encoding was a dict, delete this once CazymeRecord implementation is tested and working
         # entry_dict = {"genbank": genbank, "protein_name": protein_name, "ec_num": ec_num, "org_name": org_name,
         #           "domain": domain, "uniprot": uniprot, "pdb": pdb, "module_start": bounds_dict[module][0],
