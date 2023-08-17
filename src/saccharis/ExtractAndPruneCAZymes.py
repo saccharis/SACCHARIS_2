@@ -245,12 +245,12 @@ def main(fasta_filepath, family, output_folder, mode, force_update=False, prune=
     fasta_mod_file = re.sub("pruned", "mod.pruned", pruned_filepath)
     id_file = os.path.join(output_folder, f"{family}_{mode.name}_key_id_pairs.json")
     bounds_file = os.path.join(output_folder, f"{family}_{mode.name}_bounds.json")
-    eCAMI_file = os.path.join(output_folder, f"{family}_{mode.name}_eCAMI.json")
+    ecami_file = os.path.join(output_folder, f"{family}_{mode.name}_eCAMI.json")
     diamond_file = os.path.join(output_folder, f"{family}_{mode.name}_diamond.json")
 
     try:
         if os.path.isfile(pruned_filepath) and os.path.isfile(fasta_mod_file) and os.path.isfile(id_file) \
-                and os.path.isfile(bounds_file) and os.path.isfile(eCAMI_file) and os.path.isfile(diamond_file) \
+                and os.path.isfile(bounds_file) and os.path.isfile(ecami_file) and os.path.isfile(diamond_file) \
                 and not force_update:
             print("CAZymes already extracted, loading data from previous run.")
             print("If you would like to recalculate HMMERs, run SACCHARIS with --fresh")
@@ -261,12 +261,12 @@ def main(fasta_filepath, family, output_folder, mode, force_update=False, prune=
                 mod_dict = json.loads(f.read())
             with open(bounds_file, 'r', encoding="utf-8") as f:
                 bounds_dict = json.loads(f.read())
-            with open(bounds_file, 'r', encoding="utf-8") as f:
-                eCAMI_dict = json.loads(f.read())
-            with open(bounds_file, 'r', encoding="utf-8") as f:
+            with open(ecami_file, 'r', encoding="utf-8") as f:
+                ecami_dict = json.loads(f.read())
+            with open(diamond_file, 'r', encoding="utf-8") as f:
                 diamond_dict = json.loads(f.read())
 
-            return pruned, fasta_mod_file, mod_dict, bounds_dict
+            return pruned, fasta_mod_file, mod_dict, bounds_dict, ecami_dict, diamond_dict
     except IOError as error:
         # todo: log error here
         print("Error loading data from previous run, recalculating instead...")
@@ -324,6 +324,12 @@ def main(fasta_filepath, family, output_folder, mode, force_update=False, prune=
 
     with open(bounds_file, 'w', encoding="utf-8") as f:
         json.dump(bounds_dict, f, ensure_ascii=False, indent=4)
+
+    with open(ecami_file, 'w', encoding="utf-8") as f:
+        json.dump(ecami_dict, f, ensure_ascii=False, indent=4)
+
+    with open(diamond_file, 'w', encoding="utf-8") as f:
+        json.dump(diamond_dict, f, ensure_ascii=False, indent=4)
 
     return pruned, fasta_mod_file, mod_dict, bounds_dict, ecami_dict, diamond_dict
 

@@ -300,7 +300,8 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
     # Remove accession numbers that were not found, count valid, rebuild the list for querying
     bad_accessions = result1.find_all('PhraseNotFound')
     for item in bad_accessions:
-        logger.debug("NCBI DATA MISSING. Genbank accession:", item.text)
+        msg = f"NCBI DATA MISSING. Genbank accession: {item.text}"
+        logger.debug(msg)
         if verbose:
             print("\nWARNING: NCBI DATA MISSING")
             print("Genbank accession:", item.text, "\n")

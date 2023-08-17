@@ -28,7 +28,7 @@ from saccharis.Rendering import render_phylogeny
 from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder
 from saccharis.utils.AdvancedConfig import save_to_file
 from saccharis.utils.FamilyCategories import check_deleted_families
-from saccharis.utils.Formatting import make_metadata_dict, format_time
+from saccharis.utils.Formatting import make_metadata_dict, format_time, CazymeMetadataRecord
 
 
 def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mode = Cazy_Scrape.Mode.ALL_CAZYMES,
@@ -202,15 +202,33 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
         metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}.json"
 
     final_metadata_filepath = os.path.join(domain_folder, metadata_filename)
-    final_metadata_dict = make_metadata_dict(cazymes, list(id_convert_dict.values()), bound_dict, merged_dict,
-                                             ecami_dict, diamond_dict)
-    try:
-        with open(final_metadata_filepath, 'w', encoding="utf-8") as meta_json:
-            json.dump(final_metadata_dict, meta_json, default=vars, ensure_ascii=False, indent=4)
-    except IOError as error:
-        raise UserWarning("Problem writing final module metadata information to file. Make sure you have access "
-                          "permissions for your output folder, as this is a common source of write errors of this type."
-                          ) from error
+
+    if not force_update and os.path.isfile(final_metadata_filepath):
+        try:
+            with open(final_metadata_filepath, 'r', encoding="utf-8") as meta_json:
+                cazyme_dict = json.loads(meta_json.read())
+                final_metadata_dict = {id: CazymeMetadataRecord(**record) for id, record in cazyme_dict.items()}
+        except IOError as err:
+            logger.debug(err)
+            # todo: consider renaming the old JSON file to retain that data and writing the new data when this occurs.
+            msg = f"Data from previous run unable to be read! " \
+                  f"CazymeMetadataRecordFile with read error: {final_metadata_filepath}\n" \
+                  f"Falling back to recalculating fresh CazymeMetadataRecords, but NOT overwriting old ones. If you " \
+                  f"want to overwrite the old records, run the pipeline again with the --fresh option."
+            logger.error(msg)
+            final_metadata_dict = make_metadata_dict(cazymes, list(id_convert_dict.values()), bound_dict, merged_dict,
+                                                     ecami_dict, diamond_dict)
+    else:
+        final_metadata_dict = make_metadata_dict(cazymes, list(id_convert_dict.values()), bound_dict, merged_dict,
+                                                 ecami_dict, diamond_dict)
+        try:
+            with open(final_metadata_filepath, 'w', encoding="utf-8") as meta_json:
+                json.dump(final_metadata_dict, meta_json, default=vars, ensure_ascii=False, indent=4)
+        except IOError as error:
+            raise UserWarning("Problem writing final module metadata information to file. Make sure you have access "
+                              "permissions for your output folder, as this is a common source of write errors of this "
+                              "type."
+                              ) from error
 
     cazyme_module_count = len(pruned_list)
     extract_t = time.time()
@@ -338,6 +356,14 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
 
     render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder)
+
+    print("Completed Rendering of Graphics")
+    print("==============================================================================\n")
+    render_t = time.time()
+    print("*********************************************")
+    print("* Rendering took:")
+    print(format_time(render_t - tree_t))
+    print("*********************************************")
 
 
     # Final Benchmark tests

@@ -12,12 +12,13 @@ import random
 import sys
 from enum import Enum
 from functools import reduce
+from logging import getLogger, Logger
 
 from Bio import SeqIO
 from saccharis.Cazy_Scrape import Mode
 from saccharis.Muscle_Alignment import main as muscle
 from saccharis.utils.PipelineErrors import AAModelError
-from utils.Formatting import convert_path_wsl
+from saccharis.utils.Formatting import convert_path_wsl
 
 
 class TreeBuilder(Enum):
@@ -122,7 +123,7 @@ def parse_best_model(outpath, tree_program, modeltest=False):
 # better todo: delete "MF" because it seems totally pointless, confirm before deleting it
 def compute_best_model(muscle_input_file, pruned_list, family, output_folder, number_seqs, scrape_mode, MF,
                        num_threads=4, tree_program=TreeBuilder.FASTTREE, force_update=False, user_run=None,
-                       prottest_folder="/usr/local/prottest-3.4.2", use_modelTest=True, logger=None):
+                       prottest_folder="/usr/local/prottest-3.4.2", use_modelTest=True, logger: Logger=getLogger()):
     # Create Directory for prottest and change to this directory
     if user_run:
         prot_file_path = os.path.join(output_folder, f"{family}_{tree_program.name}_{user_run:05d}model.txt")
@@ -217,7 +218,7 @@ def compute_best_model(muscle_input_file, pruned_list, family, output_folder, nu
 
         try:
             # subprocess.run(args, check=True)
-            msg = "modeltest args: ", ' '.join(args)
+            msg = f"modeltest args: {' '.join(args)}"
             logger.debug(msg)
             main_proc = subprocess.Popen(args)
             atexit.register(main_proc.kill)

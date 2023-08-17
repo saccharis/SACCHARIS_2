@@ -32,6 +32,7 @@ class CazymeMetadataRecord:
     org_name: Optional[str] = None
     domain: Optional[str] = None
     family: Optional[str] = None
+    classfamily: Optional[str] = None
     subfamily: Optional[str] = None
     ec_num: Optional[str] = None
     uniprot: Optional[str] = None
