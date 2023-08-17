@@ -118,9 +118,9 @@ def main(input_file, seq_count, family, mode, output_folder, id_dict, force_upda
         #                " | sed 's/^ $//' > " + muscle_fast, shell=True, check=True)
 
         # Above approaches have been replaced by a python native conversion.
-        # It seems to just adds spaces to every line that isn't a sequence start, which is detemined by conotaining a
+        # It seems to just adds spaces to every line that isn't a sequence start, which is detemined by containing a
         # number in the first space delimited string. I assume that this is to line up the character positions of amino
-        # acid sequences, presumably because fastree indexes the subsequent amino acid characters by skipping the same
+        # acid sequences, presumably because fasttree indexes the subsequent amino acid characters by skipping the same
         # number of characters seen in the first block.
 
         try:
