@@ -128,9 +128,12 @@ def main(input_file, seq_count, family, mode, output_folder, id_dict, force_upda
             text = ""
             with open(muscle_ren_path, 'r') as fast_in_file:
                 for line in fast_in_file:
-                    if line == '\n' or num_regex.search(line.split(' ')[0]) or num_regex.search(line.split(' ')[1]):
-                        text += line
-                    else:
+                    try:
+                        if line == '\n' or num_regex.search(line.split(' ')[0]) or num_regex.search(line.split(' ')[1]):
+                            text += line
+                        else:
+                            text += ' ' + line
+                    except IndexError:
                         text += ' ' + line
 
             with open(muscle_fast, 'w') as fast_out_file:
