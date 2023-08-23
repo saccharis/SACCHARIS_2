@@ -15,8 +15,9 @@ from math import ceil
 from saccharis.utils.PipelineErrors import PipelineException
 
 
-def main(muscle_input_file, amino_model, output_dir, raxml_version, num_seqs, threads=4, force_update=False,
-         user_run=None, logger: Logger = getLogger()):
+def main(muscle_input_file: str | os.PathLike, amino_model: str, output_dir: str | os.PathLike,
+         raxml_version: str, num_seqs: int, threads: int = 4, force_update: bool = False,
+         user_run: int = None, logger: Logger = getLogger()):
     if user_run:
         rax_tree = f"RAxML_bipartitions.{user_run:05d}.A1"
     else:
@@ -42,7 +43,9 @@ def main(muscle_input_file, amino_model, output_dir, raxml_version, num_seqs, th
 
     # Lets get raxml running
     if os.path.isfile(file_output_path) and not force_update:
-        print("\n\nRAxML has built this tree before, loading tree data from previous run.\n\n")
+        msg = "\n\nRAxML has built this tree before, loading tree data from previous run.\n\n"
+        print(msg)
+        logger.debug(msg)
         return file_output_path
     else:
         print("Building best tree - using RAxML\n")
@@ -58,15 +61,21 @@ def main(muscle_input_file, amino_model, output_dir, raxml_version, num_seqs, th
         # }
         # &run_cmd($cmd1, $cmd2);
 
+        msg = f"Running command: {command}"
+        logger.info(msg)
         # subprocess.run(command, shell=True, cwd=output_dir, check=True)
         main_proc = subprocess.Popen(command, shell=True, cwd=output_dir)
         atexit.register(main_proc.kill)
         main_proc.wait()
         atexit.unregister(main_proc.kill)
         if main_proc.returncode != 0:
-            raise PipelineException("Muscle alignment process failed to return properly.")
+            msg = f"raxml tree building process failed to return properly. Return code: {main_proc.returncode}"
+            logger.error(msg)
+            raise PipelineException(msg)
 
-        print("RaxML has finished\n\n")
+        msg = "RaxML has finished\n\n"
+        print(msg)
+        logger.debug(msg)
         return file_output_path
 
 

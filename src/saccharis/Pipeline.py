@@ -31,11 +31,12 @@ from saccharis.utils.FamilyCategories import check_deleted_families
 from saccharis.utils.Formatting import make_metadata_dict, format_time, CazymeMetadataRecord
 
 
-def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mode = Cazy_Scrape.Mode.ALL_CAZYMES,
+def single_pipeline(family: str, output_folder: str | os.PathLike,
+                    scrape_mode: Cazy_Scrape.Mode = Cazy_Scrape.Mode.ALL_CAZYMES,
                     domain_mode: int = 0b11111, threads: int = math.ceil(os.cpu_count() * 0.75),
                     tree_program: ChooseAAModel.TreeBuilder = ChooseAAModel.TreeBuilder.FASTTREE,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
-                    force_update: bool = False, user_file=None, genbank_genomes=None, genbank_genes=None,
+                    force_update: bool = False, user_file: str | os.PathLike = None, genbank_genomes=None, genbank_genes=None,
                     auto_rename: bool = False, settings: dict = None, gui_step_signal: pyqtSignal = None,
                     merged_dict: dict = None, logger: logging.Logger = None, skip_user_ask=False):
 
@@ -316,7 +317,7 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
         if not os.path.isdir(raxml_folder):
             os.mkdir(raxml_folder, 0o755)
         tree_path = RAxML_Build.main(aligned_ren_path, aa_model, raxml_folder, raxml_cmd, cazyme_module_count, threads,
-                                     user_run_id, logger)
+                                     force_update, user_run_id, logger)
     print("Completed Building of Tree")
     print("==============================================================================\n")
     tree_t = time.time()
@@ -355,7 +356,10 @@ def single_pipeline(family: str, output_folder: str, scrape_mode: Cazy_Scrape.Mo
         if sys.gettrace():
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
 
-    render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder)
+    root = "OUT0000000" if "OUT0000000" in final_metadata_dict else None
+
+    render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder,
+                     root=root)
 
     print("Completed Rendering of Graphics")
     print("==============================================================================\n")

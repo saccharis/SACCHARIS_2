@@ -2,11 +2,14 @@ import subprocess
 from logging import getLogger, Logger
 
 
-def render_phylogeny(json_file: str, tree_file: str, output_folder: str, logger: Logger = getLogger()):
+def render_phylogeny(json_file: str, tree_file: str, output_folder: str, logger: Logger = getLogger(),
+                     root: str = None):
     json_file_double_slash = json_file.replace('\\', '\\\\')
     tree_file_double_slash = tree_file.replace('\\', '\\\\')
     output_folder_double_slash = output_folder.replace('\\', '\\\\')
-    load_call = f"C_load_and_plot_all(\'{json_file_double_slash}\', \'{tree_file_double_slash}\', \'{output_folder_double_slash}\')"
+    root_arg = f", \'{root}\'" if root else ''
+    load_call = f"C_load_and_plot_all(\'{json_file_double_slash}\', \'{tree_file_double_slash}\', " \
+                f"\'{output_folder_double_slash}\'{root_arg})"
     args = ['Rscript',  '-e', f'"library(rsaccharis)"', '-e',  f'"{load_call}"']
     try:
         # the run call doesn't work with args as a list because of weird unquoting behaviour of

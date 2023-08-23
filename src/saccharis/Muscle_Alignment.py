@@ -57,6 +57,10 @@ def main(input_file, seq_count, family, mode, output_folder, id_dict, force_upda
     if not os.path.exists(output_folder):
         os.mkdir(output_folder, 0o755)
 
+    if os.path.isfile(muscle_path_efa) and os.path.getsize(muscle_path_efa) == 0:
+        # muscle writes an empty file, even if a prior run failed or was interrupted
+        os.remove(muscle_path_efa)
+
     # Run Muscle Alignment
     if os.path.exists(muscle_path) and force_update is False:
         print("Muscle has already been run, continuing script\n")
@@ -91,6 +95,10 @@ def main(input_file, seq_count, family, mode, output_folder, id_dict, force_upda
             print("Muscle Alignment completed\n\n")
         except subprocess.CalledProcessError as error:
             raise PipelineException("Muscle could not execute properly.") from error
+        finally:
+            if os.path.isfile(muscle_path_efa) and os.path.getsize(muscle_path_efa) == 0:
+                # muscle writes an empty file even when it fails
+                os.remove(muscle_path_efa)
 
     # Only need muscle_path for subsampling to choose aa model
     if is_subsample:
