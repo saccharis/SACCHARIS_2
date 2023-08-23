@@ -1,16 +1,15 @@
   {% set name = "SACCHARIS" %}
   {% set version = "2.0.0.dev19" %}
   {% set build_no = 7 %}
-  {% set hash = "" %}
+  {% set hash = "950A6B69A9C1F0F2CF2A502E4761CBA8B2D8E9B3403526296FC4BF22F1C90D62" %}
 
 package:
   name: "{{ name|lower }}"
   version: "{{ version }}"
 
 source:
-  path: ./..
-#  url: https://github.com/saccharis/SACCHARIS_2/archive/refs/tags/v{{ version }}.tar.gz
-#  sha256: {{ hash }}
+  url: https://github.com/saccharis/SACCHARIS_2/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: {{ hash }}
 
 build:
   noarch: python
@@ -70,7 +69,7 @@ test:
     - saccharis -v > /dev/null
     - saccharis.show_family_categories > /dev/null
 #    below tests need to be commented out for successful build on bioconda because there is no file write permission
-    - saccharis.make_family_files
+#    - saccharis.make_family_files
 
 about:
   home: https://github.com/saccharis/SACCHARIS_2
