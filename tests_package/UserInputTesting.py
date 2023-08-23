@@ -52,7 +52,7 @@ class UserInputTestCase(unittest.TestCase):
         fam_dict = extract_families_hmmer(file_path, test_out_folder, threads=2)
         self.assertEqual(fam_dict, expected_dict)
 
-    @mock.patch('saccharis.utils.PipelineErrors.input', create=True)
+    @mock.patch('saccharis.utils.UserInput.input', create=True)
     def test_yes_no(self, mocked_input):
         mocked_input.side_effect = ["y", "n", "invalid", "yes", "n/a", "no"]
         self.assertTrue(ask_yes_no("Input yes for test purposes:", "yes entered", "no entered"))
