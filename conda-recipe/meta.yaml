@@ -9,7 +9,7 @@ package:
 
 source:
   url: https://github.com/saccharis/SACCHARIS_2/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: {{ hash }}
+  sha256: {{ hash|lower }}
 
 build:
   noarch: python
