@@ -7,6 +7,7 @@
 ###############################################################################
 # Built in libraries
 import atexit
+import glob
 import os
 import subprocess
 from logging import Logger, getLogger
@@ -41,13 +42,22 @@ def main(muscle_input_file: str | os.PathLike, amino_model: str, output_dir: str
 
     file_output_path = os.path.join(output_dir, rax_tree)
 
-    # Lets get raxml running
     if os.path.isfile(file_output_path) and not force_update:
         msg = "\n\nRAxML has built this tree before, loading tree data from previous run.\n\n"
         print(msg)
         logger.debug(msg)
         return file_output_path
     else:
+
+        # check for partial run files and delete them here
+        files_to_delete = glob.glob(os.path.join(output_dir, '*.A1'))
+        for file_path in files_to_delete:
+            try:
+                os.remove(file_path)
+                logger.info(f"Deleted {file_path}")
+            except OSError as e:
+                logger.info(f"Error deleting {file_path}: {e}")
+
         print("Building best tree - using RAxML\n")
         # thread_arg = "" if opt_thr == 1 else f"-T {opt_thr} "
         extension = f"UserRun{user_run:05d}.A1" if user_run else "A1"
