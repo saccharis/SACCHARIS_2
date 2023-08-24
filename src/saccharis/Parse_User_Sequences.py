@@ -100,7 +100,7 @@ def calculate_user_run_id(input_file, output_folder):
         with open(user_dict_path, 'w', encoding="utf-8") as f:
             json.dump(user_dict, f, ensure_ascii=False, indent=4)
     except IOError as error:
-        raise FileError("Cannot write user file hash information to file.") from error
+        raise FileError(f"Cannot write user file hash information to file: {user_dict_path}") from error
 
     return user_run
 
