@@ -402,7 +402,11 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
         fasta_out = fasta_fixed
 
     if fasta_out.__contains__('|'):
-        logger.warning(f"Probable parsing error on accession containing a '|' character, "
-                       f"Please report this as a bug to the developer/maintainer through github.")
+        perpetrators = re.findall(r"(\S*\|\S*)", fasta_out)
+        msg = f"Substrings containing pipes: {perpetrators}"
+        logger.warning(msg)
+        logger.warning("Possible parsing error on description(s) containing a '|' character.\n"
+                       "Please report this as a bug to the developer/maintainer if you have accession identifier "
+                       "errors.")
 
     return fasta_out, result_count
