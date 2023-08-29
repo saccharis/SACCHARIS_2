@@ -1,7 +1,7 @@
   {% set name = "SACCHARIS" %}
-  {% set version = "2.0.0.dev19" %}
-  {% set build_no = 7 %}
-  {% set hash = "1055846A2123B34699B6E93AFCBCCD7B04633DC385DA60E784504D67FDCAA01C" %}
+  {% set version = "2.0.0.dev20" %}
+  {% set build_no = 0 %}
+  {% set hash = "" %}
 
 package:
   name: "{{ name|lower }}"
