@@ -39,10 +39,20 @@ This is the preferred method for most users, since installation should be relati
 
 
 First make sure you have installed conda. I recommend downloading a version appropriate to your OS from 
-https://www.anaconda.com/products/distribution#Downloads
+https://www.anaconda.com/products/distribution#Downloads. Other options include installing miniconda or 
+mamba. The mamba package manager is considerably faster than conda at installing software, particularly 
+helpful for older or less powerful hardware, but as it is a third party reimplementation of conda it may 
+not be available in all institutional settings and comes with no support from the anaconda organization.
 
-Once conda is installed, you have to add the bioconda channel to be able to download SACCHARIS, instructions are here:
-https://bioconda.github.io/
+Once conda is installed, you have to add the bioconda channel to be able to download SACCHARIS, instructions
+from https://bioconda.github.io/ are reproduced below.
+
+```
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+```
 
 It's recommended to install SACCHARIS into a dedicated virtual environment to avoid compatibility issues with other 
 software. You can learn more about using the conda package manager and virtual environments here:
@@ -62,7 +72,7 @@ Alternately, you can activate an environment of your choice then download and in
 Once SACCHARIS is installed you can start the software from command line with `saccharis` and you can start the gui with
 `saccharis-gui`.
 
-#### Installation option 2: Anacaonda navigator GUI installation
+#### Installation option 2: Anaconda navigator GUI installation
 If you prefer to use a GUI to install and launch SACCHARIS, you can install SACCHARIS through the anaconda navigator
 GUI. Install and launch navigator as per https://docs.anaconda.org/free/navigator/, then it's recommended to create a 
 new environment to install saccharis into in the environment tab at the left. You will need to add the bioconda channel
@@ -109,7 +119,8 @@ explicit list of requirements SACCHARIS 2 needs to function.
 All of the following programs installed and available on $PATH variable:
 
 * Binary dependencies:
-  * DIAMOND  v2.0.15
+  * blast+ v2.14, or the `makeblastdb` command specifically
+  * DIAMOND v2.0.15
   * HMMER v3.3
   * MUSCLE v5 or v3.8.1551
   * ModelTest-NG
@@ -179,6 +190,6 @@ In terminal follow usage as given by
 
 # Developer Contact
 
-You can contact Alex Fraser at alexander.fraser@alumni.ubc.ca for information about beta access. 
+You can contact Alex Fraser at alexander.fraser@alumni.ubc.ca for information about the software. 
 
 If you encounter bugs, please use the github issue tracker tools to submit bug reports instead of emailing me, as it is easier to track that way.
