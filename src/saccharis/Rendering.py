@@ -20,7 +20,9 @@ def render_phylogeny(json_file: str, tree_file: str, output_folder: str, logger:
         logger.debug(error)
         logger.warning("Error running Rscript phylogeny rendering code. Check that rsaccharis is installed in R and "
                        "'Rscript' executable is available on PATH. One some systems 'Rscript' needs to be available on "
-                       "the system path, not just user path.")
+                       "the system path, not just user path.\n"
+                       "This does not affect the creation of the pipeline output files, you can still run the "
+                       "rsaccharis rendering scripts manually.")
     except Exception as error:
         logger.error(error)
         logger.error(f"Failed to render phylogenetic trees to output folder: {output_folder}")
