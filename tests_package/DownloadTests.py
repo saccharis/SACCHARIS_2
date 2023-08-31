@@ -4,7 +4,7 @@ import sys
 import unittest
 from inspect import getsourcefile
 
-from saccharis.ExtractAndPruneCAZymes import download_database
+from saccharis.utils.DatabaseDownload import download_database
 
 tests_folder = os.path.dirname(getsourcefile(lambda: 0))
 test_out_folder = os.path.join(tests_folder, "test_files", "temp")
@@ -36,3 +36,4 @@ class DownloadTestCase(unittest.TestCase):
         download_database(test_out_folder)
         for file in files:
             self.assertTrue(os.path.isfile(os.path.join(test_out_folder, file)))
+        pass

@@ -59,7 +59,8 @@ setup(name='saccharis',
               "saccharis.screen_cazome = saccharis.ScreenUserFile:cli_cazome",
               "saccharis.show_family_categories = saccharis.utils.FamilyCategories:show_categories",
               "saccharis-gui = saccharis.gui.PipelineGUI:main",
-              "saccharis.config = saccharis.utils.AdvancedConfig:cli_config"
+              "saccharis.config = saccharis.utils.AdvancedConfig:cli_config",
+              "saccharis.update_db = saccharis.ExtractAndPruneCAZymes:update_hmms"
             ]
       },
       package_data={

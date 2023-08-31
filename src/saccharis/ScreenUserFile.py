@@ -20,7 +20,7 @@ from contextlib import redirect_stdout
 # Dependency imports
 from dbcan_cli import run_dbcan
 # Internal imports
-from saccharis.ExtractAndPruneCAZymes import download_database
+from saccharis.utils.DatabaseDownload import download_database
 from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.FamilyCategories import get_category_list
 from saccharis.utils.FamilyCategories import get_user_categories
