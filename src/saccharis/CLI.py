@@ -39,16 +39,18 @@ def cli_main():
                                                  f' SACCHARIS 2 is a tool to analyze CAZyme families.',
                                      formatter_class=MultilineFormatter,
                                      epilog="The following list is of additional utilities and commands available to "
-                                            "interact with saccharis. Each command has it's own help menu, similarly "
-                                            "accessed via \"<command_name> -h\" or \"<command_name> --help\", e.g. "
-                                            "\"saccharis.make_family_files -h\"|n "
-                                            "UTILITY COMMAND LIST:|n "
+                                            "interact with saccharis. Most commands (not saccharis-gui) have their own "
+                                            "help menu, similarly accessed via \"<command_name> -h\" or "
+                                            "\"<command_name> --help\", e.g. \"saccharis.make_family_files -h\"|n "
+                                            "COMMAND LIST:|n "
                                             "-\tsaccharis.make_family_files|n "
                                             "-\tsaccharis.add_family_category|n "
                                             "-\tsaccharis.rename_user_file|n "
                                             "-\tsaccharis.prune_seqs|n "
                                             "-\tsaccharis.screen_cazome|n "
                                             "-\tsaccharis.show_family_categories|n "
+                                            "-\tsaccharis.config|n "
+                                            "-\tsaccharis.update_db|n "
                                             "-\tsaccharis-gui"
                                      )
     parser.add_argument('--version', "-v", action='version', version=f"SACCHARIS {get_version()}")
