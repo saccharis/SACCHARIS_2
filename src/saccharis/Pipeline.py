@@ -38,7 +38,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
                     force_update: bool = False, user_file: str | os.PathLike = None, genbank_genomes=None, genbank_genes=None,
                     auto_rename: bool = False, settings: dict = None, gui_step_signal: pyqtSignal = None,
-                    merged_dict: dict = None, logger: logging.Logger = None, skip_user_ask=False):
+                    merged_dict: dict = None, logger: logging.Logger = None, skip_user_ask=False,
+                    render_trees: bool = False):
 
     # todo: remove windows block once WSL support is fully implemented
     if sys.gettrace():
@@ -357,9 +358,9 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
 
     root = "OUT0000000" if "OUT0000000" in final_metadata_dict else None
-
-    render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder,
-                     root=root)
+    if render_trees:
+        render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder,
+                         root=root)
 
     print("Completed Rendering of Graphics")
     print("==============================================================================\n")
