@@ -6,6 +6,7 @@
 # License: GPL v3
 ###############################################################################
 import atexit
+import glob
 import os
 import subprocess
 import random
@@ -146,6 +147,16 @@ def compute_best_model(muscle_input_file, pruned_list, family, output_folder, nu
             file.write(best_tree_model)
         print(f"INFO: Could not run mutation modelling with less than 3 sequences, so assuming {best_tree_model} model")
     else:
+        if force_update:
+            # check for partial run files and delete them here
+            files_to_delete = glob.glob(os.path.join(output_folder, '*.ckp'))
+            for file_path in files_to_delete:
+                try:
+                    os.remove(file_path)
+                    logger.info(f"Deleted {file_path}")
+                except OSError as e:
+                    logger.info(f"Error deleting {file_path}: {e}")
+
         # Before Actually running prottest we need to make sure there are not more than 4000 sequences in the input
         # file, prottest will not run with more than 4000 sequences, we need to make a subsample dataset to run with
         subsample_file = os.path.join(output_folder, "subsample", family + ".muscle_aln.phyi")
