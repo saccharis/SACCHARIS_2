@@ -9,6 +9,7 @@ import atexit
 import glob
 import os
 import subprocess
+from subprocess import PIPE
 import random
 import sys
 from enum import Enum
@@ -231,12 +232,16 @@ def compute_best_model(muscle_input_file, pruned_list, family, output_folder, nu
             # subprocess.run(args, check=True)
             msg = f"modeltest args: {' '.join(args)}"
             logger.debug(msg)
-            main_proc = subprocess.Popen(args)
+            # main_proc = subprocess.Popen(args, text=True, stderr=PIPE, stdout=PIPE)
+            main_proc = subprocess.Popen(args, text=True, stderr=PIPE)
             atexit.register(main_proc.kill)
-            main_proc.wait()
+            outstring, errstring = main_proc.communicate()
+            # main_proc.wait()
             atexit.unregister(main_proc.kill)
             if main_proc.returncode != 0:
                 retcode_msg = f"modeltest process did not return correctly. Process return code: {main_proc.returncode}"
+                # logger.debug(f"modeltest STDOUT: {outstring}")
+                logger.error(f"modeltest STDERR: {errstring}")
                 logger.error(retcode_msg)
                 raise AAModelError(retcode_msg)
         except subprocess.CalledProcessError as error:

@@ -8,10 +8,12 @@ from saccharis.Pipeline import single_pipeline
 from saccharis.Cazy_Scrape import Mode
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.utils.Formatting import CazymeMetadataRecord
+from saccharis.utils.PipelineErrors import AAModelError
 
 tests_folder = os.path.dirname(getsourcefile(lambda: 0))
 test_out_folder = os.path.join(tests_folder, "test_files", "temp")
 small_user_testfile = os.path.join(tests_folder, "test_files", "user_test_GH102_UserFormat.fasta")
+partial_modeltest_folder = os.path.join(tests_folder, "test_files", "partial_run_modeltest", "PL9_CHARACTERIZED_ALL_DOMAINS")
 
 
 class IntegrationTestCase(unittest.TestCase):
@@ -25,9 +27,9 @@ class IntegrationTestCase(unittest.TestCase):
         shutil.rmtree(test_out_folder)
 
     def run_pipeline(self, family, scrape_mode: Mode, tree_program: TreeBuilder = TreeBuilder.FASTTREE,
-                     user_file: str = None):
+                     user_file: str = None, force_update=True):
         single_pipeline(family=family, output_folder=test_out_folder, scrape_mode=scrape_mode, skip_user_ask=True,
-                        force_update=True, verbose=True, tree_program=tree_program, user_file=user_file)
+                        force_update=force_update, verbose=True, tree_program=tree_program, user_file=user_file)
         domain_folder = f"{family}_{scrape_mode.name}_ALL_DOMAINS"
         file_prefix = f"{family}_{scrape_mode.name}_ALL_DOMAINS{'_UserRun00000' if user_file else ''}"
         tree_prog = tree_program.name
@@ -64,6 +66,13 @@ class IntegrationTestCase(unittest.TestCase):
 
     def test_GH5_4(self):
         self.run_pipeline("GH5_4", Mode.CHARACTERIZED)
+
+    def test_bad_partial_modeltest_pl9(self):
+        out_folder = os.path.join(test_out_folder, "PL9_CHARACTERIZED_ALL_DOMAINS")
+        if os.path.exists(out_folder):
+            shutil.rmtree(out_folder)
+        shutil.copytree(partial_modeltest_folder, out_folder)
+        self.assertRaises(AAModelError, self.run_pipeline, "PL9", Mode.CHARACTERIZED, force_update=False)
 
 
 if __name__ == '__main__':

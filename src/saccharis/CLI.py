@@ -159,6 +159,11 @@ def cli_main():
                         "program instead continues without an API key, slowing down queries but otherwise functioning. "
                         "It is recommended to use this option when running SACCHARIS on a cluster or in automated "
                         "fashion to prevent failed runs in environments where querying the user is not possible.")
+    parser.add_argument("--render", "-r", action="store_true", help="This is a boolean flag that by default is set to "
+                        "False which when true automatically tries to render phylogenetic trees using the rsaccharis R "
+                        "library. The rsaccharis package must be installed and the rscript command available on the "
+                        "PATH variable for this function to work, see https://github.com/saccharis/rsaccharis for "
+                        "details.")
 
     args = parser.parse_args()
 
@@ -169,6 +174,7 @@ def cli_main():
     refresh = args.fresh
     skip_user_ask = args.skip_user_ask
     num_threads = args.threads if args.threads <= os.cpu_count() else os.cpu_count()
+    render_trees = args.render
 
     domain_val = 0b0
     if isinstance(args.domain, str):
@@ -305,7 +311,7 @@ def cli_main():
             single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                             tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
                             force_update=refresh, user_file=user_path, auto_rename=rename, merged_dict=user_merged_dict,
-                            logger=logger, skip_user_ask=skip_user_ask)
+                            logger=logger, skip_user_ask=skip_user_ask, render_trees=render_trees)
         except NewUserFile as file_msg:
             user_path = file_msg.msg
             user_merged_dict = rename_header_ids(user_path, user_merged_dict)
@@ -313,7 +319,8 @@ def cli_main():
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
                                 force_update=refresh, user_file=user_path, auto_rename=rename,
-                                merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask)
+                                merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask,
+                                render_trees=render_trees)
             except PipelineException as pipe_error:
                 logger.error(pipe_error.msg)
                 logger.debug(pipe_error.__traceback__)
@@ -329,7 +336,8 @@ def cli_main():
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
                                 force_update=refresh, user_file=user_path, auto_rename=rename,
-                                merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask)
+                                merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask,
+                                render_trees=render_trees)
             except NewUserFile as file_msg:
                 user_path = file_msg.msg
                 user_merged_dict = rename_header_ids(user_path, user_merged_dict)
@@ -337,7 +345,8 @@ def cli_main():
                     single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                     tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune,
                                     verbose=verbose_arg, force_update=refresh, user_file=user_path, auto_rename=rename,
-                                    merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask)
+                                    merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask,
+                                    render_trees=render_trees)
                 except PipelineException as pipe_error:
                     logger.error(pipe_error.msg)
                     logger.debug(pipe_error.__traceback__)

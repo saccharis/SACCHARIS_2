@@ -125,113 +125,137 @@
            </font>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="single_family_tab">
            <attribute name="title">
             <string>Single Family</string>
            </attribute>
-           <widget class="QWidget" name="horizontalLayoutWidget">
-            <property name="geometry">
-             <rect>
-              <x>11</x>
-              <y>10</y>
-              <width>341</width>
-              <height>32</height>
-             </rect>
-            </property>
-            <layout class="QHBoxLayout" name="family_horizontalLayout">
-             <property name="leftMargin">
-              <number>5</number>
-             </property>
-             <property name="topMargin">
-              <number>5</number>
-             </property>
-             <property name="rightMargin">
-              <number>5</number>
-             </property>
-             <property name="bottomMargin">
-              <number>5</number>
-             </property>
-             <item>
-              <widget class="QLabel" name="family_label">
-               <property name="text">
-                <string>Family:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="family_lineedit">
-               <property name="alignment">
-                <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
-               </property>
-               <property name="placeholderText">
-                <string>GH5</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="subfamily_label">
-               <property name="text">
-                <string>Subfamily:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="subfamily_lineedit">
-               <property name="alignment">
-                <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
-               </property>
-               <property name="placeholderText">
-                <string>1</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout_10">
+            <item>
+             <layout class="QHBoxLayout" name="family_horizontalLayout">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="family_label">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>22</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Family:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="family_lineedit">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>22</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+                </property>
+                <property name="placeholderText">
+                 <string>GH5</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="subfamily_label">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>22</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Subfamily:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="subfamily_lineedit">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>22</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+                </property>
+                <property name="placeholderText">
+                 <string>1</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
           </widget>
           <widget class="QWidget" name="family_file_tab">
            <attribute name="title">
             <string>Family File</string>
            </attribute>
-           <widget class="QWidget" name="horizontalLayoutWidget_3">
-            <property name="geometry">
-             <rect>
-              <x>10</x>
-              <y>10</y>
-              <width>341</width>
-              <height>31</height>
-             </rect>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
-             <item>
-              <widget class="QPushButton" name="family_file_pushbutton">
-               <property name="maximumSize">
-                <size>
-                 <width>50</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Open</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="family_file_lineedit">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="readOnly">
-                <bool>true</bool>
-               </property>
-               <property name="placeholderText">
-                <string>Family file path...</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout_9">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="QPushButton" name="family_file_pushbutton">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>22</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>50</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Open</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="family_file_lineedit">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>22</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+                <property name="placeholderText">
+                 <string>Family file path...</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
           </widget>
           <widget class="QWidget" name="family_category_tab">
            <attribute name="title">
@@ -248,6 +272,12 @@
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>22</height>
+                 </size>
+                </property>
                 <property name="maximumSize">
                  <size>
                   <width>110</width>
@@ -262,7 +292,7 @@
               <item>
                <widget class="QComboBox" name="family_categories_dropdown">
                 <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
@@ -270,7 +300,7 @@
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
-                  <height>21</height>
+                  <height>22</height>
                  </size>
                 </property>
                 <item>
@@ -313,25 +343,28 @@
            <attribute name="title">
             <string>Explore</string>
            </attribute>
-           <widget class="QWidget" name="horizontalLayoutWidget_5">
-            <property name="geometry">
-             <rect>
-              <x>10</x>
-              <y>10</y>
-              <width>341</width>
-              <height>31</height>
-             </rect>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
-             <item>
-              <widget class="QPushButton" name="screen_cazome_button">
-               <property name="text">
-                <string>Screen Cazome</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0">
+              <property name="sizeConstraint">
+               <enum>QLayout::SetDefaultConstraint</enum>
+              </property>
+              <item>
+               <widget class="QPushButton" name="screen_cazome_button">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>22</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Screen Cazome</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
           </widget>
          </widget>
         </item>
@@ -534,6 +567,9 @@
              </item>
              <item row="2" column="0">
               <widget class="QCheckBox" name="fresh_run_checkbox">
+               <property name="toolTip">
+                <string>Doing a fresh run will forcibly delete any partial run data already present in the output folder. Check this if you have any issues trying to restart partially completed runs.</string>
+               </property>
                <property name="text">
                 <string>Fresh run (will overwrite preexisting data)</string>
                </property>
@@ -579,12 +615,25 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_4">
             <item>
+             <widget class="QCheckBox" name="render_trees_checkBox">
+              <property name="toolTip">
+               <string>When checked, the pipeline will render phylogenetic trees using the rsaccharis R package, if installed and available on PATH.</string>
+              </property>
+              <property name="text">
+               <string>Render Trees</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QCheckBox" name="include_frag_checkbox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="toolTip">
+               <string>Includes proteins labeled as &quot;fragment&quot; in the CAZy database in the tree.</string>
               </property>
               <property name="text">
                <string>Include fragments</string>
@@ -602,6 +651,9 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="toolTip">
+               <string>Instead of extracting individual CAZyme modules, create tree from entire proteins, which may contain multiple modules in different families.</string>
+              </property>
               <property name="text">
                <string>Skip module prune</string>
               </property>
@@ -618,6 +670,9 @@
               </item>
               <item>
                <widget class="QComboBox" name="thread_dropdown">
+                <property name="toolTip">
+                 <string>Threads allow parallel processing. Some analysis steps are sped up with more threads, but uses more system resources and may cause system slowdown if you are using other programs while running SACCHARIS.</string>
+                </property>
                 <property name="editable">
                  <bool>false</bool>
                 </property>
@@ -737,6 +792,9 @@
                 <height>16777215</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>Downloads all proteins from CAZy database. This includes many proteins that are only placed in the family by automated bioinformatics tools.</string>
+              </property>
               <property name="text">
                <string>All</string>
               </property>
@@ -759,6 +817,9 @@
                 <height>16777215</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>Downloads &quot;Characterized&quot; proteins from CAZy database. Typically this means the protein has at least one assigned EC number, a system of classifying biochemical reactions.</string>
+              </property>
               <property name="text">
                <string>Characterized only</string>
               </property>
@@ -780,6 +841,9 @@
                 <width>16777215</width>
                 <height>16777215</height>
                </size>
+              </property>
+              <property name="toolTip">
+               <string>Downloads &quot;Structure&quot; proteins from CAZy database. Typically this means the protein has at least one assigned PDB structure.</string>
               </property>
               <property name="text">
                <string>Structure only</string>
@@ -843,6 +907,9 @@
                 <height>13</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>Include proteins from the Archaea domain in the tree.</string>
+              </property>
               <property name="text">
                <string>Archaea</string>
               </property>
@@ -864,6 +931,9 @@
                 <width>16777215</width>
                 <height>13</height>
                </size>
+              </property>
+              <property name="toolTip">
+               <string>Include proteins from the Bacteria domain in the tree.</string>
               </property>
               <property name="text">
                <string>Bacteria</string>
@@ -887,6 +957,9 @@
                 <height>13</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>Include proteins from the Eukaryota domain in the tree.</string>
+              </property>
               <property name="text">
                <string>Eukaryota</string>
               </property>
@@ -909,6 +982,9 @@
                 <height>13</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>Include proteins from Viruses in the tree.</string>
+              </property>
               <property name="text">
                <string>Viruses</string>
               </property>
@@ -930,6 +1006,9 @@
                 <width>16777215</width>
                 <height>13</height>
                </size>
+              </property>
+              <property name="toolTip">
+               <string>Include proteins with unclassified domain in the tree.</string>
               </property>
               <property name="text">
                <string>Unclassified</string>
@@ -966,6 +1045,9 @@
            <layout class="QVBoxLayout" name="verticalLayout">
             <item>
              <widget class="QRadioButton" name="fasttree_radiobutton">
+              <property name="toolTip">
+               <string>Quick tree construction, but not always as accurate as RAxML. Great for preliminary investigation.</string>
+              </property>
               <property name="text">
                <string>FastTree</string>
               </property>
@@ -976,6 +1058,9 @@
             </item>
             <item>
              <widget class="QRadioButton" name="raxml_radiobutton">
+              <property name="toolTip">
+               <string>More accurate tree construction, but much slower than FastTree. Better for definitive publication figures. Not recommended for slow personal computers.</string>
+              </property>
               <property name="text">
                <string>RAxML</string>
               </property>

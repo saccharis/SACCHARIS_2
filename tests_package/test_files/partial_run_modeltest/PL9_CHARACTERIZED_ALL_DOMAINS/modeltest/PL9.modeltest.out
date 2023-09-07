@@ -1,0 +1,41 @@
+--------------------------------------------------------------------------------
+ModelTest-NG v0.1.7
+
+Input data:
+  MSA:        /mnt/c/Users/sonic/IdeaProjects/SACCHARIS_2/tests_package/test_files/temp/PL9_CHARACTERIZED_ALL_DOMAINS/muscle/PL9_CHARACTERIZED.muscle_aln.phyi
+  Tree:       Maximum parsimony
+    file:           -
+  #taxa:            16
+  #sites:           531
+  #patterns:        487
+  Max. thread mem:  17 MB
+
+Output:
+  Log:           /mnt/c/Users/sonic/IdeaProjects/SACCHARIS_2/tests_package/test_files/temp/PL9_CHARACTERIZED_ALL_DOMAINS/modeltest/PL9.modeltest.log
+  Starting tree: /mnt/c/Users/sonic/IdeaProjects/SACCHARIS_2/tests_package/test_files/temp/PL9_CHARACTERIZED_ALL_DOMAINS/modeltest/PL9.modeltest.tree
+  Results:       /mnt/c/Users/sonic/IdeaProjects/SACCHARIS_2/tests_package/test_files/temp/PL9_CHARACTERIZED_ALL_DOMAINS/modeltest/PL9.modeltest.out
+
+Selection options:
+  # protein matrices: 3
+  # protein models:   24
+  include model parameters:
+    Uniform:         true
+    p-inv (+I):      true
+    gamma (+G):      true
+    both (+I+G):     true
+    free rates (+R): false
+    fixed freqs:     true
+    estimated freqs: false
+    #categories:     4
+  gamma rates mode:   mean
+  asc bias:           none
+  epsilon (opt):      0.01
+  epsilon (par):      0.05
+  keep branches:      false
+
+Additional options:
+  verbosity:        very low
+  threads:          9/2
+  RNG seed:         12345
+  subtree repeats:  enabled
+--------------------------------------------------------------------------------
