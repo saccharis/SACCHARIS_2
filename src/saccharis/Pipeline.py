@@ -359,6 +359,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
 
     root = "OUT0000000" if "OUT0000000" in final_metadata_dict else None
     if render_trees:
+        print(f"rsaccharis - Tree rendering of {family} is underway")
+
         render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder,
                          root=root)
 
@@ -370,8 +372,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
     print(format_time(render_t - tree_t))
     print("*********************************************")
 
-
     # Final Benchmark tests
+    print("==============================================================================\n")
     print("*********************************************")
     print("* Cazy Pipeline Took in Total:")
     print(format_time(tree_t - start_t))
