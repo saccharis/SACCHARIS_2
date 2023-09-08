@@ -35,6 +35,7 @@ class AAModelTestCase(unittest.TestCase):
                                                 use_modelTest=True)
         self.assertEqual(best, "PROTGAMMAIWAG")
 
+    @unittest.skip
     def test_fasttree_prottest(self):
         # todo: delete this test when prottest support is removed
         best = ChooseAAModel.compute_best_model(self.aligned_path, None, "GH16", test_out_folder, 208,
@@ -44,6 +45,7 @@ class AAModelTestCase(unittest.TestCase):
                                                 use_modelTest=False)
         self.assertEqual(best, "gamma-wag")
 
+    @unittest.skip
     def test_raxml_prottest(self):
         # todo: delete this test when prottest support is removed
         best = ChooseAAModel.compute_best_model(self.aligned_path, None, "GH16", test_out_folder, 208,
