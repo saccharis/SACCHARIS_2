@@ -312,6 +312,7 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
         args.__setattr__("threads", self.thread_dropdown.currentIndex()+1)
         args.__setattr__("get_fragments", self.include_frag_checkbox.isChecked())
         args.__setattr__("prune_seqs", not self.skip_prune_checkbox.isChecked())
+        args.__setattr__("render_trees", self.render_trees_checkBox.isChecked())
         args.__setattr__("settings", self.settings)
 
         return args
@@ -1102,7 +1103,8 @@ class PipelineThread(QThread):
                                 get_fragments=self.args.get_fragments, prune_seqs=self.args.prune_seqs, verbose=False,
                                 force_update=self.args.force_update, user_file=self.args.fasta_file,
                                 auto_rename=self.args.rename, settings=self.args.settings,
-                                gui_step_signal=self.progress_step, merged_dict=self.args.fasta_source_dict)
+                                gui_step_signal=self.progress_step, merged_dict=self.args.fasta_source_dict,
+                                render_trees=self.args.render_trees)
                 fam_status[fam] = 2
             except NewUserFile as error:
                 self.args.fasta_file = error.msg

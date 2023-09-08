@@ -26,8 +26,8 @@ setup(name='saccharis',
       # - First bugfix to public release might be "2.0.1"
       # - The first public release after 2.0.* that breaks anything reliant on 2.0.* will be 2.1.0
 
-      version="2.0.0.dev19",
-      build=8,
+      version="2.0.0.dev20",
+      build=0,
       # version=meta_yaml_data["package"]["version"],
       # build=meta_yaml_data["build"]["number"],
       description='Bioinformatics tool for automated CAZyme phylogeny construction',
@@ -59,7 +59,8 @@ setup(name='saccharis',
               "saccharis.screen_cazome = saccharis.ScreenUserFile:cli_cazome",
               "saccharis.show_family_categories = saccharis.utils.FamilyCategories:show_categories",
               "saccharis-gui = saccharis.gui.PipelineGUI:main",
-              "saccharis.config = saccharis.utils.AdvancedConfig:cli_config"
+              "saccharis.config = saccharis.utils.AdvancedConfig:cli_config",
+              "saccharis.update_db = saccharis.ExtractAndPruneCAZymes:update_hmms"
             ]
       },
       package_data={

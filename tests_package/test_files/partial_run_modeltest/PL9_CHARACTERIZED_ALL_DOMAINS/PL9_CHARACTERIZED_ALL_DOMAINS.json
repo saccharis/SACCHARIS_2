@@ -1,0 +1,525 @@
+{
+    "AAA24850.1": {
+        "protein_id": "AAA24850.1",
+        "genbank": "AAA24850.1",
+        "protein_name": "exopolygalacturonate lyase (PelX)",
+        "org_name": "Dickeya chrysanthemi EC16",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.9",
+        "uniprot": "P22751",
+        "pdb": null,
+        "module_start": "378",
+        "module_end": "718",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "AAA24850.1",
+                "PL9_1",
+                "4.2.2.9"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:23",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_1:125",
+                "4.2.2.9:2",
+                "GH28:1",
+                "PL9:1"
+            ]
+        },
+        "source_file": null
+    },
+    "AAA99476.1": {
+        "protein_id": "AAA99476.1",
+        "genbank": "AAA99476.1",
+        "protein_name": "pectate lyase (PelL)",
+        "org_name": "Dickeya chrysanthemi EC16",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.2",
+        "uniprot": "P0C1A6",
+        "pdb": null,
+        "module_start": "38",
+        "module_end": "404",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "AAA99476.1",
+                "PL9_1",
+                "4.2.2.2"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:7",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_1:16",
+                "4.2.2.2:3"
+            ]
+        },
+        "source_file": null
+    },
+    "AAF05308.1": {
+        "protein_id": "AAF05308.1",
+        "genbank": "AAF05308.1",
+        "protein_name": "pectate lyase (PelL1; PelLI)",
+        "org_name": "Dickeya chrysanthemi PY35",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.2",
+        "uniprot": "Q9RP65",
+        "pdb": null,
+        "module_start": "39",
+        "module_end": "404",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "AAF05308.1",
+                "PL9_1",
+                "4.2.2.2"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:7",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_1:16",
+                "4.2.2.2:3"
+            ]
+        },
+        "source_file": null
+    },
+    "AAG59609.1": {
+        "protein_id": "AAG59609.1",
+        "genbank": "AAG59609.1",
+        "protein_name": "pectate lyase A (PelA)",
+        "org_name": "Clostridium cellulovorans",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.2",
+        "uniprot": "Q9AQF3",
+        "pdb": null,
+        "module_start": "406",
+        "module_end": "816",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "AAG59609.1",
+                "PL9_1",
+                "4.2.2.2"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:20",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_1:37",
+                "PL1:7",
+                "CBM35:6",
+                "CE8:4",
+                "CBM77:3",
+                "4.2.2.2:2",
+                "PL1_5:1",
+                "PL9:1"
+            ]
+        },
+        "source_file": null
+    },
+    "AAO79275.1": {
+        "protein_id": "AAO79275.1",
+        "genbank": "AAO79275.1",
+        "protein_name": "rhamnogalacturonan lyase (BT4170;BT_4170)",
+        "org_name": "Bacteroides thetaiotaomicron VPI-5482",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.23",
+        "uniprot": "Q8A051",
+        "pdb": "5OLQ[A,B,C] 5OLR[A,B,C] 5OLS[A]",
+        "module_start": "20",
+        "module_end": "440",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "ALJ43466.1",
+                "PL9_1"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:26",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_1:13",
+                "4.2.2.23:2",
+                "PL9:2"
+            ]
+        },
+        "source_file": null
+    },
+    "AAO79288.1": {
+        "protein_id": "AAO79288.1",
+        "genbank": "AAO79288.1",
+        "protein_name": "rhamnogalacturonan lyase (BT4183;BT_4183)",
+        "org_name": "Bacteroides thetaiotaomicron VPI-5482",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.23",
+        "uniprot": "Q8A038",
+        "pdb": null,
+        "module_start": "20",
+        "module_end": "423",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "QMW86526.1",
+                "PL9_1"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:26",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_1:13",
+                "4.2.2.23:2",
+                "PL9:2"
+            ]
+        },
+        "source_file": null
+    },
+    "ABN53381.1": {
+        "protein_id": "ABN53381.1",
+        "genbank": "ABN53381.1",
+        "protein_name": "bimodular/bifunctional pectin and pectate lyase (PL1B+PL9; Cthe_2179",
+        "org_name": "Acetivibrio thermocellus ATCC 27405",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.10 4.2.2.2",
+        "uniprot": "A3DHF2",
+        "pdb": null,
+        "module_start": "645",
+        "module_end": "913",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "ABN53381.1",
+                "CBM35",
+                "PL1_5",
+                "PL9_1"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL1:1",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL1_5:56",
+                "PL1:10",
+                "4.2.2.2:7",
+                "CBM35:2",
+                "PL9_1:2",
+                "4.2.2.9:1",
+                "CBM1:1"
+            ]
+        },
+        "source_file": null
+    },
+    "ACM60943.1": {
+        "protein_id": "ACM60943.1",
+        "genbank": "ACM60943.1",
+        "protein_name": "pectate lyase (PecA; CbPL9; Athe_1855; Cbes1855)",
+        "org_name": "Caldicellulosiruptor bescii DSM 6725",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.2",
+        "uniprot": null,
+        "pdb": null,
+        "module_start": "271",
+        "module_end": "647",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "ACM60943.1",
+                "CBM66",
+                "PL9_1"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:29",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_1:92",
+                "CBM35:18",
+                "PL1_5:7",
+                "CBM66:7",
+                "CBM13:5",
+                "CBM2:5",
+                "PL9:3",
+                "4.2.2.2:1",
+                "CBM3:1",
+                "CBM77:1",
+                "CBM16:1",
+                "CBM6:1",
+                "CBM5:1"
+            ]
+        },
+        "source_file": null
+    },
+    "ADM99100.1": {
+        "protein_id": "ADM99100.1",
+        "genbank": "ADM99100.1",
+        "protein_name": "pectate lyase L (PelL; Dda3937_02794)",
+        "org_name": "Dickeya dadantii 3937",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.2",
+        "uniprot": "P0C1A7 Q47473",
+        "pdb": "1RU4[A]",
+        "module_start": "38",
+        "module_end": "404",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "ADM99100.1",
+                "PL9_1",
+                "4.2.2.2"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:7",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_1:16",
+                "4.2.2.2:3"
+            ]
+        },
+        "source_file": null
+    },
+    "BAA81753.1": {
+        "protein_id": "BAA81753.1",
+        "genbank": "BAA81753.1",
+        "protein_name": "pectate lyase H (Pel-15H; Pel15H)",
+        "org_name": "Bacillus sp. KSM-P15",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.2",
+        "uniprot": "Q9XDT1",
+        "pdb": null,
+        "module_start": "284",
+        "module_end": "660",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "BAA81753.1",
+                "PL9_1",
+                "4.2.2.2"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "CBM13:161",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "CBM13:15",
+                "PL9_1:6",
+                "PL1:4",
+                "PL3:2",
+                "PL3_4:2",
+                "PL3_1:1"
+            ]
+        },
+        "source_file": null
+    },
+    "BAB92974.2": {
+        "protein_id": "BAB92974.2",
+        "genbank": "BAB92974.2",
+        "protein_name": "thiopeptidoglycan lyase (DssA)",
+        "org_name": "Paenibacillus koleovorans JCM 11186",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "4",
+        "ec_num": "4.2.2.-",
+        "uniprot": "Q8KKH8",
+        "pdb": null,
+        "module_start": "100",
+        "module_end": "251",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "BAB92974.2",
+                "PL9_4",
+                "4.2.2.-"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:6",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_4:10",
+                "4.2.2.-:1"
+            ]
+        },
+        "source_file": null
+    },
+    "BAC87940.1": {
+        "protein_id": "BAC87940.1",
+        "genbank": "BAC87940.1",
+        "protein_name": "pectate lyase 9A",
+        "org_name": "Thermoclostridium stercorarium F-9",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.2",
+        "uniprot": "Q76EC9",
+        "pdb": null,
+        "module_start": "882",
+        "module_end": "1225",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "BAC87940.1",
+                "PL9_1",
+                "4.2.2.2"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "CBM35:22",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "CBM35:27",
+                "PL9_1:24",
+                "PL1:3",
+                "PL1_5:2",
+                "CBM77:1"
+            ]
+        },
+        "source_file": null
+    },
+    "CAB39324.1": {
+        "protein_id": "CAB39324.1",
+        "genbank": "CAB39324.1",
+        "protein_name": "exo-polygalacturonate lyase (PelX;Dda3937_00143)",
+        "org_name": "Dickeya dadantii 3937",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.9",
+        "uniprot": "E0SDR9 Q9Z5P8",
+        "pdb": null,
+        "module_start": "379",
+        "module_end": "733",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "CAB39324.1",
+                "PL9_1",
+                "4.2.2.9"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "PL9:23",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "PL9_1:125",
+                "4.2.2.9:2",
+                "GH28:1",
+                "PL9:1"
+            ]
+        },
+        "source_file": null
+    },
+    "EAA64642.1": {
+        "protein_id": "EAA64642.1",
+        "genbank": "EAA64642.1",
+        "protein_name": "pectate lyase (AnPL9; AN2537.2; ANID_02537)",
+        "org_name": "Aspergillus nidulans FGSC A4",
+        "domain": "Eukaryota",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "3",
+        "ec_num": "4.2.2.2",
+        "uniprot": null,
+        "pdb": null,
+        "module_start": "18",
+        "module_end": "396",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "EAA64642.1",
+                "PL9_3"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "CBM35:57",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "CBM35:8",
+                "GH43_37:4",
+                "CBM61:3",
+                "PL9_3:3",
+                "CE12:1",
+                "3.2.1.99:1"
+            ]
+        },
+        "source_file": null
+    },
+    "KAA8782363.1": {
+        "protein_id": "KAA8782363.1",
+        "genbank": "KAA8782363.1",
+        "protein_name": "pectate lyase (PelC; pamy_1763; EC604_00690)",
+        "org_name": "Paenibacillus amylolyticus 27C64",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.2",
+        "uniprot": null,
+        "pdb": null,
+        "module_start": "71",
+        "module_end": "443",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "QKS56135.1",
+                "PL9_1"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "CBM13:161",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "CBM13:15",
+                "PL9_1:6",
+                "PL1:4",
+                "PL3:2",
+                "PL3_4:2",
+                "PL3_1:1"
+            ]
+        },
+        "source_file": null
+    },
+    "QDF46711.1": {
+        "protein_id": "QDF46711.1",
+        "genbank": "QDF46711.1",
+        "protein_name": "pectate lyase (PpPel9a)",
+        "org_name": "Paenibacillus polymyxa KF-1",
+        "domain": "Bacteria",
+        "family": "PL9",
+        "classfamily": "PL9",
+        "subfamily": "1",
+        "ec_num": "4.2.2.2",
+        "uniprot": null,
+        "pdb": null,
+        "module_start": "32",
+        "module_end": "404",
+        "diamond_prediction": {
+            "CAZyme Predictions": [
+                "QDF46711.1",
+                "PL9_1"
+            ]
+        },
+        "ecami_prediction": {
+            "fam_name:group_number": "CBM13:161",
+            "subfam_name_of_the_group:subfam_name_count": [
+                "CBM13:15",
+                "PL9_1:6",
+                "PL1:4",
+                "PL3:2",
+                "PL3_4:2",
+                "PL3_1:1"
+            ]
+        },
+        "source_file": null
+    }
+}

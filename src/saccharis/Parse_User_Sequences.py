@@ -105,7 +105,7 @@ def calculate_user_run_id(input_file, output_folder):
     return user_run
 
 
-def concatenate_multiple_fasta(fasta_filenames: list[str], output_folder: str, logger: logging.Logger = None)\
+def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_folder: str | os.PathLike, logger: logging.Logger = None)\
                                                                                                         -> [str, dict, dict]:
     metadata_dict = {}
     all_seqs = []
