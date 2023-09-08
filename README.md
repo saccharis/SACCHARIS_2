@@ -124,8 +124,10 @@ All of the following programs installed and available on $PATH variable:
   * HMMER v3.3
   * MUSCLE v5 or v3.8.1551
   * ModelTest-NG
-  * FastTree v2.1.11
-  * RAxML version 8.2.12
+  * One or more supported phylogenetic tree tools:
+    * FastTree v2.1.11
+    * RAxML version 8.2.12
+    * RAxML-ng version 1.2.0
   * R, with 'Rscript' available on PATH (optional, but needed to automatically rendering phylogenic trees)
 * Python 3.10 with following python libraries 
   (you can just run `pip install <latest tarball path under the release page>` ):
@@ -180,16 +182,11 @@ In terminal follow usage as given by
   - `saccharis -h` or `saccharis --help`
 
 # License
-
-
-  [//]: # (todo: choose a license, are we still using GPL? Update to GPL 3?)
-
   This software is distributed under the terms of the GPL, version 3, excepting that:
 
   - The third party programs and scripts used by SACCHARIS are covered by the terms of their respective licenses
 
 # Developer Contact
-
 You can contact Alex Fraser at alexander.fraser@alumni.ubc.ca for information about the software. 
 
-If you encounter bugs, please use the github issue tracker tools to submit bug reports instead of emailing me, as it is easier to track that way.
+If you encounter bugs, please use the github issue tracker tools to submit bug reports instead of emailing, as it is easier to track that way.

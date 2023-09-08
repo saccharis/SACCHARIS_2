@@ -89,6 +89,20 @@ def main(muscle_input_file: str | os.PathLike, amino_model: str, output_dir: str
         return file_output_path
 
 
+def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, output_dir: str | os.PathLike,
+                        num_seqs: int, threads: int = 4, force_update: bool = False,
+                        user_run: int = None, logger: Logger = getLogger()):
+    if user_run:
+        # todo: probably need to update these filenames
+        rax_tree = f"RAxML_bipartitions.{user_run:05d}.A1"
+    else:
+        rax_tree = "RAxML_bipartitions.A1"
+    bootstrap = 100
+    file_output_path = os.path.join(output_dir, rax_tree)
+
+    return file_output_path
+
+
 if __name__ == "__main__":
     test_family = "PL9"
     test_mode = "CHARACTERIZED"

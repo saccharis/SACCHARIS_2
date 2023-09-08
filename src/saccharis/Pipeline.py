@@ -312,13 +312,23 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         if not os.path.isdir(fasttree_folder):
             os.mkdir(fasttree_folder, 0o755)
         tree_path = FastTree_Build.main(aligned_fasttree, aa_model, fasttree_folder, force_update, user_run_id, logger)
-    else:  # RAxML
+    elif tree_program == ChooseAAModel.TreeBuilder.RAXML_NG:
+        print(f"RaxML-NG - Tree building of {os.path.split(aligned_ren_path)[1]} is underway")
+        raxml_ng_folder = os.path.join(domain_folder, "raxml_ng")
+        if not os.path.isdir(raxml_ng_folder):
+            os.mkdir(raxml_ng_folder, 0o755)
+        tree_path = RAxML_Build.build_tree_raxml_ng(aligned_ren_path, aa_model, raxml_ng_folder, cazyme_module_count,
+                                                    threads, force_update, user_run_id, logger)
+    elif tree_program == ChooseAAModel.TreeBuilder.RAXML:
         print(f"RaxML - Tree building of {os.path.split(aligned_ren_path)[1]} is underway")
         raxml_folder = os.path.join(domain_folder, "raxml")
         if not os.path.isdir(raxml_folder):
             os.mkdir(raxml_folder, 0o755)
         tree_path = RAxML_Build.main(aligned_ren_path, aa_model, raxml_folder, raxml_cmd, cazyme_module_count, threads,
                                      force_update, user_run_id, logger)
+    else:
+        raise PipelineException("Undefined tree construction software specified. This is a bug, it should never "
+                                "happen, please report to developer through github or otherwise!")
     print("Completed Building of Tree")
     print("==============================================================================\n")
     tree_t = time.time()

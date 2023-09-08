@@ -1039,7 +1039,7 @@
              <x>9</x>
              <y>20</y>
              <width>161</width>
-             <height>51</height>
+             <height>65</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout">
@@ -1053,6 +1053,16 @@
               </property>
               <property name="checked">
                <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="raxml_ng_radiobutton">
+              <property name="toolTip">
+               <string>Newer version of RAxML. More accurate tree construction, but slower than FastTree. Better for definitive publication figures. Not recommended for slow personal computers.</string>
+              </property>
+              <property name="text">
+               <string>RAxML-NG</string>
               </property>
              </widget>
             </item>

@@ -6,7 +6,6 @@
 ###############################################################################
 import argparse
 import importlib.metadata
-import logging
 import math
 import os
 import sys
@@ -147,10 +146,10 @@ def cli_main():
                              " 1 to <max_cores>. The default is set at 3/4 of the number of logical cores reported by "
                              "your operating system. This is to prevent lockups if other programs are running.",
                         choices=range(1, os.cpu_count()+1))
-    parser.add_argument("--tree", "-e", default="fasttree", choices=["fasttree", "raxml"], help="Choice of tree "
-                        "building program. FastTree is the default because it is substantially faster than RAxML. "
+    parser.add_argument("--tree", "-e", default="fasttree", choices=["fasttree", "raxml", "raxml_ng"], help="Choice of "
+                        "tree building program. FastTree is the default because it is substantially faster than RAxML. "
                         "RAxML may take days or even weeks to build large trees, but sometimes builds slightly higher "
-                        "quality trees than FastTree.")
+                        "quality trees than FastTree. Both RAxML and RAxML-NG are supported.")
     parser.add_argument("--skip_user_ask", action="store_true", help="This is a boolean flag that by default is set to "
                         "False which when true skips querying the user for input. If a question would be posed to the "
                         "user, the question will be skipped and a reasonable default action will occur if possible or "

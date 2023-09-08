@@ -304,8 +304,12 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
 
         if self.fasttree_radiobutton.isChecked():
             args.__setattr__("tree_program", TreeBuilder.FASTTREE)
-        else:
+        elif self.raxml_ng_radiobutton.isChecked():
+            args.__setattr__("tree_program", TreeBuilder.RAXML_NG)
+        elif self.raxml_radiobutton.isChecked():
             args.__setattr__("tree_program", TreeBuilder.RAXML)
+        else:
+            args.__setattr__("tree_program", None)
 
         args.__setattr__("rename", self.auto_prepend_headers_checkbox.isChecked())
         args.__setattr__("force_update", self.fresh_run_checkbox.isChecked())

@@ -26,6 +26,7 @@ from saccharis.utils.Formatting import convert_path_wsl
 class TreeBuilder(Enum):
     RAXML = 1
     FASTTREE = 2
+    RAXML_NG = 3
 
 
 def compute_subsample(pruned_list, family, output_folder, num_threads, scrape_mode, mf):
