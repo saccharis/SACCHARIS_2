@@ -117,7 +117,9 @@ def load_from_env(gui_object=None, ask_method=None, get_method=None, show_user_m
 
 
 def get_default_settings():
-    settings = {"hmm_eval": 1e-15, "hmm_cov": 0.35, "genbank_query_size": 350,
+    settings = {"hmm_eval": 1e-15,
+                "hmm_cov": 0.35,
+                "genbank_query_size": 350,
                 "raxml_command": "raxmlHPC-PTHREADS-AVX2"}
 
     return settings
@@ -232,6 +234,7 @@ def cli_config():
                                                  "underlying tool, if any. Any settings changed here are stored for "
                                                  "use in future runs in the config folder: ~/saccharis/config",
                                      formatter_class=MultilineFormatter)
+    parser.add_argument("--show", action="store_true", help="Show settings in console after updating values.")
     parser.add_argument('--hmm_eval', default=None, type=float, help='HMMER E Value for dbcan2')
     parser.add_argument('--hmm_cov', default=None, type=float, help='HMMER Coverage val for dbcan2')
     parser.add_argument("--querysize", "-q", default=None, type=int, help="Number of accession numbers to query genbank"
@@ -271,28 +274,34 @@ def cli_config():
                                                                               " API key.")
 
     args = parser.parse_args()
-
+    changes = False
     settings = get_user_settings()
 
     if args.hmm_eval:
         settings["hmm_eval"] = args.hmm_eval
-
+        changes = True
     if args.hmm_cov:
         settings["hmm_cov"] = args.hmm_cov
-
+        changes = True
     if args.querysize:
         settings["genbank_query_size"] = args.querysize
-
+        changes = True
     if args.raxml_command:
         settings["raxml_command"] = args.raxml_command
-
+        changes = True
     if args.restore_defaults:
         settings = get_default_settings()
+        changes = True
 
     try:
         validate_settings(settings)
-        save_to_file(settings, args.ncbi_email, args.ncbi_api_key)
-        print("Successfully updated advanced settings!")
+        save_to_file(settings, email=args.ncbi_email, api_key=args.ncbi_api_key)
+        if args.show:
+            print(f"NCBI email: {args.ncbi_email}")
+            print(f"NCBI API key: {args.ncbi_api_key}")
+            print("Settings: ", json.dumps(settings, indent=4))
+        if changes:
+            print("Successfully updated advanced settings!")
     except UserWarning as error:
         print("ERROR", error.args[0])
         print("ERROR: Invalid settings, did not save changes.")

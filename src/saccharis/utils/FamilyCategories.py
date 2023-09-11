@@ -11,7 +11,9 @@ import os
 import argparse
 import re
 import sys
+from enum import Enum
 from json import JSONDecodeError
+
 # Internal Imports
 from saccharis.utils.PipelineErrors import PipelineException
 from saccharis.utils.UserInput import ask_yes_no
@@ -25,6 +27,12 @@ default_fam_lists_file_path = os.path.join(folder_config, fam_lists_filename)
 
 _DELETEDFAMILYLIST = ["CBM33", "CBM7", "CE10", "GH145", "GH155", "GH21", "GH40", "GH41", "GH60", "GH61", "GH69", "GT36",
                       "PL19"]
+
+
+class WriteMode(Enum):
+    APPEND = 0
+    REMOVE = 1
+    REPLACE = 2
 
 
 class Matcher:
@@ -220,23 +228,48 @@ def write_family_files(out_folder=None, data=None):
         json.dump(data["all_families"], file, ensure_ascii=False, indent=4)
 
 
-def show_categories():
+def show_categories(category_name: str = None):
+    any_displayed = False
     for category in get_user_categories():
-        print("Category name:", category)
-        for family in get_category_list(category):
-            print(f"\t{family}")
+        if category_name is None or category == category_name:
+            any_displayed = True
+            print("Category name:", category)
+            for family in get_category_list(category):
+                print(f"\t{family}")
+    if not any_displayed:
+        print(f"No matching categories with name: {category_name}")
+
+
+def cli_show_categories():
+    parser = argparse.ArgumentParser(description="Utility to show family category definitions")
+    parser.add_argument("category_name", type=str, help="Name of a single family category to display. If not provided, "
+                                                        "all categories will be displayed.",
+                        default=None)
+    args = parser.parse_args()
+    show_categories(args.category_name)
 
 
 def cli_append_user_family():
     parser = argparse.ArgumentParser(description="SACCHARIS utility to add or override a user-defined category grouping"
                                                  " of CAZyme families to the list of built in family categories used "
-                                                 "with the --family_category feature.")
-    parser.add_argument("category_name", type=str, help="This will be the name of the new CAzyme category you "
-                                                        "are adding.")
+                                                 "with the --family_category feature.\n"
+                                                 "By default, a new family category is created or an existing category "
+                                                 "overwritten with ONLY the families specified after the category "
+                                                 "name. If you want to add or remove only the specified families, use "
+                                                 "the --add or --remove flags.")
+    parser.add_argument("category_name", type=str, help="This will be the name of the CAZyme category you "
+                                                        "are adding, editing, or overwriting families in.")
     parser.add_argument("families", nargs='+', type=str, help="This is a space separated list of families and/or "
-                                                              "subfamilies to include in your new category.")
-    parser.add_argument("--file", "-f", nargs=1, type=str, help="This is an optional")
+                                                              "subfamilies to add/remove/set in the chosen category.")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--add", "-a", action="store_true", help="Use this flag if you want to add the specified "
+                                                                "families to an existing family category without "
+                                                                "removing the existing families in that category.")
+    group.add_argument("--remove", "-r", action="store_true", help="Use this flag if you want to remove the specified "
+                                                                   "families from an existing family category without "
+                                                                   "removing the other families in that category.")
     args = parser.parse_args()
+
     families = args.families
     category_name = args.category_name
     m = Matcher()
@@ -259,26 +292,42 @@ def cli_append_user_family():
     # load existing JSON which we will append or replace category of
     try:
         with open(default_fam_lists_file_path, 'r', encoding="utf-8") as jsonfile:
-            categories = json.loads(jsonfile.read())
+            categories: list[str] = json.loads(jsonfile.read())
     except IOError as error:
         print("ERROR:", error.args[0])
         print("ERROR: Cannot load data from default family_category config file.")
         sys.exit(1)
 
     # check if user wants to overwrite a pre-existing category
+    mode = WriteMode.REPLACE
     write = True
     if category_name in categories:
-        write = ask_yes_no("Category already exists! Would you like to overwrite it?",
-                           f"Overwriting {category_name} category...",
-                           f"Leaving existing {category_name} category...")
+        if args.add:
+            mode = WriteMode.APPEND
+        elif args.remove:
+            mode = WriteMode.REMOVE
+        else:
+            mode = WriteMode.REPLACE
+            write = ask_yes_no("Category already exists! \n"
+                               f"If you meant to add or remove the families: {families}, "
+                               f"use the --add/--remove flags.\n"
+                               f"Would you like to overwrite the {category_name} category?\n",
+                               f"Overwriting {category_name} category...",
+                               f"Leaving existing {category_name} category...")
 
     # write new json file data
     if write:
-        categories[category_name] = families
+        if mode == WriteMode.REPLACE:
+            categories[category_name] = families
+        elif mode == WriteMode.APPEND:
+            categories[category_name] = list(set(categories[category_name]).union(set(families)))
+        elif mode == WriteMode.REMOVE:
+            categories[category_name] = list(filter(lambda item: item not in families, categories[category_name]))
         try:
             with open(default_fam_lists_file_path, 'w', encoding="utf-8") as jsonfile:
                 json.dump(categories, jsonfile, ensure_ascii=False, indent=4)
             print(f"New category \"{category_name}\" added to category list.")
+            show_categories(category_name)
         except IOError as error:
             print("ERROR:", error.args[0])
             print("ERROR: Cannot write data to default family_category config file.")
