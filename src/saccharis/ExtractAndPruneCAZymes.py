@@ -258,7 +258,10 @@ def main(fasta_filepath, family, output_folder, mode, force_update=False, prune=
 
 
 def cli_prune_seqs():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Used to manually perform pruning of CAZyme modules for a specific "
+                                                 "fasta file and bounds file. Useful if you want to manually adjust "
+                                                 "pruning bounds based on outside information (e.g. manual inspection "
+                                                 "of 3D protein models). ")
     # fasta_filepath, bounds_file, family, output_folder, source
     parser.add_argument("--fasta", "-a", type=str, help="Fasta file to prune sequences of.")
     parser.add_argument("--bounds", "-b", type=str, help="Bounds file which contains start and stop indices of the "
@@ -269,8 +272,8 @@ def cli_prune_seqs():
                                                              "modified bounds file to. If not given, the fasta data "
                                                              "will be written to standard console output.",
                         default=None)
-    parser.add_argument("--source", "-s", type=str, help="The program which generated the bounds file. Currently, only"
-                                                         "dbcan hmmer.out and pfam files are supported.",
+    parser.add_argument("--source", "-s", type=str, help="The program which generated the bounds file. Currently, only "
+                                                         "dbcan hmmer.out and pfam bounds file formats are supported.",
                         choices=["dbcan", "pfam"])
     args = parser.parse_args()
 

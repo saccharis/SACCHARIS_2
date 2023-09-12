@@ -60,7 +60,7 @@ setup(name='saccharis',
               "saccharis.show_family_categories = saccharis.utils.FamilyCategories:cli_show_categories",
               "saccharis-gui = saccharis.gui.PipelineGUI:main",
               "saccharis.config = saccharis.utils.AdvancedConfig:cli_config",
-              "saccharis.update_db = saccharis.ExtractAndPruneCAZymes:update_hmms"
+              "saccharis.update_db = saccharis.utils.DatabaseDownload:cli_update_hmms"
             ]
       },
       package_data={

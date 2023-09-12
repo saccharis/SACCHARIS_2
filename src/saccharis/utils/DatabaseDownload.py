@@ -1,3 +1,4 @@
+import argparse
 import os
 import pathlib
 import shutil
@@ -9,6 +10,7 @@ import wget
 from saccharis.utils.AdvancedConfig import get_db_folder
 from saccharis.utils.Formatting import convert_path_wsl
 
+links_last_updated = "September, 2023"
 urls_and_process_and_rename = \
     [("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz", "tar", None),
@@ -77,9 +79,20 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
             subprocess.run(["diamond", "makedb", "--in", output_path, "-d", diamond_output_path], check=True)
             os.remove(output_path)
 
+    return downloaded
 
-def update_hmms():
-    download_database(force_download=True)
+
+def cli_update_hmms():
+    parser = argparse.ArgumentParser(description="Downloads the database files for HMM analysis, overwriting old files "
+                                                 "if present. Note that the software may have be updated via bioconda "
+                                                 "to update the internal links to download files from. Database "
+                                                 f"download links last updated in {links_last_updated}")
+    # fasta_filepath, bounds_file, family, output_folder, source
+    parser.add_argument("--keep_existing", "-k", action="store_false", help="Use this option if you don't want newly "
+                                                                            "downloaded files to replace existing "
+                                                                            "files.")
+    args = parser.parse_args()
+    download_database(force_download=args.keep_existing)
 
 
 def download_database(db_install_folder: str | os.PathLike = get_db_folder(), force_download: bool = False) -> int:
