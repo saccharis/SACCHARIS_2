@@ -9,6 +9,7 @@ import atexit
 import glob
 import os
 import subprocess
+from collections import defaultdict
 from subprocess import PIPE
 import random
 import sys
@@ -29,7 +30,7 @@ class TreeBuilder(Enum):
     RAXML_NG = 3
 
 
-def compute_subsample(pruned_list, family, output_folder, num_threads, scrape_mode, mf):
+def compute_subsample(pruned_list, family, output_folder, num_threads, scrape_mode):
     subsample_size = 4000
     # Create Directory for muscle and change to this directory
     sub_folder = os.path.join(output_folder, "subsample")
@@ -82,7 +83,7 @@ def compute_subsample(pruned_list, family, output_folder, num_threads, scrape_mo
 def parse_best_model(outpath, tree_program, modeltest=False):
 
     # Parse the prottest results to obtain the model for raxML
-    raxmodel = {}
+    raxmodel = defaultdict(int)
     # i, g = (False, False) # probably unnecessary, need to test
     models = []
     with open(outpath, 'r') as protfile:
@@ -90,31 +91,39 @@ def parse_best_model(outpath, tree_program, modeltest=False):
             if modeltest:
                 # if line.__contains__("Best model according to"):
                 if line[0:6] == "Model:":
-                    models.append(line[20:-1])
+                    assert (line[20:-1] == line.split(' ')[-1].strip())  # ensure new method equals old, delete later
+                    models.append(line.split(' ')[-1].strip())
             else:
                 if line[0:4] == "Best":
                     models.append(line[line.find(':')+2:-1])
 
-    # Use models parsed from the file to create the raxml modelname and push to hash incrementing identical values
-    for line in models:
-        i = line.__contains__("+I")
-        g = line.__contains__("+G")
-        matrix = line.split('+')[0]
+    # Use models parsed from the file to create the raxml modelname and push to dict incrementing identical values
+    for model in models:
+        # todo: this section is vastly simplified for fasttree, but can we capture number after the G? does fasttree
+        #  support that? What about +R? Answer: fasttree does not, but maybe old raxml 8 does?
+        # todo: move the parsing of model type for fasttree and raxml into respective tree build functions. Would
+        #  simplify adding BLOSUM support to fasttree by packaging a BLOSUM matrix file with SACCHARIS, and makes
+        #  extending to other tree software easier in the future.
+        i = model.__contains__("+I")
+        g = model.__contains__("+G")
+        matrix = model.split('+')[0]
 
         # Set Tree ModelName based on RAxML or FastTree
         if tree_program == TreeBuilder.RAXML:   # Create the RaxML ModelName
             rxm = "PROT" + ("GAMMA" if g else "CAT") + ("I" if i else "") + matrix
-        else:   # Create the FastTree ModelName
+        elif tree_program == TreeBuilder.FASTTREE:   # Create the FastTree ModelName
             rxm = ("gamma" if g else "cat") + \
                   ("-wag" if matrix == "WAG" else "-lg" if matrix == "LG" else "-jtt")
+        elif tree_program == TreeBuilder.RAXML_NG:
+            rxm = model
+        else:
+            raise AAModelError(f"Invalid tree program specified: {tree_program} is not valid. This is some kind of "
+                               f"internal bug, please report it to the developer through github or email.")
 
         # i, g = (False, False) # probably unnecessary, need to test
 
         # increment model count, as identified by hash
-        if rxm in raxmodel:
-            raxmodel[rxm] += 1
-        else:
-            raxmodel[rxm] = 1
+        raxmodel[rxm] += 1
 
     # Set - final matrix name to the hash key with the largest count
     best_tree_model = reduce(lambda a, b: a if raxmodel[a] > raxmodel[b] else b, raxmodel)
@@ -122,11 +131,9 @@ def parse_best_model(outpath, tree_program, modeltest=False):
     return best_tree_model
 
 
-# todo: rename "MF" to something more descriptive
-# better todo: delete "MF" because it seems totally pointless, confirm before deleting it
-def compute_best_model(muscle_input_file, pruned_list, family, output_folder, number_seqs, scrape_mode, MF,
-                       num_threads=4, tree_program=TreeBuilder.FASTTREE, force_update=False, user_run=None,
-                       prottest_folder="/usr/local/prottest-3.4.2", use_modelTest=True, logger: Logger=getLogger()):
+def compute_best_model(muscle_input_file, pruned_list, family, output_folder, number_seqs, scrape_mode, num_threads=4,
+                       tree_program=TreeBuilder.FASTTREE, force_update=False, user_run=None,
+                       prottest_folder="/usr/local/prottest-3.4.2", use_modelTest=True, logger: Logger = getLogger()):
     # Create Directory for prottest and change to this directory
     if user_run:
         prot_file_path = os.path.join(output_folder, f"{family}_{tree_program.name}_{user_run:05d}model.txt")
@@ -168,8 +175,7 @@ def compute_best_model(muscle_input_file, pruned_list, family, output_folder, nu
         else:
             if number_seqs >= 4000:
                 # pass in pruned list to avoid recomputing hmmer bounds
-                muscle_input_file = compute_subsample(pruned_list, family, output_folder, num_threads, scrape_mode,
-                                                      MF)
+                muscle_input_file = compute_subsample(pruned_list, family, output_folder, num_threads, scrape_mode)
 
         # todo: figure out why this section appears to be unnecessary
         # Copy the properties file for prottest to the cwd
@@ -258,7 +264,9 @@ def compute_best_model(muscle_input_file, pruned_list, family, output_folder, nu
         else:
             best_tree_model = parse_best_model(outpath, tree_program, modeltest=use_modelTest)
 
-        tp_name = "FastTree" if tree_program == TreeBuilder.FASTTREE else "RAxML"
+        tp_name = "FastTree" if tree_program == TreeBuilder.FASTTREE \
+            else "RAxML-NG" if tree_program == TreeBuilder.RAXML_NG \
+            else "RAxML"
         print(f"Parsing of output files completed and have best model: {best_tree_model} for {tp_name} Run\n\n")
 
         with open(prot_file_path, 'w') as file:
@@ -277,4 +285,4 @@ if __name__ == "__main__":
     if not os.path.isdir(test_output_folder):
         os.mkdir(test_output_folder, 0o755)
 
-    compute_best_model(input_file_path, "dbcan", "PL9", test_mode, test_output_folder, 13, MF="MF", num_threads=12)
+    compute_best_model(input_file_path, "dbcan", "PL9", test_mode, test_output_folder, 13, num_threads=12)

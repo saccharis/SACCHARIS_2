@@ -288,7 +288,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
     print(f"ModelTest-NG tree modeling of {os.path.split(aligned_path)[1]} is underway\n")
     aa_model = ChooseAAModel.compute_best_model(aligned_path, pruned_list, family, prottest_folder, cazyme_module_count,
-                                                scrape_mode, "MF", threads, tree_program, force_update, user_run_id,
+                                                scrape_mode, threads, tree_program, force_update, user_run_id,
                                                 use_modelTest=True, logger=logger)
     prottest_t = time.time()
     print("Best model found via ModelTest")

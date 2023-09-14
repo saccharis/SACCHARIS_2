@@ -10,8 +10,11 @@ import atexit
 import glob
 import os
 import subprocess
+import sys
 from logging import Logger, getLogger
 from math import ceil
+
+from saccharis.utils.Formatting import convert_path_wsl
 # Internal Imports
 from saccharis.utils.PipelineErrors import PipelineException
 
@@ -26,8 +29,6 @@ def main(muscle_input_file: str | os.PathLike, amino_model: str, output_dir: str
     bootstrap = 100
 
     # Calculate an optimal number of threads to use
-    # muscle_depth = `head -1 $muscle` # muscle depth = first line in muscle file
-    # @md = split(/ /, $muscle_depth)
     opt_thr = ceil(num_seqs / 300)  # optimal thread num = # seqs / 300 rounded up
     # todo: QUESTION: why do we do this? alignments of smaller groups still seem faster with more threads
 
@@ -91,16 +92,76 @@ def main(muscle_input_file: str | os.PathLike, amino_model: str, output_dir: str
 
 def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, output_dir: str | os.PathLike,
                         num_seqs: int, threads: int = 4, force_update: bool = False,
-                        user_run: int = None, logger: Logger = getLogger()):
+                        user_run: int = None, logger: Logger = getLogger(), bootstraps: int = 100):
     if user_run:
-        # todo: probably need to update these filenames
-        rax_tree = f"RAxML_bipartitions.{user_run:05d}.A1"
+        # todo: update these prefixes to be more informative? Is this redudant?
+        rax_tree = f"RAxML-NG_output.U{user_run:05d}"
     else:
-        rax_tree = "RAxML_bipartitions.A1"
-    bootstrap = 100
-    file_output_path = os.path.join(output_dir, rax_tree)
+        rax_tree = "RAxML-NG_output"
 
-    return file_output_path
+    initial_seed = 111
+    file_output_prefix = os.path.join(output_dir, rax_tree)
+
+    if sys.platform.startswith("win"):
+        command = "wsl "
+        muscle_input_path = convert_path_wsl(muscle_input_file)
+        file_output_path = convert_path_wsl(file_output_prefix)
+        validity_args = ["wsl"]
+    else:
+        command = ""
+        muscle_input_path = muscle_input_file
+        file_output_path = file_output_prefix
+        validity_args = []
+
+    validity_args += ["raxml-ng", "--parse", "--seed", str(initial_seed), "--msa", muscle_input_path, "--model", amino_model, "--prefix", file_output_path]
+    valid_result = subprocess.run(validity_args, capture_output=True, encoding="utf-8", check=True)
+    optimal_threads = threads
+    can_run = False
+    for line in valid_result.stdout.split('\n'):
+        if line.__contains__("Recommended number of threads"):
+            optimal_threads = int(line.split(' ')[-1])
+        elif line.__contains__("Alignment can be successfully read"):
+            can_run = True
+
+    if not can_run:
+        logger.error(valid_result.stdout)
+        logger.error("RAxML-NG cannot read MSA.")
+        raise PipelineException("RAxML-NG cannot read MSA.")
+    run_threads = min(optimal_threads, threads)
+
+    # todo: add outgroup option --outgroup [csv list]
+    command += f"raxml-ng --all --threads auto{'{' + str(run_threads) + '}'} --seed {initial_seed} " \
+               f"--msa {muscle_input_path} --prefix {file_output_path} --model {amino_model} --bs-trees {bootstraps}"
+
+    if force_update:
+        command += " --redo"
+
+    msg = f"Running command: {command}"
+    logger.info(msg)
+    main_proc = subprocess.Popen(command, cwd=output_dir)
+    atexit.register(main_proc.kill)
+    main_proc.wait()
+    atexit.unregister(main_proc.kill)
+    if main_proc.returncode != 0:
+        msg = f"raxml-ng tree building process failed to return properly. Return code: {main_proc.returncode}"
+        logger.error(msg)
+        raise PipelineException(msg)
+
+    # todo: check if bootstraps converged and then run until they converge. This may take large amounts of compute and
+    #  should be an optional feature. Will have to recompute best tree with support, so maybe just do this
+    #  earlier instead of running with --all?
+    # bsconverge_args = ["raxml-ng", "--bsconverge", "--bs-trees", f"{file_output_path}.raxml.bootstraps",
+    #                    "--prefix", f"{file_output_path}", "--seed", "2", "--threads", "2", "--bs-cutoff", "0.01"]
+    # if sys.platform.startswith("win"):
+    #     bsconverge_args.insert(0, "wsl")
+    # bsconverge_result = subprocess.run(bsconverge_args, capture_output=True, encoding="utf-8", check=True)
+
+    msg = "RaxML-NG has finished\n\n"
+    print(msg)
+    logger.debug(msg)
+
+    best_tree_with_support_path = os.path.join(f"{file_output_prefix}.raxml.support")
+    return best_tree_with_support_path
 
 
 if __name__ == "__main__":

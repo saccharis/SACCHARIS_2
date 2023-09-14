@@ -23,24 +23,22 @@ class AAModelTestCase(unittest.TestCase):
 
     def test_fasttree(self):
         best = ChooseAAModel.compute_best_model(self.aligned_path, None, "GH16", test_out_folder, 208,
-                                                Mode.CHARACTERIZED, "MF", os.cpu_count(),
-                                                ChooseAAModel.TreeBuilder.FASTTREE, force_update=True, user_run=None,
-                                                use_modelTest=True)
+                                                Mode.CHARACTERIZED, os.cpu_count(), ChooseAAModel.TreeBuilder.FASTTREE,
+                                                force_update=True, user_run=None, use_modelTest=True)
         self.assertEqual(best, "gamma-wag")
 
     def test_raxml(self):
         best = ChooseAAModel.compute_best_model(self.aligned_path, None, "GH16", test_out_folder, 208,
-                                                Mode.CHARACTERIZED, "MF", os.cpu_count(),
-                                                ChooseAAModel.TreeBuilder.RAXML, force_update=True, user_run=None,
-                                                use_modelTest=True)
+                                                Mode.CHARACTERIZED, os.cpu_count(), ChooseAAModel.TreeBuilder.RAXML,
+                                                force_update=True, user_run=None, use_modelTest=True)
         self.assertEqual(best, "PROTGAMMAIWAG")
 
     @unittest.skip
     def test_fasttree_prottest(self):
         # todo: delete this test when prottest support is removed
         best = ChooseAAModel.compute_best_model(self.aligned_path, None, "GH16", test_out_folder, 208,
-                                                Mode.CHARACTERIZED, "MF", os.cpu_count(),
-                                                ChooseAAModel.TreeBuilder.FASTTREE, force_update=True, user_run=None,
+                                                Mode.CHARACTERIZED, os.cpu_count(), ChooseAAModel.TreeBuilder.FASTTREE,
+                                                force_update=True, user_run=None,
                                                 prottest_folder=r"\\wsl$\Ubuntu\usr\local\prottest-3.4.2",
                                                 use_modelTest=False)
         self.assertEqual(best, "gamma-wag")
@@ -49,9 +47,8 @@ class AAModelTestCase(unittest.TestCase):
     def test_raxml_prottest(self):
         # todo: delete this test when prottest support is removed
         best = ChooseAAModel.compute_best_model(self.aligned_path, None, "GH16", test_out_folder, 208,
-                                                Mode.CHARACTERIZED, "MF", os.cpu_count(),
-                                                ChooseAAModel.TreeBuilder.RAXML, force_update=True, user_run=None,
-                                                use_modelTest=False)
+                                                Mode.CHARACTERIZED, os.cpu_count(), ChooseAAModel.TreeBuilder.RAXML,
+                                                force_update=True, user_run=None, use_modelTest=False)
         self.assertEqual(best, "PROTGAMMAWAG")
 
 

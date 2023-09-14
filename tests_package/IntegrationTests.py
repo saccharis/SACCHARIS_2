@@ -27,9 +27,10 @@ class IntegrationTestCase(unittest.TestCase):
         shutil.rmtree(test_out_folder)
 
     def run_pipeline(self, family, scrape_mode: Mode, tree_program: TreeBuilder = TreeBuilder.FASTTREE,
-                     user_file: str = None, force_update=True):
+                     user_file: str = None, force_update=True, render_trees=False):
         single_pipeline(family=family, output_folder=test_out_folder, scrape_mode=scrape_mode, skip_user_ask=True,
-                        force_update=force_update, verbose=True, tree_program=tree_program, user_file=user_file)
+                        force_update=force_update, verbose=True, tree_program=tree_program, user_file=user_file,
+                        render_trees=render_trees)
         domain_folder = f"{family}_{scrape_mode.name}_ALL_DOMAINS"
         file_prefix = f"{family}_{scrape_mode.name}_ALL_DOMAINS{'_UserRun00000' if user_file else ''}"
         tree_prog = tree_program.name
@@ -45,18 +46,23 @@ class IntegrationTestCase(unittest.TestCase):
                 record_2 = final_metadata_dict[record].protein_id + "<2>"
                 self.assertFalse(final_metadata_dict[record].module_start == final_metadata_dict[record_2].module_start)
                 self.assertFalse(final_metadata_dict[record].module_end == final_metadata_dict[record_2].module_end)
-
-    # def test_pipeline(self):
-    #     single_pipeline(family="PL9", output_folder=test_out_folder, scrape_mode=Mode.CHARACTERIZED, skip_user_ask=True,
-    #                     force_update=True, verbose=True)
-    #     self.assertTrue(os.path.exists(os.path.join(test_out_folder, "PL9_CHARACTERIZED_ALL_DOMAINS", "PL9_CHARACTERIZED_ALL_DOMAINS.json")))
-    #     self.assertTrue(os.path.exists(os.path.join(test_out_folder, "PL9_CHARACTERIZED_ALL_DOMAINS", "PL9_CHARACTERIZED_ALL_DOMAINS_FASTTREE.tree")))
+        if render_trees:
+            tree_files = ["Basic_circular_tree.pdf", "basic_circular_tree_bootstrap.pdf",
+                          "basic_circular_with_domain.pdf", "basic_circular_domain_bootstrap.pdf",
+                          "basic_circular_domain_ECNo.pdf", "basic_circular_domain_ECno_numeric.pdf",
+                          "Rplots.pdf"]
+            for filename in tree_files:
+                self.assertTrue(os.path.isfile(os.path.join(test_out_folder, domain_folder, filename)))
 
     def test_PL9(self):
         self.run_pipeline("PL9", Mode.CHARACTERIZED)
 
     def test_PL9_raxml(self):
         self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML, user_file=small_user_testfile)
+
+    def test_PL9_raxml_ng(self):
+        self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML_NG, user_file=small_user_testfile,
+                          render_trees=True)
 
     def test_PL9_raxml_structure(self):
         self.run_pipeline("PL9", Mode.STRUCTURE, tree_program=TreeBuilder.RAXML, user_file=small_user_testfile)
