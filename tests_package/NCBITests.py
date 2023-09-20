@@ -7,7 +7,8 @@ import operator
 
 from Bio import Entrez, SeqIO
 
-from saccharis.NCBIQueries import ncbi_query_dna_from_protein_accessions
+from example_ncbi_api import example_usage_of_api
+from saccharis.NCBIQueries import ncbi_query_dna_from_protein_accessions, download_proteins_from_genomes
 
 tests_folder = os.path.dirname(getsourcefile(lambda: 0))
 test_out_folder = os.path.join(tests_folder, "test_files", "temp")
@@ -30,6 +31,15 @@ class NCBITestCase(unittest.TestCase):
 
         fasta_md5 = md5(fasta_data.encode()).hexdigest()
         self.assertEqual(fasta_md5, "7972ff99e454dccd8ad216edbbb5f7c8")
+
+    def test_query_proteins_from_single_genome(self):
+        b_uniformis_genbank = "GCA_018292165.1"
+        seqs, sourcedict = download_proteins_from_genomes(b_uniformis_genbank)
+        self.assertEqual(len(seqs), 4031)
+
+    def test_example_usage_of_api(self):
+        input_gene_ids: list[int] = [1, 2, 3, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+        example_usage_of_api(input_gene_ids)
 
 
 if __name__ == '__main__':

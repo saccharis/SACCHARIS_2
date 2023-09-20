@@ -150,6 +150,7 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
     # todo: check if bootstraps converged and then run until they converge. This may take large amounts of compute and
     #  should be an optional feature. Will have to recompute best tree with support, so maybe just do this
     #  earlier instead of running with --all?
+    # see https://github.com/amkozlov/raxml-ng/wiki/Tutorial#bootstrapping
     # bsconverge_args = ["raxml-ng", "--bsconverge", "--bs-trees", f"{file_output_path}.raxml.bootstraps",
     #                    "--prefix", f"{file_output_path}", "--seed", "2", "--threads", "2", "--bs-cutoff", "0.01"]
     # if sys.platform.startswith("win"):

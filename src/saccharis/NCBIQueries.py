@@ -28,13 +28,17 @@ ncbi_exception_count = 0
 NCBI_EXCEPTION_MAX_TRIES = 100
 
 
-def valid_ncbi_genome(string_to_check: str, verbose: bool = False):
+def valid_ncbi_genome_assembly_accession(string_to_check: str, verbose: bool = False):
     # The goal is to validate that the string matches some kind of genome accession identifier from NCBI. This page
-    # describes several formats they can take, but this is incompelte because it doesn't provide detailed information on
+    # describes several formats they can take, but this is incomplete because it doesn't provide detailed information on
     # the RefSeq identifiers. https://www.ncbi.nlm.nih.gov/genbank/acc_prefix/
-    # RefSeq ids are supposed to be described here, but this is also incompletel because it doesn't include 3 letter
-    # codes before the underscore. https://www.ncbi.nlm.nih.gov/books/NBK21091/table/ch18.T.refseq_accession_numbers_and_mole/?report=objectonly/
-    # A very common format for reference genomes is:
+
+    # RefSeq ids are supposed to be described here, but this is also incomplete because it doesn't include 3 letter
+    # codes before the underscore.
+    # https://www.ncbi.nlm.nih.gov/books/NBK21091/table/ch18.T.refseq_accession_numbers_and_mole/?report=objectonly/
+    # A very common format for reference genomes is the assembly identifiers, described here:
+    #   https://support.nlm.nih.gov/knowledgebase/article/KA-03451/en-us
+    # Example
     #  [three-letter alphabetical prefix]_[9 digits][.][version number]
     #   Where the three letters are GCA or GCF for GenBank and RefSeq accessions respectively.
     #   e.g. GCA_018292165.1 or
@@ -44,7 +48,6 @@ def valid_ncbi_genome(string_to_check: str, verbose: bool = False):
 
     if re.match(r"((GCA)|(GCF))_\w{9}\.\d+", string_to_check):
         return True
-
 
     if verbose:
         print(f"\"{string_to_check}\" is not a valid genbank gene/protein accession identifier. If this is in error "
@@ -80,6 +83,8 @@ def valid_genbank_gene(string_to_check: str, verbose: bool = False):
     #  (for example, AAAAAA020000001).
     #  https://www.nlm.nih.gov/pubs/techbull/so18/brief/so18_genbank_expanded_accession_formats.html
 
+    # Here is yet another page describing various accession formats: https://www.ncbi.nlm.nih.gov/genbank/acc_prefix/
+
     if re.match(r"\w{8}|\w{6}|\w{12}\.\d+", string_to_check):
         return True
 
@@ -91,8 +96,14 @@ def valid_genbank_gene(string_to_check: str, verbose: bool = False):
 
 
 # todo: call this function from gui, lol
-def download_proteins_from_genomes(genome_list: list[str], out_dir: str = None, logger: Logger = None,
+def download_proteins_from_genomes(genome_list: list[str] | str, out_dir: str = None, logger: Logger = getLogger(),
                                    fresh: bool = False) -> (list[SeqRecord], dict[str:str]):
+    if len(genome_list) == 0:
+        print("Please provide at least one genome-id")
+        return None, None
+
+    if type(genome_list) == str:
+        genome_list = [genome_list]
     seqs = []
     source_dict = {}
     api = GenomeApi()
@@ -108,8 +119,8 @@ def download_proteins_from_genomes(genome_list: list[str], out_dir: str = None, 
         with ZipFile(handle) as myzip:
             for genome_id in genome_list:
                 with io.TextIOWrapper(myzip.open(f"ncbi_dataset/data/{genome_id}/protein.faa"), encoding="utf-8") as myfile:
-                    genome_seqs = Bio.SeqIO.parse(myfile, "fasta")
-                    source_dict += dict.fromkeys(map(lambda seq: seq.id, genome_seqs), f"NCBI Genome:{genome_id}")
+                    genome_seqs = list(Bio.SeqIO.parse(myfile, "fasta"))
+                    source_dict |= dict.fromkeys(map(lambda seq: seq.id, genome_seqs), f"NCBI Genome: {genome_id}")
                     # todo: save seqs locally for later if out_dir is given
                     seqs += genome_seqs
     except Exception as e:
@@ -125,19 +136,23 @@ def download_proteins_from_genomes(genome_list: list[str], out_dir: str = None, 
     return seqs, source_dict
 
 
-def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None, logger: Logger = None,
+def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None, logger: Logger = getLogger(),
                             fresh: bool = False) -> (list[SeqRecord], dict[str:str]):
+    if len(gene_list) == 0:
+        print("Please provide at least one genome-id")
+        return None, None
+
     seqs = []
     source_dict = {}
     api = GeneApi()
-    if seq_type.lower() == "dna":
+    if seq_type.lower() == "dna" or seq_type.lower() == "fna":
         annot_type = ["FASTA_GENE", "FASTA_CDS"]
         filename = "something.idk"
-    elif seq_type.lower().startswith("prot"):
+    elif seq_type.lower().startswith("prot") or seq_type.lower().startswith("faa"):
         annot_type = ["FASTA_PROTEIN"]
         filename = "protein.faa"
     else:
-        raise NCBIException("Invaid sequence type, seq_type should be 'dna' or 'protein'")
+        raise NCBIException("Invalid sequence type, seq_type should be 'dna', 'fna', 'protein', or 'faa'")
     # todo: put this whole thing in a loop to query NCBI one gene at a time???
     if out_dir:
         if not fresh:
@@ -151,8 +166,8 @@ def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None
         with ZipFile(handle) as myzip:
             for gene_id in gene_list:
                 with io.TextIOWrapper(myzip.open(f"ncbi_dataset/data/{gene_id}/{filename}"), encoding="utf-8") as myfile:
-                    gene_seqs = Bio.SeqIO.parse(myfile, "fasta")
-                    source_dict += dict.fromkeys(map(lambda seq: seq.id, gene_seqs), f"NCBI Gene")
+                    gene_seqs = list(Bio.SeqIO.parse(myfile, "fasta"))
+                    source_dict |= dict.fromkeys(map(lambda seq: seq.id, gene_seqs), f"NCBI Gene")
                     # todo: save seqs locally for later if out_dir is given
                     seqs += gene_seqs
     except Exception as e:

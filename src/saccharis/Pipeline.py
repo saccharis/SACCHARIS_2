@@ -38,7 +38,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
                     force_update: bool = False, user_file: str | os.PathLike = None, genbank_genomes=None, genbank_genes=None,
                     auto_rename: bool = False, settings: dict = None, gui_step_signal: pyqtSignal = None,
-                    merged_dict: dict = None, logger: logging.Logger = None, skip_user_ask=False,
+                    merged_dict: dict = None, logger: logging.Logger = logging.getLogger(), skip_user_ask=False,
                     render_trees: bool = False):
 
     # todo: remove windows block once WSL support is fully implemented

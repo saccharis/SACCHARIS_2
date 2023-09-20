@@ -6,6 +6,11 @@ functional predictions of uncharacterized sequences for any CAZyme or CBM family
 currently maintained on the CAZy website or within user-defined datasets through
 phylogenetic methods.
 
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/saccharis/README.html)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/version.svg)](https://anaconda.org/bioconda/saccharis)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/latest_release_date.svg)](https://anaconda.org/bioconda/saccharis)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/license.svg)](https://anaconda.org/bioconda/saccharis)
+
 ## Beta information
 
 SACCHARIS 2.0 is currently under active development and is currently in open beta. 
@@ -17,7 +22,6 @@ Public release is available through the bioconda channel of the conda package ma
 Publication information coming soon.
 
 ## Installation
-
 
 [//]: # (Run the linux_install script to set up the virtual environment, or run )
 
