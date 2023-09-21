@@ -156,7 +156,7 @@ def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None
     # todo: put this whole thing in a loop to query NCBI one gene at a time???
     if out_dir:
         if not fresh:
-            # todo: check for local seqs to load from each genome  instead of downloading from NCBI, if fresh == false
+            # todo: check for local seqs to load from each genome instead of downloading from NCBI, if fresh == false
             pass
         outpath = os.path.join(out_dir, "ncbi_dataset.zip")
         handle = api.download_gene_package(gene_list, include_annotation_type=annot_type, filename=outpath)
@@ -172,7 +172,7 @@ def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None
                     seqs += gene_seqs
     except Exception as e:
         if logger:
-            msg = "Problem reading genome zip file downloaded from NCBI."
+            msg = "Problem reading gee zip file downloaded from NCBI."
             logger.error(e.__traceback__)
             logger.error(msg)
             raise NCBIException(msg) from e

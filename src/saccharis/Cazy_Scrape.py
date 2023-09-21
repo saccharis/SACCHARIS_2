@@ -5,7 +5,6 @@
 # Original author for SACCHARIS 1.0: Dallas Thomas
 # License: GPL v3
 ###############################################################################
-import math
 import time
 from enum import Enum
 import re
@@ -26,7 +25,7 @@ from saccharis.NCBIQueries import valid_genbank_gene, ncbi_protein_query
 from saccharis.utils.UserInput import ask_yes_no
 from saccharis.utils.PipelineErrors import PipelineException
 from saccharis.utils.AdvancedConfig import load_from_env
-from saccharis.utils.PipelineErrors import NCBIException, CazyException
+from saccharis.utils.PipelineErrors import CazyException
 from saccharis.utils.Formatting import CazymeMetadataRecord
 
 
@@ -149,7 +148,7 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
         if counted > 0:
             # load new page on second iteration and above
             url = url_cazy + f"?debut_FUNC={str(counted)}#pagination_FUNC"
-            clean_text = html_get.get_clean_html_text(url, logger)
+            clean_text = html_get.get_clean_html_text(url, logger=logger)
             soup = BeautifulSoup(clean_text, "html.parser")
 
         # find and filter table entries

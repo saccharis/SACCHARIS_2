@@ -10,6 +10,7 @@ import math
 import os
 import sys
 from importlib.metadata import version
+from typing import List
 
 from Bio.Entrez import efetch
 
@@ -209,26 +210,25 @@ def cli_main():
     if not os.path.isdir(output_path):
         os.mkdir(output_path)
 
-    # user_path = os.path.abspath(args.seqfile) if args.seqfile else None
+    # # user_path = os.path.abspath(args.seqfile) if args.seqfile else None
+    # if args.seqfile is None:
+    #     user_path = None
+    #     user_merged_dict = None
+    # elif type(args.seqfile) == list:
+    #     # todo: don't handle genbank fasta download here for both genome and genes, delete the code that did this
+    #     #  in the following function call because it's not easily extensible
+    #     user_path, user_merged_dict, user_seqs = concatenate_multiple_fasta(args.seqfile, output_folder=output_path)
+    # else:
+    #     raise Exception("Error parsing user sequence file(s) from command line. This shouldn't happen, "
+    #                     "please report as a bug through github.")
+
     if args.seqfile is None:
-        user_path = None
-        user_merged_dict = None
-    elif type(args.seqfile) == list:
-        # todo: don't handle genbank fasta download here for both genome and genes, delete the code that did this
-        #  in the following function call because it's not easily extensible
-        user_path, user_merged_dict, user_seqs = concatenate_multiple_fasta(args.seqfile, output_folder=output_path)
+        user_fasta_paths = None
+    elif type(args.seqfile) == List[str]:
+        user_fasta_paths = args.seqfile
     else:
         raise Exception("Error parsing user sequence file(s) from command line. This shouldn't happen, "
                         "please report as a bug through github.")
-
-    # if args.ncbi_genome is not None:
-    #     ncbi_genome = args.ncbi_genome
-    # #     todo: this probably shouldn't even be here tbh
-    #     # Download seqs from NCBI for given genomes
-    #     genome_storage_dir = os.path.join(os.path.expanduser('~'), "saccharis", "ncbi_downloads")
-    #     genome_seqs, genome_source = download_proteins_from_genomes(ncbi_genome, out_dir=genome_storage_dir, logger=logger)
-    #     # origin_dict += genome_source
-    #     # all_seqs += genome_seqs
 
     matcher = Matcher()
     if args.family:
@@ -269,11 +269,13 @@ def cli_main():
             print("ERROR: Cannot use subfamily argument with explore. Instead, you can select the family_subfamily "
                   "categories found in the file to run the pipeline on to make trees.")
             sys.exit(3)
-        if not args.seqfile:
-            print("ERROR: Cannot run exploratory mode without a user sequence file!")
+        if not args.seqfile or not user_fasta_paths:
+            logger.error("ERROR: Cannot run exploratory mode without a user sequence file!")
             print("Exiting...")
             sys.exit(3)
         try:
+            # add ncbi fasta paths
+            user_path, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_fasta_paths, output_folder=output_path)
             fam_list = choose_families_from_fasta(user_path, output_path, num_threads)
         except PipelineException as error:
             print(f"ERROR: {error.msg}")

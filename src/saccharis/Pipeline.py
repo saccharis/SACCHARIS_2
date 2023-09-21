@@ -15,6 +15,8 @@ import time
 
 from PyQt5.QtCore import pyqtSignal
 
+from saccharis.NCBIQueries import download_proteins_from_genomes, download_from_genes
+from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
 from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.PipelineErrors import PipelineException, UserError, make_logger
 from saccharis import Cazy_Scrape
@@ -25,7 +27,7 @@ from saccharis import Muscle_Alignment
 from saccharis import Parse_User_Sequences
 from saccharis import RAxML_Build
 from saccharis.Rendering import render_phylogeny
-from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder
+from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder, get_ncbi_folder
 from saccharis.utils.AdvancedConfig import save_to_file
 from saccharis.utils.FamilyCategories import check_deleted_families
 from saccharis.utils.Formatting import make_metadata_dict, format_time, CazymeMetadataRecord
@@ -36,7 +38,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
                     domain_mode: int = 0b11111, threads: int = math.ceil(os.cpu_count() * 0.75),
                     tree_program: ChooseAAModel.TreeBuilder = ChooseAAModel.TreeBuilder.FASTTREE,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
-                    force_update: bool = False, user_file: str | os.PathLike = None, genbank_genomes=None, genbank_genes=None,
+                    force_update: bool = False, user_files: list[str | os.PathLike] = None, genbank_genomes=None, genbank_genes=None,
                     auto_rename: bool = False, settings: dict = None, gui_step_signal: pyqtSignal = None,
                     merged_dict: dict = None, logger: logging.Logger = logging.getLogger(), skip_user_ask=False,
                     render_trees: bool = False):
@@ -147,15 +149,29 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
     print("*********************************************")
 
     #######################################
-    # Step Two - Combine User and Cazy
+    # Step Two - Combine User, Cazy, and NCBI
     #######################################
     fasta_with_user_file = ""       #
     user_run_id = None              # These lines to suppress warnings from undeclared variables being accessed
     user_t = None                   #
-    if user_file is not None:
+
+
+
+    if user_files is not None or ncbi_genomes is not None or ncbi_genes is not None:
         user_folder = os.path.join(domain_folder, "user")
         if not os.path.isdir(user_folder):
             os.mkdir(user_folder, 0o755)
+
+        user_path, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_files, output_folder=user_folder)
+        if ncbi_genomes is not None:
+            # Download seqs from NCBI for given genomes
+            genome_seqs, genome_source = download_proteins_from_genomes(ncbi_genomes, out_dir=get_ncbi_folder(), logger=logger)
+            # origin_dict += genome_source
+            # all_seqs += genome_seqs
+
+        if ncbi_genes is not None:
+            genes_seqs, genome_source = do
+
         try:
             fasta_with_user_file, user_count, user_run_id = Parse_User_Sequences.run(user_file, fasta_file, user_folder,
                                                                                      verbose, force_update,
@@ -179,6 +195,9 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         print("* Appending user sequences takes:")
         print(format_time(user_t - cazy_t))
         print("*********************************************")
+
+
+
     #######################################
     # Step Three - dbCAN, extract & prune
     #######################################

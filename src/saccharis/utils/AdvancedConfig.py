@@ -22,6 +22,7 @@ default_settings_path = os.path.join(folder_config, "advanced_settings.json")
 folder_db = os.path.join(folder_saccharis_user, "db")
 folder_logs = os.path.join(folder_saccharis_user, "logs")
 folder_default_output = os.path.join(folder_saccharis_user, "output")
+folder_ncbi = os.path.join(folder_saccharis_user, "ncbi_downloads")
 
 
 def get_db_folder():
@@ -39,6 +40,9 @@ def get_output_folder():
 def get_config_folder():
     return folder_config
 
+
+def get_ncbi_folder():
+    return folder_ncbi
 
 class MultilineFormatter(argparse.HelpFormatter):
     def _fill_text(self, text, width, indent):

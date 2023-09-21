@@ -8,6 +8,7 @@ from DownloadTests import DownloadTestCase
 from NCBITests import NCBITestCase
 from IntegrationTests import IntegrationTestCase
 from AAModelTests import AAModelTestCase
+from GUITests import GUITestCase
 
 
 def saccharis_test_suite():
@@ -22,6 +23,7 @@ def saccharis_test_suite():
     suite.addTest(loader.loadTestsFromTestCase(AAModelTestCase))
     suite.addTest(loader.loadTestsFromTestCase(HelperTestCase))
     suite.addTest(loader.loadTestsFromTestCase(IntegrationTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(GUITestCase))
     return suite
 
 
