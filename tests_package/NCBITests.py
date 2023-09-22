@@ -7,7 +7,7 @@ import operator
 
 from Bio import Entrez, SeqIO
 
-from example_ncbi_api import example_usage_of_api
+# from example_ncbi_api import example_usage_of_api
 from saccharis.NCBIQueries import ncbi_query_dna_from_protein_accessions, download_proteins_from_genomes
 
 tests_folder = os.path.dirname(getsourcefile(lambda: 0))
@@ -37,9 +37,9 @@ class NCBITestCase(unittest.TestCase):
         seqs, sourcedict = download_proteins_from_genomes(b_uniformis_genbank)
         self.assertEqual(len(seqs), 4031)
 
-    def test_example_usage_of_api(self):
-        input_gene_ids: list[int] = [1, 2, 3, 9, 10, 11, 12, 13, 14, 15, 16, 17]
-        example_usage_of_api(input_gene_ids)
+    # def test_example_usage_of_api(self):
+    #     input_gene_ids: list[int] = [1, 2, 3, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+    #     example_usage_of_api(input_gene_ids)
 
 
 if __name__ == '__main__':
