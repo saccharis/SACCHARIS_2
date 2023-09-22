@@ -28,13 +28,15 @@ Publication information coming soon.
 [//]: # (``conda install --use-local /path/to/conda_package.tar.gz``)
 
 #### Supported Platforms
-PLATFORMS: Currently, linux is the main target platform. It *may* also work on macOS **without** apple silicon (some of 
+Currently, linux is the main target platform. It also works on macOS **without** apple silicon (some of 
 the dependencies such as HMMER are not yet available for apple silicon, but you may get it working under a virtual 
-machine). Windows installation is possible using the CLI method inside a WSL2 linux environment. If you have a current 
+machine), but be aware that the developer has minimal macOS resources and there is less testing on macOS. Windows 
+installation is possible using the CLI method inside a WSL2 linux environment. If you have a current 
 version of WSL2 and Windows 10/11, you can even launch the gui through WSL2 if graphics is enabled for your WSL2. 
 Installation on base windows is possible but requires several dependencies to be installed and available in the base 
 WSL2 environment (SACCHARIS won't be able to know anything about virtual environments in your WSL environment) and 
 should only be attempted by advanced users familiar with using a CLI, linux/WSL2, conda, bioconda, etc.
+
 ### Beta installation
 
 #### Installation option 1: Conda CLI Install
