@@ -162,7 +162,6 @@ dependencies:
   - raxml-ng=1.2.0=h6d1f11b_1
   - readline=8.2=h8228510_1
   - requests=2.31.0=pyhd8ed1ab_0
-  - saccharis=2.0.0.dev21=pyh7cba7a3_0
   - scipy=1.11.2=py311h64a7726_1
   - setuptools=68.2.2=pyhd8ed1ab_0
   - simplejson=3.19.1=py311h2582759_0
