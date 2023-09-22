@@ -160,7 +160,8 @@ def parse_diamond_dict(file_path):
 def main(fasta_filepath, family, output_folder, mode, force_update=False, prune=True, accession_dict=None,
          threads=math.ceil(os.cpu_count() * .75), hmm_eval: float = 1e-15, hmm_cov: float = 0.35):
 
-    download_database()
+    files_downloaded = download_database()
+    print(f"{files_downloaded} files downloaded for DbCAN database")
 
     # set up dbcan output filenames
     fasta_filename = os.path.split(fasta_filepath)[1]
