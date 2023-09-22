@@ -8,8 +8,9 @@ package:
   version: "{{ version }}"
 
 source:
-  url: https://github.com/saccharis/SACCHARIS_2/releases/download/v{{ version }}/saccharis-{{ version }}.tar.gz
-  sha256: {{ hash|lower }}
+#  url: https://github.com/saccharis/SACCHARIS_2/releases/download/v{{ version }}/saccharis-{{ version }}.tar.gz
+#  sha256: {{ hash|lower }}
+  path: ./..
 
 build:
   noarch: python
