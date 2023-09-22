@@ -38,7 +38,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
                     domain_mode: int = 0b11111, threads: int = math.ceil(os.cpu_count() * 0.75),
                     tree_program: ChooseAAModel.TreeBuilder = ChooseAAModel.TreeBuilder.FASTTREE,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
-                    force_update: bool = False, user_files: list[str | os.PathLike] = None, genbank_genomes=None, genbank_genes=None,
+                    force_update: bool = False, user_files: list[str | os.PathLike] = None,
+                    ncbi_genomes: list[str] = None, ncbi_genes: list[str] = None,
                     auto_rename: bool = False, settings: dict = None, gui_step_signal: pyqtSignal = None,
                     merged_dict: dict = None, logger: logging.Logger = logging.getLogger(), skip_user_ask=False,
                     render_trees: bool = False):
@@ -170,7 +171,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
             # all_seqs += genome_seqs
 
         if ncbi_genes is not None:
-            genes_seqs, genome_source = do
+            genes_seqs, genome_source = download_from_genes(ncbi_genes, seq_type="protein", out_dir=get_ncbi_folder(),
+                                                            logger=logger, fresh=force_update)
 
         try:
             fasta_with_user_file, user_count, user_run_id = Parse_User_Sequences.run(user_file, fasta_file, user_folder,
