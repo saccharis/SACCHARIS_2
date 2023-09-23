@@ -32,6 +32,7 @@ jobs:
     - name: Build and install SACCHARIS
       run: |
         conda install conda-build
+        conda config --add channels bioconda
         conda build .
         conda install --use-local saccharis
     - name: Lint with flake8
