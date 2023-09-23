@@ -53,6 +53,9 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
     if logger is None:
         logger = make_logger("PipelineLogger", get_log_folder(), "pipeline_logs.txt")
 
+    if verbose:
+        logger.setLevel(logging.INFO)
+
     family = family.upper()
     matcher = Matcher()
     if not matcher.valid_cazy_family(family):

@@ -138,12 +138,20 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
 
     msg = f"Running command: {command}"
     logger.info(msg)
-    main_proc = subprocess.Popen(command, cwd=output_dir)
-    atexit.register(main_proc.kill)
-    main_proc.wait()
-    atexit.unregister(main_proc.kill)
-    if main_proc.returncode != 0:
-        msg = f"raxml-ng tree building process failed to return properly. Return code: {main_proc.returncode}"
+
+    try:
+        main_proc = subprocess.Popen(command, cwd=output_dir)
+        atexit.register(main_proc.kill)
+        main_proc.wait()
+        atexit.unregister(main_proc.kill)
+        if main_proc.returncode != 0:
+            msg = f"raxml-ng tree building process failed to return properly. Return code: {main_proc.returncode}"
+            logger.error(msg)
+            raise PipelineException(msg)
+
+    except FileNotFoundError as err:
+        logger.error(err)
+        msg = "raxml-ng not found, check that it's available via PATH variable."
         logger.error(msg)
         raise PipelineException(msg)
 
