@@ -114,7 +114,14 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
         validity_args = []
 
     validity_args += ["raxml-ng", "--parse", "--seed", str(initial_seed), "--msa", muscle_input_path, "--model", amino_model, "--prefix", file_output_path]
-    valid_result = subprocess.run(validity_args, capture_output=True, encoding="utf-8", check=True)
+    try:
+        valid_result = subprocess.run(validity_args, capture_output=True, encoding="utf-8", check=True)
+    except FileNotFoundError as err:
+        logger.error(err)
+        msg = "raxml-ng not found, check that it's available via PATH variable."
+        logger.error(msg)
+        raise PipelineException(msg) from err
+
     optimal_threads = threads
     can_run = False
     for line in valid_result.stdout.split('\n'):
@@ -140,6 +147,8 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
     logger.info(msg)
 
     try:
+        assert(os.path.isfile(muscle_input_path))
+        assert(os.path.isdir(output_dir))
         main_proc = subprocess.Popen(command, cwd=output_dir)
         atexit.register(main_proc.kill)
         main_proc.wait()
@@ -153,7 +162,7 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
         logger.error(err)
         msg = "raxml-ng not found, check that it's available via PATH variable."
         logger.error(msg)
-        raise PipelineException(msg)
+        raise PipelineException(msg) from err
 
     # todo: check if bootstraps converged and then run until they converge. This may take large amounts of compute and
     #  should be an optional feature. Will have to recompute best tree with support, so maybe just do this
