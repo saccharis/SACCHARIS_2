@@ -24,6 +24,7 @@ jobs:
         r-version: '4.3.1'
     - name: Install rsaccharis and dependencies
       run: |
+        sudo apt install build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev # required for proper devtools install
         Rscript -e 'install.packages(c("BiocManager", "devtools"))' -e 'BiocManager::install(c("jsonlite", "ape", "stringr", "magicfor", "knitr", "dplyr", "magrittr",
         "RColorBrewer", "ggnewscale", "ggplot2", "ggtree"))'
         Rscript -e 'library("devtools")' -e 'devtools::install_github(saccharis/rsaccharis)'
