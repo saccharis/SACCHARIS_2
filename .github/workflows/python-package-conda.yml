@@ -30,7 +30,7 @@ jobs:
       env:
         GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        sudo Rscript -e 'install.packages(c("BiocManager"))' -e 'BiocManager::install(c("remotes", "saccharis/rsaccharis"), dependencies=TRUE)'
+        sudo Rscript -e 'install.packages("BiocManager", repos = "http://cran.us.r-project.org")' -e 'BiocManager::install(c("remotes", "saccharis/rsaccharis"), dependencies=TRUE)'
         #        'BiocManager::install(c("jsonlite", "ape", "stringr", "magicfor", "knitr", "dplyr", "magrittr",
         "RColorBrewer", "ggnewscale", "ggplot2", "ggtree"))'
         #        Rscript -e 'library("devtools")' -e 'devtools::install_github(saccharis/rsaccharis)'
