@@ -103,12 +103,12 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
     file_output_prefix = os.path.join(output_dir, rax_tree)
 
     if sys.platform.startswith("win"):
-        command = "wsl "
+        command = ["wsl"]
         muscle_input_path = convert_path_wsl(muscle_input_file)
         file_output_path = convert_path_wsl(file_output_prefix)
         validity_args = ["wsl"]
     else:
-        command = ""
+        command = []
         muscle_input_path = muscle_input_file
         file_output_path = file_output_prefix
         validity_args = []
@@ -138,17 +138,18 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
     run_threads = min(optimal_threads, threads)
 
     # todo: add outgroup option --outgroup [csv list]
-    command += f"raxml-ng --all --threads auto{'{' + str(run_threads) + '}'} --seed {initial_seed} " \
-               f"--msa {muscle_input_path} --prefix {file_output_path} --model {amino_model} --bs-trees {bootstraps}"
+    command += ["raxml-ng", "--all", "--threads", f"auto{'{' + str(run_threads) + '}'}", "--seed", str(initial_seed),
+                "--msa", muscle_input_path, "--prefix", file_output_path, "--model", amino_model,
+                "--bs-trees", str(bootstraps)]
 
     if force_update:
-        command += " --redo"
+        command += ["--redo"]
 
     msg = f"Running command: {command}"
     logger.info(msg)
 
     try:
-        assert(os.path.isfile(muscle_input_path))
+        assert(os.path.isfile(muscle_input_file))
         assert(os.path.isdir(output_dir))
         main_proc = subprocess.Popen(command, cwd=output_dir)
         atexit.register(main_proc.kill)
