@@ -23,29 +23,11 @@ jobs:
       with:
         r-version: '4.3.1'
     - name: Install rsaccharis and dependencies
-#      run: |
-      uses: r-lib/actions/setup-r-dependencies@v2
-      with:
-        cache-version: 2
-        extra-packages: |
-          any::jsonlite
-          any::ape
-          any::stringr
-          any::magicfor
-          any::knitr
-          any::dplyr
-          any::magrittr
-          any::RColorBrewer
-          any::ggnewscale
-          any::ggplot2
-          any::ggtree
-          github::saccharis/rsaccharis
-#        needs: |
-#          website
-#          coverage
+      run: |
 #        sudo apt install build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev # required for proper devtools install
-#        Rscript -e 'install.packages(c("BiocManager", "devtools"))' -e 'BiocManager::install(c("jsonlite", "ape", "stringr", "magicfor", "knitr", "dplyr", "magrittr",
-#        "RColorBrewer", "ggnewscale", "ggplot2", "ggtree"))'
+        Rscript -e 'install.packages(c("BiocManager"))' -e 'BiocManager::install("/saccharis/rsaccharis)'
+#        'BiocManager::install(c("jsonlite", "ape", "stringr", "magicfor", "knitr", "dplyr", "magrittr",
+        "RColorBrewer", "ggnewscale", "ggplot2", "ggtree"))'
 #        Rscript -e 'library("devtools")' -e 'devtools::install_github(saccharis/rsaccharis)'
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
