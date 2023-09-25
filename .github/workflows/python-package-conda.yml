@@ -24,7 +24,7 @@ jobs:
         r-version: '4.3.1'
     - name: Install rsaccharis and dependencies
       run: |
-        Rscript -e 'install.packages(c("BiocManager", devtools))' -e 'BiocManager::install(c("jsonlite", "ape", "stringr", "magicfor", "knitr", "dplyr", "magrittr",
+        Rscript -e 'install.packages(c("BiocManager", "devtools"))' -e 'BiocManager::install(c("jsonlite", "ape", "stringr", "magicfor", "knitr", "dplyr", "magrittr",
         "RColorBrewer", "ggnewscale", "ggplot2", "ggtree"))'
         Rscript -e 'library("devtools")' -e 'devtools::install_github(saccharis/rsaccharis)'
     - name: Set up Python 3.10
