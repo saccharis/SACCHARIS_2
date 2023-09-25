@@ -116,6 +116,7 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
     validity_args += ["raxml-ng", "--parse", "--seed", str(initial_seed), "--msa", muscle_input_path, "--model", amino_model, "--prefix", file_output_path]
     try:
         valid_result = subprocess.run(validity_args, capture_output=True, encoding="utf-8", check=True)
+        logger.info(valid_result.stdout)
     except FileNotFoundError as err:
         logger.error(err)
         msg = "raxml-ng not found, check that it's available via PATH variable."
