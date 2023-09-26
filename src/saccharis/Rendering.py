@@ -5,6 +5,14 @@ from logging import getLogger, Logger
 
 def render_phylogeny(json_file: str, tree_file: str, output_folder: str, logger: Logger = getLogger(),
                      root: str = None):
+    print("1")
+    try:
+        result = subprocess.run(["Rscript", "--version"], check=True)
+        print(result.stdout)
+        print("2")
+    except (subprocess.SubprocessError, subprocess.CalledProcessError) as error:
+        logger.debug(error)
+        logger.warning("Rscript version command failed")
     json_file_double_slash = json_file.replace('\\', '\\\\')
     tree_file_double_slash = tree_file.replace('\\', '\\\\')
     output_folder_double_slash = output_folder.replace('\\', '\\\\')

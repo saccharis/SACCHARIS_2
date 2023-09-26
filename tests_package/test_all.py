@@ -9,6 +9,7 @@ from tests_package.NCBITests import NCBITestCase
 from tests_package.IntegrationTests import IntegrationTestCase
 from tests_package.AAModelTests import AAModelTestCase
 from tests_package.TreeTests import TreeTestCase
+from tests_package.RenderingTests import RenderingTestCase
 
 
 def saccharis_test_suite():
@@ -24,6 +25,7 @@ def saccharis_test_suite():
     suite.addTest(loader.loadTestsFromTestCase(HelperTestCase))
     suite.addTest(loader.loadTestsFromTestCase(IntegrationTestCase))
     suite.addTest(loader.loadTestsFromTestCase(TreeTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(RenderingTestCase))
     return suite
 
 
