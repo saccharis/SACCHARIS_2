@@ -68,6 +68,6 @@ jobs:
     - name: Upload build artifact
       uses: actions/upload-artifact@v1
       with:
-        name: logs-all
-        path: /home/runner/artifacts
+        name: artifact-all
+        path: /home/runner/work/
         retention-days: 5
