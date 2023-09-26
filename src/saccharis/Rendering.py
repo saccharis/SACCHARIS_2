@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from logging import getLogger, Logger
 
 
@@ -14,7 +15,10 @@ def render_phylogeny(json_file: str, tree_file: str, output_folder: str, logger:
     try:
         # the run call doesn't work with args as a list because of weird unquoting behaviour of
         # subprocess.run() on windows
-        subprocess.run(' '.join(args), check=True)
+        if sys.platform.startswith("win"):
+            subprocess.run(' '.join(args), check=True)
+        else:
+            subprocess.run(args, check=True)
         logger.info(f"Successfully rendered phylogenetic trees to folder: {output_folder} ")
     except (subprocess.SubprocessError, subprocess.CalledProcessError) as error:
         logger.debug(error)
