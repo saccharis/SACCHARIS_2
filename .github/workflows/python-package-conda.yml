@@ -13,7 +13,7 @@ on:  # yamllint disable-line rule:truthy
 
 
 jobs:
-  build-linux:
+  build-test-linux:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
@@ -23,7 +23,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -y && sudo apt-get install -y libcurl4-openssl-dev
-          sudo apt install build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev # required for  devtools install
+#          sudo apt install build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev # required for  devtools install
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
@@ -35,9 +35,6 @@ jobs:
           Rscript -e 'install.packages("BiocManager", repos = "http://cran.us.r-project.org")'
           -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager");BiocManager::install()'
           -e 'BiocManager::install(c("remotes", "saccharis/rsaccharis"), dependencies=TRUE)'
-          #        'BiocManager::install(c("jsonlite", "ape", "stringr", "magicfor", "knitr", "dplyr", "magrittr",
-          #         "RColorBrewer", "ggnewscale", "ggplot2", "ggtree")'
-          #        Rscript -e 'library("devtools")' -e 'devtools::install_github(saccharis/rsaccharis)'
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
@@ -69,7 +66,7 @@ jobs:
           conda install pytest
           pytest tests_package
       - name: Upload build artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}
         with:
           name: artifact-all
