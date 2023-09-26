@@ -1,6 +1,6 @@
 ---  # yamllint disable-line rule:new-lines
 
-name: Test SACCHARIS Conda Package
+name: SACCHARIS Conda Test Suite
 
 on:  # yamllint disable-line rule:truthy
   push:
