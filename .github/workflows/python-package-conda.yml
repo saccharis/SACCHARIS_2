@@ -65,3 +65,9 @@ jobs:
       run: |
         conda install pytest
         pytest tests_package
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: logs-all
+        path: /home/runner/artifacts
+        retention-days: 5
