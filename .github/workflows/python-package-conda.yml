@@ -67,6 +67,7 @@ jobs:
         pytest tests_package
     - name: Upload build artifact
       uses: actions/upload-artifact@v1
+      if: ${{ !cancelled() }}
       with:
         name: artifact-all
         path: /home/runner/work/
