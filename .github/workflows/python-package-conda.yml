@@ -32,7 +32,7 @@ jobs:
       run: |
         Rscript -e 'install.packages("BiocManager", repos = "http://cran.us.r-project.org")' -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager");BiocManager::install()' -e 'BiocManager::install(c("remotes", "saccharis/rsaccharis"), dependencies=TRUE)'
         #        'BiocManager::install(c("jsonlite", "ape", "stringr", "magicfor", "knitr", "dplyr", "magrittr",
-        "RColorBrewer", "ggnewscale", "ggplot2", "ggtree"))'
+        #         "RColorBrewer", "ggnewscale", "ggplot2", "ggtree"))'
         #        Rscript -e 'library("devtools")' -e 'devtools::install_github(saccharis/rsaccharis)'
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
