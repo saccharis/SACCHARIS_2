@@ -65,6 +65,7 @@ jobs:
           conda install pytest
           pytest tests_package
       - name: Zip build artifact
+        if: ${{ failure() }}
         run: zip -r artifact.zip /home/runner/work/
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
