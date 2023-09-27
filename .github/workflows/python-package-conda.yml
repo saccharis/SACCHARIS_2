@@ -64,10 +64,12 @@ jobs:
         run: |
           conda install pytest
           pytest tests_package
+      - name: Zip build artifact
+        run: zip -r artifact.zip /home/runner/work/
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         with:
           name: artifact-all
-          path: /home/runner/work/
+          path: artifact.zip
           retention-days: 5
