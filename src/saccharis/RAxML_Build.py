@@ -103,18 +103,26 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
     file_output_prefix = os.path.join(output_dir, rax_tree)
 
     if sys.platform.startswith("win"):
-        command = "wsl "
+        command = ["wsl"]
         muscle_input_path = convert_path_wsl(muscle_input_file)
         file_output_path = convert_path_wsl(file_output_prefix)
         validity_args = ["wsl"]
     else:
-        command = ""
+        command = []
         muscle_input_path = muscle_input_file
         file_output_path = file_output_prefix
         validity_args = []
 
     validity_args += ["raxml-ng", "--parse", "--seed", str(initial_seed), "--msa", muscle_input_path, "--model", amino_model, "--prefix", file_output_path]
-    valid_result = subprocess.run(validity_args, capture_output=True, encoding="utf-8", check=True)
+    try:
+        valid_result = subprocess.run(validity_args, capture_output=True, encoding="utf-8", check=True)
+        logger.info(valid_result.stdout)
+    except FileNotFoundError as err:
+        logger.error(err)
+        msg = "raxml-ng not found, check that it's available via PATH variable."
+        logger.error(msg)
+        raise PipelineException(msg) from err
+
     optimal_threads = threads
     can_run = False
     for line in valid_result.stdout.split('\n'):
@@ -130,22 +138,33 @@ def build_tree_raxml_ng(muscle_input_file: str | os.PathLike, amino_model: str, 
     run_threads = min(optimal_threads, threads)
 
     # todo: add outgroup option --outgroup [csv list]
-    command += f"raxml-ng --all --threads auto{'{' + str(run_threads) + '}'} --seed {initial_seed} " \
-               f"--msa {muscle_input_path} --prefix {file_output_path} --model {amino_model} --bs-trees {bootstraps}"
+    command += ["raxml-ng", "--all", "--threads", f"auto{'{' + str(run_threads) + '}'}", "--seed", str(initial_seed),
+                "--msa", muscle_input_path, "--prefix", file_output_path, "--model", amino_model,
+                "--bs-trees", str(bootstraps)]
 
     if force_update:
-        command += " --redo"
+        command += ["--redo"]
 
     msg = f"Running command: {command}"
     logger.info(msg)
-    main_proc = subprocess.Popen(command, cwd=output_dir)
-    atexit.register(main_proc.kill)
-    main_proc.wait()
-    atexit.unregister(main_proc.kill)
-    if main_proc.returncode != 0:
-        msg = f"raxml-ng tree building process failed to return properly. Return code: {main_proc.returncode}"
+
+    try:
+        assert(os.path.isfile(muscle_input_file))
+        assert(os.path.isdir(output_dir))
+        main_proc = subprocess.Popen(command, cwd=output_dir)
+        atexit.register(main_proc.kill)
+        main_proc.wait()
+        atexit.unregister(main_proc.kill)
+        if main_proc.returncode != 0:
+            msg = f"raxml-ng tree building process failed to return properly. Return code: {main_proc.returncode}"
+            logger.error(msg)
+            raise PipelineException(msg)
+
+    except FileNotFoundError as err:
+        logger.error(err)
+        msg = "raxml-ng not found, check that it's available via PATH variable."
         logger.error(msg)
-        raise PipelineException(msg)
+        raise PipelineException(msg) from err
 
     # todo: check if bootstraps converged and then run until they converge. This may take large amounts of compute and
     #  should be an optional feature. Will have to recompute best tree with support, so maybe just do this

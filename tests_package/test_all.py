@@ -1,14 +1,16 @@
 import unittest
-from CazyTests import CazyTestCase
-from Helper_Tests import HelperTestCase
-from PruneTests import PruneTestCase
-from UserFastaRenameTest import UserRenameFastaTestCase
-from UserInputTesting import UserInputTestCase
-from DownloadTests import DownloadTestCase
-from NCBITests import NCBITestCase
-from IntegrationTests import IntegrationTestCase
-from AAModelTests import AAModelTestCase
-from GUITests import GUITestCase
+from tests_package.CazyTests import CazyTestCase
+from tests_package.HelperTests import HelperTestCase
+from tests_package.PruneTests import PruneTestCase
+from tests_package.UserFastaRenameTest import UserRenameFastaTestCase
+from tests_package.UserInputTesting import UserInputTestCase
+from tests_package.DownloadTests import DownloadTestCase
+from tests_package.NCBITests import NCBITestCase
+from tests_package.IntegrationTests import IntegrationTestCase
+from tests_package.AAModelTests import AAModelTestCase
+from tests_package.TreeTests import TreeTestCase
+from tests_package.RenderingTests import RenderingTestCase
+from tests_package.GUITests import GUITestCase
 
 
 def saccharis_test_suite():
@@ -24,6 +26,8 @@ def saccharis_test_suite():
     suite.addTest(loader.loadTestsFromTestCase(HelperTestCase))
     suite.addTest(loader.loadTestsFromTestCase(IntegrationTestCase))
     suite.addTest(loader.loadTestsFromTestCase(GUITestCase))
+    suite.addTest(loader.loadTestsFromTestCase(TreeTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(RenderingTestCase))
     return suite
 
 

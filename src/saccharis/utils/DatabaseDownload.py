@@ -26,6 +26,8 @@ urls_and_process_and_rename = \
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/CAZyDB.07262023.fa", "diamond", "CAZy.fa")
      ]
 
+files_to_skip_deletion = ["dbCAN.txt"]
+
 
 def download_and_process(url, output_folder: str | os.PathLike, process: str = None, new_filename: str = None,
                          force_download: bool = False) -> bool:
@@ -64,7 +66,8 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
                 subprocess.run(["wsl", "hmmpress", win_hmmpress_path], check=True)
             else:
                 subprocess.run(["hmmpress", output_path], check=True)
-            os.remove(output_path)
+            if os.path.basename(output_path) not in files_to_skip_deletion:
+                os.remove(output_path)
         elif process == "tar":
             if sys.platform.startswith("win"):
                 win_tar_path = convert_path_wsl(output_path)
@@ -77,7 +80,8 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
             output_path_obj = pathlib.PurePath(output_path)
             diamond_output_path = output_path_obj.parent / output_path_obj.stem
             subprocess.run(["diamond", "makedb", "--in", output_path, "-d", diamond_output_path], check=True)
-            os.remove(output_path)
+            if os.path.basename(output_path) not in files_to_skip_deletion:
+                os.remove(output_path)
 
     return downloaded
 

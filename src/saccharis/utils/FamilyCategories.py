@@ -244,7 +244,7 @@ def cli_show_categories():
     parser = argparse.ArgumentParser(description="Utility to show family category definitions")
     parser.add_argument("category_name", type=str, help="Name of a single family category to display. If not provided, "
                                                         "all categories will be displayed.",
-                        default=None)
+                        default=None, nargs='?')
     args = parser.parse_args()
     show_categories(args.category_name)
 
