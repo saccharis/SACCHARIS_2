@@ -17,13 +17,14 @@ from Bio.Entrez import efetch
 from saccharis.NCBIQueries import download_proteins_from_genomes
 from saccharis.Cazy_Scrape import Mode, Domain
 from saccharis.ChooseAAModel import TreeBuilder
-from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
+from saccharis.ParseUserSequences import parse_multiple_fasta, merge_data_sources
 from saccharis.Pipeline import single_pipeline
 from saccharis.ScreenUserFile import choose_families_from_fasta
 from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder
 from saccharis.utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
 from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile, make_logger
 from saccharis.utils.Formatting import rename_header_ids
+from saccharis.utils.UserInput import ask_yes_no
 
 
 def get_version():
@@ -230,6 +231,12 @@ def cli_main():
         raise Exception("Error parsing user sequence file(s) from command line. This shouldn't happen, "
                         "please report as a bug through github.")
 
+    if True:  # ncbi genes
+        ncbi_genes = None
+
+    if True:  # ncbi genomes
+        ncbi_genomes = None
+
     matcher = Matcher()
     if args.family:
         family_arg = args.family.upper()
@@ -246,37 +253,40 @@ def cli_main():
 
     elif args.family_category:
         if args.subfamily:
-            print("ERROR: Cannot use subfamily argument with family categories. Instead, you can customize the JSON "
-                  "file which contains the family categories and add subfamilies to default or custom lists using "
-                  "\"<family>_<subfamily>\" syntax. \n"
-                  "\te.g. subfamily 1 of GH43 is \"GH43_1\" and can be added to category lists specifically")
+            logger.error("Cannot use subfamily argument with family categories. Instead, you can customize the JSON "
+                         "file which contains the family categories and add subfamilies to default or custom lists "
+                         "using \"<family>_<subfamily>\" syntax. \n"
+                         "\te.g. subfamily 1 of GH43 is \"GH43_1\" and can be added to category lists specifically")
             sys.exit(3)
         try:
             fam_list = get_category_list(args.family_category)
         except UserError as error:
-            print(error.msg)
+            logger.error(error.msg)
             sys.exit(3)
 
         for fam in fam_list:
             if not matcher.valid_cazy_family(fam):
-                print(f"ERROR: Invalid family argument read from family category file: \"{fam}\"\n"
-                      f"\tPlease input a valid family: PL*, GH*, GT*, CE*, or "
-                      f"AA*, where * is a number.")
+                logger.error(f"Invalid family argument read from family category file: \"{fam}\"\n"
+                             f"\tPlease input a valid family: PL*, GH*, GT*, CE*, or AA*, where * is a number.")
                 sys.exit(3)
 
     elif args.explore:
         if args.subfamily:
-            print("ERROR: Cannot use subfamily argument with explore. Instead, you can select the family_subfamily "
-                  "categories found in the file to run the pipeline on to make trees.")
+            logger.error("Cannot use subfamily argument with explore. Instead, you can select the family_subfamily "
+                         "categories found in the file to run the pipeline on to make trees.")
             sys.exit(3)
-        if not args.seqfile or not user_fasta_paths:
-            logger.error("ERROR: Cannot run exploratory mode without a user sequence file!")
+        if not user_fasta_paths and not ncbi_genes and not ncbi_genomes:
+            logger.error("ERROR: Cannot run exploratory mode without user sequences!")
             print("Exiting...")
             sys.exit(3)
         try:
-            # add ncbi fasta paths
-            user_path, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_fasta_paths, output_folder=output_path)
-            fam_list = choose_families_from_fasta(user_path, output_path, num_threads)
+            user_seqs, user_metadata, merged_file_path, _ = \
+                merge_data_sources(cazy_seqs=None, cazy_metadata=None, user_file_paths=user_fasta_paths,
+                                   ncbi_genomes=ncbi_genomes, ncbi_genes=ncbi_genes,
+                                   output_folder=os.path.join(output_path, "cazome_screen"), verbose=verbose_arg,
+                                   force_update=refresh, auto_rename=rename, logger=logger, skip_user_ask=skip_user_ask,
+                                   ask_func=ask_yes_no)
+            fam_list = choose_families_from_fasta(merged_file_path, output_path, num_threads)
         except PipelineException as error:
             print(f"ERROR: {error.msg}")
             print("Exiting...")
@@ -311,17 +321,17 @@ def cli_main():
         try:
             single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                             tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
-                            force_update=refresh, user_file=user_path, auto_rename=rename, merged_dict=user_merged_dict,
-                            logger=logger, skip_user_ask=skip_user_ask, render_trees=render_trees)
+                            force_update=refresh, user_files=user_fasta_paths, auto_rename=rename, logger=logger,
+                            skip_user_ask=skip_user_ask, render_trees=render_trees)
         except NewUserFile as file_msg:
+            # todo: delete NewUserFile branch, this was bad practice to begin with and should no longer be used
             user_path = file_msg.msg
-            user_merged_dict = rename_header_ids(user_path, user_merged_dict)
+            # user_merged_dict = rename_header_ids(user_path, user_merged_dict)
             try:
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
-                                force_update=refresh, user_file=user_path, auto_rename=rename,
-                                merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask,
-                                render_trees=render_trees)
+                                force_update=refresh, user_files=user_fasta_paths, auto_rename=rename, logger=logger,
+                                skip_user_ask=skip_user_ask, render_trees=render_trees)
             except PipelineException as pipe_error:
                 logger.error(pipe_error.msg)
                 logger.debug(pipe_error.__traceback__)
@@ -336,17 +346,17 @@ def cli_main():
             try:
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
-                                force_update=refresh, user_file=user_path, auto_rename=rename,
-                                merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask,
-                                render_trees=render_trees)
+                                force_update=refresh, user_files=user_fasta_paths, auto_rename=rename, logger=logger,
+                                skip_user_ask=skip_user_ask, render_trees=render_trees)
             except NewUserFile as file_msg:
                 user_path = file_msg.msg
-                user_merged_dict = rename_header_ids(user_path, user_merged_dict)
+                # todo: delete NewUserFile branch, this was bad practice to begin with and should no longer be used
+                # user_merged_dict = rename_header_ids(user_path, user_merged_dict)
                 try:
                     single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                     tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune,
-                                    verbose=verbose_arg, force_update=refresh, user_file=user_path, auto_rename=rename,
-                                    merged_dict=user_merged_dict, logger=logger, skip_user_ask=skip_user_ask,
+                                    verbose=verbose_arg, force_update=refresh, user_files=user_fasta_paths,
+                                    auto_rename=rename, logger=logger, skip_user_ask=skip_user_ask,
                                     render_trees=render_trees)
                 except PipelineException as pipe_error:
                     logger.error(pipe_error.msg)

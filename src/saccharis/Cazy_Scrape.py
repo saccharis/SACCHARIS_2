@@ -11,6 +11,7 @@ import re
 import os
 import csv
 import json
+from io import StringIO
 from json import JSONDecodeError
 from logging import Logger, getLogger
 # ignore warnings that these parsers aren't used by IDE, they ARE used
@@ -19,6 +20,7 @@ from html.parser import HTMLParser
 # noinspection PyUnresolvedReferences
 import lxml
 import requests
+from Bio import SeqIO
 from bs4 import BeautifulSoup
 
 from saccharis.NCBIQueries import valid_genbank_gene, ncbi_protein_query
@@ -444,13 +446,13 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
     return domain_cazymes, stats
 
 
-def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, force_update=False, ncbi_query_size=200,
-         domain_mode=0b11111, skip_ask=False, logger: Logger = getLogger()):
+def main(family, output_folder: str | os.PathLike, scrape_mode, get_fragments=False, verbose=False, force_update=False,
+         ncbi_query_size=200, domain_mode=0b11111, skip_ask=False, logger: Logger = getLogger()):
     api_key, ncbi_email, ncbi_tool = load_from_env(skip_ask=skip_ask)
     # Folder and file output setup
-    fasta_file = os.path.join(cazy_folder, f"{family}_{scrape_mode.name}_cazy.fasta")
-    data_file = os.path.join(cazy_folder, f"{family}_{scrape_mode.name}_data.json")
-    stats_file = os.path.join(cazy_folder, f"{family}_{scrape_mode.name}_stats.json")
+    fasta_file = os.path.join(output_folder, f"{family}_{scrape_mode.name}_cazy.fasta")
+    data_file = os.path.join(output_folder, f"{family}_{scrape_mode.name}_data.json")
+    stats_file = os.path.join(output_folder, f"{family}_{scrape_mode.name}_stats.json")
 
     try:
         if os.path.isfile(fasta_file) and not force_update:
@@ -480,13 +482,15 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
                 logger.debug(msg)
                 raise PipelineException(msg)
 
-    cazymes, cazy_stats = cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_mode)
+    cazymes, cazy_stats = cazy_query(family, output_folder, scrape_mode, get_fragments, verbose, domain_mode)
 
     # Take the accession numbers from the dict, convert to list, and query genbank in batches
     accession_list = list(cazymes.keys())
 
     fasta_data, queried, retrieved = ncbi_protein_query(accession_list, api_key, ncbi_email, ncbi_tool, False, logger,
                                                         ncbi_query_size)
+
+    seq_list = list(SeqIO.parse(StringIO(fasta_data), "fasta"))
 
     cazy_stats.append(queried)
     cazy_stats.append(retrieved)
@@ -503,9 +507,9 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
             json.dump(cazy_stats, f, ensure_ascii=False, indent=4)
     except IOError as e:
         logger.error("IOError:", e)
-        logger.error(f"Failed to write cazyme files in output folder: {cazy_folder}")
+        logger.error(f"Failed to write cazyme files in output folder: {output_folder}")
         raise PipelineException(f"Cannot write cazyme data to drive. Check that you have file write permissions in the "
-                                f"output folder: {cazy_folder}") from e
+                                f"output folder: {output_folder}") from e
 
     summary_msg = ""
     summary_msg += f"Characterized entries retrieved from CAZy database: {cazy_stats[0]}\n"
@@ -537,7 +541,7 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
               " Enable verbose argument for more details on duplicate/fragment/missing accessions.")
     print("\n")
 
-    return fasta_file, cazymes, cazy_stats
+    return fasta_file, cazymes, cazy_stats, seq_list
 
 
 if __name__ == "__main__":

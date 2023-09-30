@@ -44,6 +44,7 @@ def get_config_folder():
 def get_ncbi_folder():
     return folder_ncbi
 
+
 class MultilineFormatter(argparse.HelpFormatter):
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()

@@ -8,8 +8,11 @@ import math
 import subprocess
 from copy import deepcopy
 from dataclasses import dataclass
+from functools import reduce
 from logging import Logger, getLogger
 from typing import Optional, Tuple
+
+from Bio import SeqRecord
 
 from saccharis.utils.PipelineErrors import PipelineException
 
@@ -57,41 +60,21 @@ def rename_header_ids(new_user_fasta_file: str, metadata_dict: dict[str, CazymeM
     return new_metadata_dict
 
 
-def make_metadata_dict(cazy_accession_dict: dict[str, CazymeMetadataRecord], cazyme_module_list: list[str],
-                       bounds_dict: dict[str, Tuple[int, int]], merged_dict: dict[str, CazymeMetadataRecord],
+def make_metadata_dict(metadata_dict: dict[str, CazymeMetadataRecord], module_list: list[str],
+                       # merged_dict: dict[str, CazymeMetadataRecord],
+                       bounds_dict: dict[str, Tuple[int, int]],
                        ecami_dict: dict, diamond_dict: dict,
                        logger: Logger = getLogger()):
     new_cazyme_dict = {}
-    for module in cazyme_module_list:
+    for module in module_list:
         if module.__contains__("<"):
             module_id = module.split("<")[0]
         else:
             module_id = module
-
-        # # todo: delete this whole if/else section, it's been replaced by loading CazymeMetadataRecord dicts and
-        # #  updating records
-        # if module_id in cazy_accession_dict:  # module came from a CAZyme downloaded from CAZy
-        #     genbank = module_id
-        #     try:
-        #         protein_name, ec_num, org_name, domain, uniprot, pdb, subfamily = cazy_accession_dict[genbank]
-        #     except ValueError:
-        #         protein_name, ec_num, org_name, domain, uniprot, pdb = cazy_accession_dict[genbank]
-        #         subfamily = None  # todo: remove this branch later, it's just backwards compatibility for alpha output
-        #     source_file = "cazy_website"
-        # else:  # module came from a user sequence/genome
-        #     genbank = None
-        #     protein_name, ec_num, org_name, domain, uniprot, pdb, subfamily = \
-        #         None, None, None, None, None, None, None
-        #     source_file = merged_dict[module_id].source_file if module_id in merged_dict else None
-
-        #     Note: merged dict should not typically be none. If source_file is None, we are either working with
-        #     pre-release metadata(which should probably be discarded by the time anyone reads this) or something has
-        #     gone wrong, so consider a change the above to simply at a later date:
-        #   source_file = merged_dict[module_id]
-            if merged_dict and module_id not in merged_dict and module_id not in cazy_accession_dict:
+            # if merged_dict and module_id not in merged_dict and module_id not in cazy_accession_dict:
+            if module_id not in metadata_dict:
                 logger.error(f"Bad loading of data from merged fasta dictionary. {module_id} not in merged_dict")
 
-        # match/case syntax would be cleaner, but will require python 3.10 minimum, may not want to impose that yet
         ecami_prediction = ecami_dict[module] if module in ecami_dict else \
                            ecami_dict[module_id] if module_id in ecami_dict else \
                            None
@@ -99,17 +82,26 @@ def make_metadata_dict(cazy_accession_dict: dict[str, CazymeMetadataRecord], caz
                              diamond_dict[module_id] if module_id in diamond_dict else \
                              None
 
-        if merged_dict and module in merged_dict:
-            entry_item = merged_dict[module_id]
-        elif merged_dict and module_id in merged_dict:
-            entry_item = deepcopy(merged_dict[module_id])
-        elif module in cazy_accession_dict:
-            entry_item = cazy_accession_dict[module]
-        elif module_id in cazy_accession_dict:
-            entry_item = deepcopy(cazy_accession_dict[module_id])
+        # todo: delete below once new behaviour is confirmed to work correctly
+        # if merged_dict and module in merged_dict:
+        #     entry_item = merged_dict[module_id]
+        # elif merged_dict and module_id in merged_dict:
+        #     entry_item = deepcopy(merged_dict[module_id])
+        # elif module in cazy_accession_dict:
+        #     entry_item = cazy_accession_dict[module]
+        # elif module_id in cazy_accession_dict:
+        #     entry_item = deepcopy(cazy_accession_dict[module_id])
+
+        if module in metadata_dict:
+            entry_item = metadata_dict[module_id]
+        elif module_id in metadata_dict:
+            entry_item = deepcopy(metadata_dict[module_id])
         else:
-            raise PipelineException(f"Error in make_meatdata_dict method, it failed to receive a CazymeMetadataRecord "
-                                    f"for accession id {module_id} in it's arguments")
+            msg = f"Error in make_metadata_dict method, it failed to receive a CazymeMetadataRecord for accession id " \
+                  f"{module_id} in it's arguments"
+            logger.error(msg)
+            raise PipelineException(msg)
+
             # todo: delete this whole code for instantiating new CazymeMetadataRecord objects here, it shouldn't run.
             #  I am keeping the code in for now as reference until loading data from the cazy_accession_dict and
             #  merged_dict is bug free and produces correct JSON files
@@ -149,6 +141,7 @@ def make_metadata_dict(cazy_accession_dict: dict[str, CazymeMetadataRecord], caz
             msg = "Type error on updating CazymeMetadataRecord objects. \n" \
                   "PLEASE REPORT THIS ERROR TO THE DEVELOPER THROUGH GITHUB OR EMAIL, AS ITS INTERMITTENT AND " \
                   "UNKNOWN WHAT TRIGGERS IT!!!!"
+            logger.error(err)
             logger.error(msg)
             raise PipelineException(msg) from err
 
@@ -165,3 +158,7 @@ def format_time(seconds):
         return f"*\t {math.floor(seconds/60):.0f} minutes, {seconds%60:.0f} seconds to run"
 
     return f"*\t {seconds:.1f} seconds to run"
+
+
+def seqs_to_string(seqs: list[SeqRecord]):
+    return reduce(lambda a, b: a.format("fasta") + b.format("fasta"), seqs)

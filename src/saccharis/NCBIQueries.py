@@ -19,10 +19,13 @@ from Bio.SeqRecord import SeqRecord
 import requests
 from bs4 import BeautifulSoup
 from ncbi.datasets import GenomeApi, GeneApi
+
+from saccharis.ParseUserSequences import parse_multiple_fasta
+from saccharis.utils.Formatting import CazymeMetadataRecord
 # Internal imports
 from saccharis.utils.PipelineErrors import NCBIException, PipelineException
 
-NCBI_DEFAULT_DELAY = 0.3  # this is a delay time for ncbi queries. Without it, results may be incomplete
+NCBI_DEFAULT_DELAY = 0.4  # this is a delay time for ncbi queries. Without it, results may be incomplete
 # count ncbi exceptions, so we can terminate if too many failures occur. Too many failures probably means NCBI is down.
 ncbi_exception_count = 0
 NCBI_EXCEPTION_MAX_TRIES = 100
@@ -95,9 +98,8 @@ def valid_genbank_gene(string_to_check: str, verbose: bool = False):
     return False
 
 
-# todo: call this function from gui, lol
 def download_proteins_from_genomes(genome_list: list[str] | str, out_dir: str = None, logger: Logger = getLogger(),
-                                   fresh: bool = False) -> (list[SeqRecord], dict[str:str]):
+                                   fresh: bool = False) -> (list[SeqRecord], dict[str:CazymeMetadataRecord]):
     if len(genome_list) == 0:
         print("Please provide at least one genome-id")
         return None, None
@@ -105,7 +107,7 @@ def download_proteins_from_genomes(genome_list: list[str] | str, out_dir: str = 
     if type(genome_list) == str:
         genome_list = [genome_list]
     seqs = []
-    source_dict = {}
+    metadata_dict = {}
     api = GenomeApi()
     if out_dir:
         if not fresh:
@@ -119,10 +121,13 @@ def download_proteins_from_genomes(genome_list: list[str] | str, out_dir: str = 
         with ZipFile(handle) as myzip:
             for genome_id in genome_list:
                 with io.TextIOWrapper(myzip.open(f"ncbi_dataset/data/{genome_id}/protein.faa"), encoding="utf-8") as myfile:
-                    genome_seqs = list(Bio.SeqIO.parse(myfile, "fasta"))
-                    source_dict |= dict.fromkeys(map(lambda seq: seq.id, genome_seqs), f"NCBI Genome: {genome_id}")
+                    # genome_seqs = list(Bio.SeqIO.parse(myfile, "fasta"))
+                    genome_seqs, genome_metadata, _ = parse_multiple_fasta([myfile],
+                                                                           source_override=f"NCBI Genome {genome_id}")
+                    # source_dict |= dict.fromkeys(map(lambda seq: seq.id, genome_seqs), f"NCBI Genome: {genome_id}")
                     # todo: save seqs locally for later if out_dir is given
                     seqs += genome_seqs
+                    metadata_dict |= genome_metadata
     except Exception as e:
         if logger:
             msg = "Problem reading genome zip file downloaded from NCBI."
@@ -133,17 +138,17 @@ def download_proteins_from_genomes(genome_list: list[str] | str, out_dir: str = 
         handle.close()
         os.remove(handle.name)
 
-    return seqs, source_dict
+    return seqs, metadata_dict
 
 
 def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None, logger: Logger = getLogger(),
-                            fresh: bool = False) -> (list[SeqRecord], dict[str:str]):
+                            fresh: bool = False) -> (list[SeqRecord], dict[str:CazymeMetadataRecord]):
     if len(gene_list) == 0:
-        print("Please provide at least one genome-id")
+        print("Please provide at least one gene-id")
         return None, None
 
     seqs = []
-    source_dict = {}
+    metadata_dict = {}
     api = GeneApi()
     if seq_type.lower() == "dna" or seq_type.lower() == "fna":
         annot_type = ["FASTA_GENE", "FASTA_CDS"]
@@ -153,7 +158,6 @@ def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None
         filename = "protein.faa"
     else:
         raise NCBIException("Invalid sequence type, seq_type should be 'dna', 'fna', 'protein', or 'faa'")
-    # todo: put this whole thing in a loop to query NCBI one gene at a time???
     if out_dir:
         if not fresh:
             # todo: check for local seqs to load from each genome instead of downloading from NCBI, if fresh == false
@@ -166,13 +170,15 @@ def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None
         with ZipFile(handle) as myzip:
             for gene_id in gene_list:
                 with io.TextIOWrapper(myzip.open(f"ncbi_dataset/data/{gene_id}/{filename}"), encoding="utf-8") as myfile:
-                    gene_seqs = list(Bio.SeqIO.parse(myfile, "fasta"))
-                    source_dict |= dict.fromkeys(map(lambda seq: seq.id, gene_seqs), f"NCBI Gene")
+                    # gene_seqs = list(Bio.SeqIO.parse(myfile, "fasta"))
+                    gene_seqs, gene_metadata, _ = parse_multiple_fasta([myfile], source_override=f"NCBI Gene")
+                    # source_dict |= dict.fromkeys(map(lambda seq: seq.id, gene_seqs), f"NCBI Gene")
                     # todo: save seqs locally for later if out_dir is given
                     seqs += gene_seqs
+                    metadata_dict |= gene_metadata
     except Exception as e:
         if logger:
-            msg = "Problem reading gee zip file downloaded from NCBI."
+            msg = "Problem reading gene zip file downloaded from NCBI."
             logger.error(e.__traceback__)
             logger.error(msg)
             raise NCBIException(msg) from e
@@ -180,7 +186,7 @@ def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None
         handle.close()
         os.remove(handle.name)
 
-    return seqs, source_dict
+    return seqs, metadata_dict
 
 
 def format_list(accession_list):
@@ -237,12 +243,11 @@ def ncbi_query_dna_from_protein_accessions(accessions: list[str]):
         except Exception as e:
             print(f"Error fetching sequence for source {source}: {e}")
 
-
     return fasta_sequences
 
-def ncbi_protein_query(accession_list: list[str], api_key, ncbi_email, ncbi_tool, verbose=False, logger: Logger = getLogger(),
-                       ncbi_query_size=200) \
-        -> (str, int, int):
+
+def ncbi_protein_query(accession_list: list[str], api_key: str, ncbi_email: str, ncbi_tool: str, verbose: bool = False,
+                       logger: Logger = getLogger(), ncbi_query_size: int = 200) -> (str, int, int):
     accession_count = len(accession_list)
     queried = 0
     retrieved = 0
@@ -281,19 +286,19 @@ def ncbi_protein_query(accession_list: list[str], api_key, ncbi_email, ncbi_tool
     return fasta_data, queried, retrieved
 
 
-def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=None, verbose=False, logger=getLogger()):
+def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=None,
+                      verbose=False, logger=getLogger()) -> (str, int):
     genbank_list = format_list(accession_list)
 
     # Set up the Query URL
     # Set up a search out to the eSearch program:
     #    - db is protein and search term is left blank for now <term>
-    email_string = '&email=' + ncbi_email if ncbi_email else ""
-    tool_string = '&tool=' + ncbi_tool if ncbi_tool else ""
+    email_string = f'&email={ncbi_email}' if ncbi_email else ""
+    tool_string = f'&tool={ncbi_tool}' if ncbi_tool else ""
     api_key_string = f"&api_key={api_key}" if api_key else ""
     # todo: consider checking for valid API_key here
     utils = "http://www.ncbi.nlm.nih.gov/entrez/eutils"
-    # TODO: add email and tool fields to ncbi requests
-    base_url = utils + "/esearch.fcgi?db=protein" + api_key_string
+    base_url = utils + "/esearch.fcgi?db=protein" + api_key_string + email_string + tool_string
     esearch = base_url + '&term='
 
     # Submit the search to retrieve a count of total number of sequences
@@ -369,8 +374,7 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
     # $efetch = $utils . '/efetch.fcgi?db=protein&query_key=' . $key . '&WebEnv='
     #             . $web . '&rettype=fasta&retmode=text';
     # base_url = utils + '/efetch.fcgi?db=protein&email=' + ncbi_email + '&tool=' + ncbi_tool + '&api_key='+api_key
-    # TODO: add email and tool fields to ncbi requests
-    base_url = utils + f'/efetch.fcgi?db=protein' + api_key_string
+    base_url = utils + '/efetch.fcgi?db=protein' + api_key_string + email_string + tool_string
     efetch = base_url + '&query_key=' + query_key + '&WebEnv=' + web_env + '&rettype=fasta&retmode=text'
 
     try:

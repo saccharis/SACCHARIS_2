@@ -28,8 +28,8 @@ class IntegrationTestCase(unittest.TestCase):
 
     def run_pipeline(self, family, scrape_mode: Mode, tree_program: TreeBuilder = TreeBuilder.FASTTREE,
                      user_file: str = None, force_update=True, render_trees=False):
-        single_pipeline(family=family, output_folder=test_out_folder, scrape_mode=scrape_mode, skip_user_ask=True,
-                        force_update=force_update, verbose=True, tree_program=tree_program, user_file=user_file,
+        single_pipeline(family=family, output_folder=test_out_folder, scrape_mode=scrape_mode,
+                        tree_program=tree_program, verbose=True, force_update=force_update, skip_user_ask=True,
                         render_trees=render_trees)
         domain_folder = f"{family}_{scrape_mode.name}_ALL_DOMAINS"
         file_prefix = f"{family}_{scrape_mode.name}_ALL_DOMAINS{'_UserRun00000' if user_file else ''}"

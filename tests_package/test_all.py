@@ -11,6 +11,7 @@ from tests_package.AAModelTests import AAModelTestCase
 from tests_package.TreeTests import TreeTestCase
 from tests_package.RenderingTests import RenderingTestCase
 from tests_package.GUITests import GUITestCase
+from tests_package.ParseTests import ParseTestCase
 
 
 def saccharis_test_suite():
@@ -28,6 +29,7 @@ def saccharis_test_suite():
     suite.addTest(loader.loadTestsFromTestCase(GUITestCase))
     suite.addTest(loader.loadTestsFromTestCase(TreeTestCase))
     suite.addTest(loader.loadTestsFromTestCase(RenderingTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(ParseTestCase))
     return suite
 
 

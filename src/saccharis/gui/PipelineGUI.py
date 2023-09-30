@@ -34,7 +34,7 @@ from saccharis.gui import CategoryDialog
 from saccharis.gui import SettingsDialog
 from saccharis.gui import ScreenDialog
 
-from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
+from saccharis.ParseUserSequences import concatenate_multiple_fasta
 from saccharis.ScreenUserFile import extract_families_hmmer
 from saccharis.Pipeline import single_pipeline
 from saccharis.CLI import get_version
@@ -1107,9 +1107,8 @@ class PipelineThread(QThread):
                 single_pipeline(fam, self.args.output_path, self.args.cazyme_mode, domain_mode=self.args.domain,
                                 threads=self.args.threads, tree_program=self.args.tree_program,
                                 get_fragments=self.args.get_fragments, prune_seqs=self.args.prune_seqs, verbose=False,
-                                force_update=self.args.force_update, user_file=self.args.fasta_file,
-                                auto_rename=self.args.rename, settings=self.args.settings,
-                                gui_step_signal=self.progress_step, merged_dict=self.args.fasta_source_dict,
+                                force_update=self.args.force_update, auto_rename=self.args.rename,
+                                settings=self.args.settings, gui_step_signal=self.progress_step,
                                 render_trees=self.args.render_trees)
                 fam_status[fam] = 2
             except NewUserFile as error:
@@ -1119,9 +1118,8 @@ class PipelineThread(QThread):
                     single_pipeline(fam, self.args.output_path, self.args.cazyme_mode, domain_mode=self.args.domain,
                                     threads=self.args.threads, tree_program=self.args.tree_program,
                                     get_fragments=self.args.get_fragments, prune_seqs=self.args.prune_seqs,
-                                    verbose=False, force_update=self.args.force_update, user_file=self.args.fasta_file,
-                                    auto_rename=self.args.rename, settings=self.args.settings,
-                                    gui_step_signal=self.progress_step, merged_dict=self.args.fasta_source_dict)
+                                    verbose=False, force_update=self.args.force_update, auto_rename=self.args.rename,
+                                    settings=self.args.settings, gui_step_signal=self.progress_step)
                     fam_status[fam] = 2
                 except PipelineException as error:
                     # noinspection PyUnresolvedReferences
@@ -1207,9 +1205,8 @@ class PipelineWorker(QObject):
                 single_pipeline(fam, self.args.output_path, self.args.cazyme_mode, domain_mode=self.args.domain,
                                 threads=self.args.threads, tree_program=self.args.tree_program,
                                 get_fragments=self.args.get_fragments, prune_seqs=self.args.prune_seqs, verbose=False,
-                                force_update=self.args.force_update, user_file=self.args.fasta_file,
-                                auto_rename=self.args.rename, settings=self.args.settings,
-                                gui_step_signal=self.progress_step, merged_dict=self.args.fasta_source_dict)
+                                force_update=self.args.force_update, auto_rename=self.args.rename,
+                                settings=self.args.settings, gui_step_signal=self.progress_step)
                 fam_status[fam] = 2
             except NewUserFile as error:
                 self.args.fasta_file = error.msg
@@ -1218,9 +1215,8 @@ class PipelineWorker(QObject):
                     single_pipeline(fam, self.args.output_path, self.args.cazyme_mode, domain_mode=self.args.domain,
                                     threads=self.args.threads, tree_program=self.args.tree_program,
                                     get_fragments=self.args.get_fragments, prune_seqs=self.args.prune_seqs,
-                                    verbose=False, force_update=self.args.force_update, user_file=self.args.fasta_file,
-                                    auto_rename=self.args.rename, settings=self.args.settings,
-                                    gui_step_signal=self.progress_step, merged_dict=self.args.fasta_source_dict)
+                                    verbose=False, force_update=self.args.force_update, auto_rename=self.args.rename,
+                                    settings=self.args.settings, gui_step_signal=self.progress_step)
                     fam_status[fam] = 2
                 except PipelineException as error:
                     fam_status[fam] = 3

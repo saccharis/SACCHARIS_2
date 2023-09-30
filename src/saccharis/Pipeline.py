@@ -15,8 +15,7 @@ import time
 
 from PyQt5.QtCore import pyqtSignal
 
-from saccharis.NCBIQueries import download_proteins_from_genomes, download_from_genes
-from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
+from saccharis.ParseUserSequences import merge_data_sources
 from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.PipelineErrors import PipelineException, UserError, make_logger
 from saccharis import Cazy_Scrape
@@ -24,25 +23,24 @@ from saccharis import ChooseAAModel
 from saccharis.ExtractAndPruneCAZymes import main as extract_pruned
 from saccharis import FastTree_Build
 from saccharis import Muscle_Alignment
-from saccharis import Parse_User_Sequences
 from saccharis import RAxML_Build
 from saccharis.Rendering import render_phylogeny
-from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder, get_ncbi_folder
+from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder
 from saccharis.utils.AdvancedConfig import save_to_file
 from saccharis.utils.FamilyCategories import check_deleted_families
 from saccharis.utils.Formatting import make_metadata_dict, format_time, CazymeMetadataRecord
 
 
 def single_pipeline(family: str, output_folder: str | os.PathLike,
-                    scrape_mode: Cazy_Scrape.Mode = Cazy_Scrape.Mode.ALL_CAZYMES,
-                    domain_mode: int = 0b11111, threads: int = math.ceil(os.cpu_count() * 0.75),
+                    scrape_mode: Cazy_Scrape.Mode = Cazy_Scrape.Mode.ALL_CAZYMES, domain_mode: int = 0b11111,
+                    threads: int = math.ceil(os.cpu_count() * 0.75),
                     tree_program: ChooseAAModel.TreeBuilder = ChooseAAModel.TreeBuilder.FASTTREE,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
                     force_update: bool = False, user_files: list[str | os.PathLike] = None,
-                    ncbi_genomes: list[str] = None, ncbi_genes: list[str] = None,
-                    auto_rename: bool = False, settings: dict = None, gui_step_signal: pyqtSignal = None,
-                    merged_dict: dict = None, logger: logging.Logger = logging.getLogger(), skip_user_ask=False,
-                    render_trees: bool = False):
+                    ncbi_genomes: list[str] = None, ncbi_genes: list[str] = None, auto_rename: bool = False,
+                    settings: dict = None, gui_step_signal: pyqtSignal = None,
+                    logger: logging.Logger = logging.getLogger(), skip_user_ask=False, render_trees: bool = False,
+                    ask_func=None):
 
     # todo: remove windows block once WSL support is fully implemented
     if sys.gettrace():
@@ -141,9 +139,9 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         if sys.gettrace():
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
     print(f"Cazy Extract is proceeding for {scrape_mode.name} of family {family}...")
-    fasta_file, cazymes, cazy_stats = Cazy_Scrape.main(family, cazy_folder, scrape_mode, get_fragments, verbose,
-                                                       force_update, ncbi_query_size, domain_mode,
-                                                       skip_ask=bool(gui_step_signal) or skip_user_ask, logger=logger)
+    cazy_file, cazy_metadata, cazy_stats, cazy_seqs = \
+        Cazy_Scrape.main(family, cazy_folder, scrape_mode, get_fragments, verbose, force_update, ncbi_query_size,
+                         domain_mode, skip_ask=bool(gui_step_signal) or skip_user_ask, logger=logger)
     cazy_t = time.time()
     print("Completed Cazy Extract")
     print("==============================================================================\n")
@@ -155,53 +153,33 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
     #######################################
     # Step Two - Combine User, Cazy, and NCBI
     #######################################
-    fasta_with_user_file = ""       #
-    user_run_id = None              # These lines to suppress warnings from undeclared variables being accessed
-    user_t = None                   #
+    user_t = None  # This line to suppress warning from undeclared variable being accessed
 
+    user_folder = os.path.join(domain_folder, "user")
+    if not os.path.isdir(user_folder):
+        os.mkdir(user_folder, 0o755)
 
+    all_seqs_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}"
 
     if user_files is not None or ncbi_genomes is not None or ncbi_genes is not None:
-        user_folder = os.path.join(domain_folder, "user")
-        if not os.path.isdir(user_folder):
-            os.mkdir(user_folder, 0o755)
 
-        user_path, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_files, output_folder=user_folder)
-        if ncbi_genomes is not None:
-            # Download seqs from NCBI for given genomes
-            genome_seqs, genome_source = download_proteins_from_genomes(ncbi_genomes, out_dir=get_ncbi_folder(), logger=logger)
-            # origin_dict += genome_source
-            # all_seqs += genome_seqs
-
-        if ncbi_genes is not None:
-            genes_seqs, genome_source = download_from_genes(ncbi_genes, seq_type="protein", out_dir=get_ncbi_folder(),
-                                                            logger=logger, fresh=force_update)
-
-        try:
-            fasta_with_user_file, user_count, user_run_id = Parse_User_Sequences.run(user_file, fasta_file, user_folder,
-                                                                                     verbose, force_update,
-                                                                                     auto_rename or skip_user_ask)
-        #     todo: replace this with functions that return seq and cazymemetadatarecord lists to more easily concat
-        #       mixtures of family(ies?), genbank genomes/genes, and user seqs
-        except UserWarning as error:
-            logger.warning(error.args[0])
-            answer = input("Would you like to continue anyway, without user sequences in the analysis?")
-            if not skip_user_ask and (answer.lower() == "y" or answer.lower() == "yes"):
-                print("Continuing...")
-                logger.info("Continuing...")
-            else:
-                print("Exiting...")
-                logger.info("Exiting...")
-                sys.exit()
+        all_seqs, all_metadata, all_seqs_file_path, user_run_id = \
+            merge_data_sources(cazy_seqs, cazy_metadata, user_files, ncbi_genomes, ncbi_genes, user_folder,
+                               all_seqs_filename, verbose, force_update, auto_rename, logger, skip_user_ask, ask_func)
         user_t = time.time()
-        print("Added user sequences to CAZy family sequences")
+        print("Added user FASTA/NCBI sequences to CAZy family sequences")
         print("==============================================================================\n")
         print("*********************************************")
         print("* Appending user sequences takes:")
         print(format_time(user_t - cazy_t))
         print("*********************************************")
+    else:  # Source is CAZy only
+        all_seqs = cazy_seqs
+        all_metadata = cazy_metadata
+        all_seqs_file_path = cazy_file
+        user_run_id = None
 
-
+    user_run_insert = f"_UserRun{user_run_id:05d}" if user_run_id else ""
 
     #######################################
     # Step Three - dbCAN, extract & prune
@@ -214,18 +192,12 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         if sys.gettrace():
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
     hmm_cov, hmm_eval = settings["hmm_cov"], settings["hmm_eval"]
-    if user_file is not None:
-        print(f"dbCAN processing of {os.path.split(fasta_with_user_file)[1]} is underway...")
-        pruned_list, pruned_file, id_convert_dict, bound_dict, ecami_dict, diamond_dict = \
-            extract_pruned(fasta_with_user_file, family, dbcan_folder, scrape_mode, force_update, prune_seqs,
-                           threads=threads, hmm_cov=hmm_cov, hmm_eval=hmm_eval)
-        metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}_UserRun{user_run_id:05d}.json"
-    else:
-        print(f"dbCAN processing of {os.path.split(fasta_file)[1]} is underway...")
-        pruned_list, pruned_file, id_convert_dict, bound_dict, ecami_dict, diamond_dict = \
-            extract_pruned(fasta_file, family, dbcan_folder, scrape_mode, force_update, prune_seqs,
-                           threads=threads, hmm_cov=hmm_cov, hmm_eval=hmm_eval)
-        metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}.json"
+    print(f"dbCAN processing of {os.path.split(all_seqs_file_path)[1]} is underway...")
+    pruned_list, pruned_file, id_convert_dict, bound_dict, ecami_dict, diamond_dict = \
+        extract_pruned(all_seqs_file_path, family, dbcan_folder, scrape_mode, force_update, prune_seqs,
+                       threads=threads, hmm_cov=hmm_cov, hmm_eval=hmm_eval)
+
+    metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}{user_run_insert}.json"
 
     final_metadata_filepath = os.path.join(domain_folder, metadata_filename)
 
@@ -233,7 +205,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         try:
             with open(final_metadata_filepath, 'r', encoding="utf-8") as meta_json:
                 cazyme_dict = json.loads(meta_json.read())
-                final_metadata_dict = {id: CazymeMetadataRecord(**record) for id, record in cazyme_dict.items()}
+                final_metadata_dict = {uid: CazymeMetadataRecord(**record) for uid, record in cazyme_dict.items()}
         except IOError as err:
             logger.debug(err)
             # todo: consider renaming the old JSON file to retain that data and writing the new data when this occurs.
@@ -242,11 +214,11 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
                   f"Falling back to recalculating fresh CazymeMetadataRecords, but NOT overwriting old ones. If you " \
                   f"want to overwrite the old records, run the pipeline again with the --fresh option."
             logger.error(msg)
-            final_metadata_dict = make_metadata_dict(cazymes, list(id_convert_dict.values()), bound_dict, merged_dict,
-                                                     ecami_dict, diamond_dict)
+            final_metadata_dict = make_metadata_dict(all_metadata, list(id_convert_dict.values()), bound_dict,
+                                                     ecami_dict, diamond_dict, logger=logger)
     else:
-        final_metadata_dict = make_metadata_dict(cazymes, list(id_convert_dict.values()), bound_dict, merged_dict,
-                                                 ecami_dict, diamond_dict)
+        final_metadata_dict = make_metadata_dict(all_metadata, list(id_convert_dict.values()), bound_dict,
+                                                 ecami_dict, diamond_dict, logger=logger)
         try:
             with open(final_metadata_filepath, 'w', encoding="utf-8") as meta_json:
                 json.dump(final_metadata_dict, meta_json, default=vars, ensure_ascii=False, indent=4)
@@ -280,19 +252,12 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         if sys.gettrace():
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
     print(f"Muscle alignment of {os.path.split(pruned_file)[1]} is underway...")
-    if user_file:
-        aligned_ren_path, aligned_path, aligned_fasttree = Muscle_Alignment.main(pruned_file, cazyme_module_count,
-                                                                                 family, scrape_mode,
-                                                                                 muscle_folder, id_convert_dict,
-                                                                                 force_update=force_update,
-                                                                                 user_run_id=user_run_id,
-                                                                                 threads=threads)
-    else:
-        aligned_ren_path, aligned_path, aligned_fasttree = Muscle_Alignment.main(pruned_file, cazyme_module_count,
-                                                                                 family, scrape_mode,
-                                                                                 muscle_folder, id_convert_dict,
-                                                                                 force_update=force_update,
-                                                                                 threads=threads)
+    aligned_ren_path, aligned_path, aligned_fasttree = Muscle_Alignment.main(pruned_file, cazyme_module_count,
+                                                                             family, scrape_mode,
+                                                                             muscle_folder, id_convert_dict,
+                                                                             force_update=force_update,
+                                                                             user_run_id=user_run_id,
+                                                                             threads=threads)
 
     muscle_t = time.time()
     print("Completed Muscle Alignment")
@@ -363,22 +328,17 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
 
     # Copy the Best tree and settings file to the group directory
     try:
-        if user_file is not None:
-            tree_fname = f"{family}_{scrape_mode.name}_{domain_dir_name}_UserRun{user_run_id:05d}_{tree_program.name}.tree"
-        else:
-            tree_fname = f"{family}_{scrape_mode.name}_{domain_dir_name}_{tree_program.name}.tree"
+        tree_fname = f"{family}_{scrape_mode.name}_{domain_dir_name}{user_run_insert}_{tree_program.name}.tree"
+
         final_tree_path = os.path.join(domain_folder, tree_fname)
         shutil.copyfile(tree_path, final_tree_path)
-        if user_file is not None:
-            settings_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}_UserRun{user_run_id:05d}_settings-" \
-                                f"{datetime.datetime.now().strftime('%d-%m-%y_%H-%M')}.json"
-        else:
-            settings_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}_settings-" \
-                                f"{datetime.datetime.now().strftime('%d-%m-%y_%H-%M')}.json"
+
+        settings_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}{user_run_insert}_settings-" \
+                            f"{datetime.datetime.now().strftime('%d-%m-%y_%H-%M')}.json"
         run_settings_path = os.path.join(domain_folder, settings_filename)
         save_to_file(settings, settings_path=run_settings_path)
     except IOError as error:
-        raise UserWarning("Problem writing final tree outputs information to file. Make sure you have access "
+        raise UserWarning("Problem writing final tree output information to file. Make sure you have access "
                           "permissions for your output folder, as this is a common source of write errors of this type."
                           ) from error
 
@@ -398,13 +358,13 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder,
                          root=root)
 
-    print("Completed Rendering of Graphics")
-    print("==============================================================================\n")
-    render_t = time.time()
-    print("*********************************************")
-    print("* Rendering took:")
-    print(format_time(render_t - tree_t))
-    print("*********************************************")
+        print("Completed Rendering of Graphics")
+        print("==============================================================================\n")
+        render_t = time.time()
+        print("*********************************************")
+        print("* Rendering took:")
+        print(format_time(render_t - tree_t))
+        print("*********************************************")
 
     # Final Benchmark tests
     print("==============================================================================\n")
