@@ -2,7 +2,7 @@ import os
 import shutil
 import unittest
 from saccharis import ChooseAAModel
-from saccharis.Cazy_Scrape import Mode
+from saccharis.CazyScrape import Mode
 from inspect import getsourcefile
 
 tests_folder = os.path.dirname(getsourcefile(lambda: 0))

@@ -18,7 +18,7 @@ import atexit
 import Bio.SeqIO
 
 # Internal imports
-from saccharis.Cazy_Scrape import Mode
+from saccharis.CazyScrape import Mode
 from saccharis.utils.PipelineErrors import PipelineException
 
 

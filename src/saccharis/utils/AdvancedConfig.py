@@ -94,29 +94,33 @@ def load_from_env(gui_object=None, ask_method=None, get_method=None, show_user_m
 
     if "EMAIL" in os.environ:
         ncbi_email = os.environ['EMAIL']
-    elif not skip_ask:
-        show_user_method("WARNING: NCBI EMAIL NOT FOUND! This is recommended.\n"
-                         "This email address should match the account your API key is from.")
-        no_email_msg = "No email address added."
-        if gui_object and ask_method:
-            ask_email = ask_method("Would you like to add your NCBI email now? (y/n):", None, no_email_msg, gui_object)
-        else:
-            ask_email = ask_yes_no("Would you like to add your NCBI email now? (y/n):", None, no_email_msg)
-
-        if ask_email:
-            if gui_object and get_method:
-                ncbi_email = get_method("Please enter your NCBI email with no spaces.", "Email:", gui_object)
-            else:
-                ncbi_email = input("Please enter your NCBI email with no spaces: ")
-            if ncbi_email:  # check that user entered an ncbi_email. the gui get_method returns None on cancel click
-                ncbi_email = ncbi_email.strip()
-                with open(os.path.join(folder_config, ".env"), 'a') as f:
-                    f.write(f"EMAIL={ncbi_email}\n")
-                show_user_method("Note: NCBI email has been stored in the .env file in the SACCHARIS config directory.")
-        else:
-            ncbi_email = None
     else:
-        ncbi_email = None
+        ncbi_email = "alexscf@msl.ubc.ca"
+    # note: below is old code when I thought ncbi email was per-user, but ncbi email in requests is supposed to go to
+    # the software developer.
+    # elif not skip_ask:
+    #     show_user_method("WARNING: NCBI EMAIL NOT FOUND! This is recommended.\n"
+    #                      "This email address should match the account your API key is from.")
+    #     no_email_msg = "No email address added."
+    #     if gui_object and ask_method:
+    #         ask_email = ask_method("Would you like to add your NCBI email? (y/n):", None, no_email_msg, gui_object)
+    #     else:
+    #         ask_email = ask_yes_no("Would you like to add your NCBI email? (y/n):", None, no_email_msg)
+    #
+    #     if ask_email:
+    #         if gui_object and get_method:
+    #             ncbi_email = get_method("Please enter your NCBI email with no spaces.", "Email:", gui_object)
+    #         else:
+    #             ncbi_email = input("Please enter your NCBI email with no spaces: ")
+    #         if ncbi_email:  # check that user entered an ncbi_email. the gui get_method returns None on cancel click
+    #             ncbi_email = ncbi_email.strip()
+    #             with open(os.path.join(folder_config, ".env"), 'a') as f:
+    #                 f.write(f"EMAIL={ncbi_email}\n")
+    #             show_user_method("Note: NCBI email stored in the .env file in the SACCHARIS config directory.")
+    #     else:
+    #         ncbi_email = None
+    # else:
+    #     ncbi_email = None
 
     return api_key, ncbi_email, ncbi_tool
 
@@ -205,14 +209,14 @@ def validate_settings(settings):
     return True
 
 
-def save_to_file(settings_dict, settings_path=default_settings_path, email=None, api_key=None):
+def save_to_file(settings_dict, settings_path=default_settings_path, api_key=None):
     if not os.path.exists(os.path.dirname(settings_path)):
         os.makedirs(os.path.dirname(settings_path))
 
     with open(settings_path, 'w', encoding="utf-8") as sfile:
         json.dump(settings_dict, sfile, ensure_ascii=False, indent=4)
 
-    if email or api_key:
+    if api_key:
         try:
             with open(os.path.join(folder_config, ".env"), 'r', encoding="utf-8") as env_file:
                 lines = env_file.readlines()
@@ -221,9 +225,9 @@ def save_to_file(settings_dict, settings_path=default_settings_path, email=None,
 
         new_lines = [(line + '\n' if line[-1] != '\n' else line) for line in lines]
 
-        if email:
-            new_lines = [line for line in new_lines if line[0:5] != "EMAIL"]
-            new_lines.append(f"EMAIL={email}\n")
+        # if email:
+        #     new_lines = [line for line in new_lines if line[0:5] != "EMAIL"]
+        #     new_lines.append(f"EMAIL={email}\n")
 
         if api_key:
             new_lines = [line for line in new_lines if line[0:7] != "API_KEY"]
@@ -300,7 +304,7 @@ def cli_config():
 
     try:
         validate_settings(settings)
-        save_to_file(settings, email=args.ncbi_email, api_key=args.ncbi_api_key)
+        save_to_file(settings, api_key=args.ncbi_api_key)
         if args.show:
             print(f"NCBI email: {args.ncbi_email}")
             print(f"NCBI API key: {args.ncbi_api_key}")

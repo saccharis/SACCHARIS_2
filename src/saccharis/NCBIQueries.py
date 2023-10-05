@@ -20,7 +20,7 @@ import requests
 from bs4 import BeautifulSoup
 from ncbi.datasets import GenomeApi, GeneApi
 
-from saccharis.ParseUserSequences import parse_multiple_fasta
+from saccharis.utils.FastaHelpers import parse_multiple_fasta
 from saccharis.utils.Formatting import CazymeMetadataRecord
 # Internal imports
 from saccharis.utils.PipelineErrors import NCBIException, PipelineException
@@ -289,6 +289,7 @@ def ncbi_protein_query(accession_list: list[str], api_key: str, ncbi_email: str,
 def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=None,
                       verbose=False, logger=getLogger()) -> (str, int):
     genbank_list = format_list(accession_list)
+    # Book detailing how to interact with entrez is here: https://www.ncbi.nlm.nih.gov/books/NBK25497/
 
     # Set up the Query URL
     # Set up a search out to the eSearch program:
@@ -297,7 +298,7 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
     tool_string = f'&tool={ncbi_tool}' if ncbi_tool else ""
     api_key_string = f"&api_key={api_key}" if api_key else ""
     # todo: consider checking for valid API_key here
-    utils = "http://www.ncbi.nlm.nih.gov/entrez/eutils"
+    utils = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
     base_url = utils + "/esearch.fcgi?db=protein" + api_key_string + email_string + tool_string
     esearch = base_url + '&term='
 

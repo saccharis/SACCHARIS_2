@@ -18,7 +18,7 @@ from functools import reduce
 from logging import getLogger, Logger
 
 from Bio import SeqIO
-from saccharis.Cazy_Scrape import Mode
+from saccharis.CazyScrape import Mode
 from saccharis.Muscle_Alignment import main as muscle
 from saccharis.utils.PipelineErrors import AAModelError
 from saccharis.utils.Formatting import convert_path_wsl

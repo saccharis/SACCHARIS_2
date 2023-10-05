@@ -15,9 +15,10 @@ from typing import List
 from Bio.Entrez import efetch
 
 from saccharis.NCBIQueries import download_proteins_from_genomes
-from saccharis.Cazy_Scrape import Mode, Domain
+from saccharis.CazyScrape import Mode, Domain
 from saccharis.ChooseAAModel import TreeBuilder
-from saccharis.ParseUserSequences import parse_multiple_fasta, merge_data_sources
+from saccharis.ParseUserSequences import merge_data_sources
+from saccharis.utils.FastaHelpers import parse_multiple_fasta
 from saccharis.Pipeline import single_pipeline
 from saccharis.ScreenUserFile import choose_families_from_fasta
 from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder

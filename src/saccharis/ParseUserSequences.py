@@ -10,17 +10,18 @@ import os
 import re
 import hashlib
 import sys
-import datetime
 from collections import Counter
 from io import TextIOBase, StringIO
 from logging import Logger, getLogger
+from typing import Iterable
 
 # Dependency imports
-from Bio.SeqIO import parse, write, SeqRecord
+from Bio.SeqIO import write, SeqRecord
 
 # Internal imports
 from saccharis.NCBIQueries import download_proteins_from_genomes, download_from_genes
 from saccharis.utils.AdvancedConfig import get_ncbi_folder
+from saccharis.utils.FastaHelpers import parse_multiple_fasta
 from saccharis.utils.PipelineErrors import FileError, PipelineException
 from saccharis.utils.PipelineErrors import UserError
 from saccharis.utils.UserInput import ask_yes_no
@@ -50,7 +51,7 @@ class UIDValidator:
         return True
 
 
-def find_duplicates(elements: list):
+def find_duplicates(elements: Iterable):
     count = Counter(elements)
     duplicates = [item for item, freq in count.items() if freq > 1]
     return duplicates
@@ -79,7 +80,7 @@ def calculate_user_run_id(input_handle: str | os.PathLike | TextIOBase, output_f
         else:  # type(input_handle) == TextIOBase:
             data = input_handle.read(buf_size)
             while data:
-                md5.update(data)
+                md5.update(data.encode())
                 data = input_handle.read(buf_size)
         md5_string = md5.hexdigest()
         print(f"MD5 of user file is: {md5_string}")
@@ -119,59 +120,6 @@ def calculate_user_run_id(input_handle: str | os.PathLike | TextIOBase, output_f
         raise FileError(f"Cannot write user file hash information to file: {user_dict_path}") from error
 
     return user_run, md5_string
-
-
-def parse_multiple_fasta(fasta_handles: list[str | os.PathLike | TextIOBase], output_folder: str | os.PathLike = None,
-                         logger: Logger = None, source_override: str = None) \
-        -> (list[SeqRecord], dict[str:CazymeMetadataRecord], str):
-
-    metadata_dict: dict[str:CazymeMetadataRecord] = {}
-    all_seqs: list[SeqRecord] = []
-    # if len(fasta_filenames) == 1:
-    #     seqs = parse(fasta_filenames[0], 'fasta')
-    #     return fasta_filenames[0], {record.id: CazymeMetadataRecord(source_file=fasta_filenames[0],
-    #                                                                 protein_id=record.id,
-    #                                                                 protein_name=record.name)
-    #                                                                 for record in seqs}, seqs
-
-    for path in fasta_handles:
-        try:
-            seqs = list(parse(path, 'fasta'))
-        except FileNotFoundError as err:
-            raise UserWarning(f"ERROR: File path \"{err.filename}\" for provided user sequences is invalid! Did you "
-                              f"type it correctly?") from err
-        except Exception as err:
-            try:
-                seqs = list(parse(path, 'fasta-2line'))
-            except Exception as other:
-                logger.error("Exception 1:", err.args[0])
-                logger.error("Exception 2:", other.args[0])
-                raise UserWarning("WARNING: Unknown error occurred while parsing user sequences. User sequences not "
-                                  "included in analysis!\nPlease check that the file format is valid.") from other
-
-        for record in seqs:
-            if record.id in metadata_dict:
-                raise UserError(f"Multiple input files contain record id: '{record.id}'. Please rename record ids in "
-                                f"FASTA headers for uniqueness.")
-            if len(fasta_handles) > 1 and not source_override:
-                record.description += f" SACCHARIS merged record from {path}"
-            species_match = re.search(r'\[(.+)\]', record.description)
-            new_record = CazymeMetadataRecord(source_file=source_override if source_override else path,
-                                              protein_id=record.id,
-                                              protein_name=record.description,
-                                              org_name=species_match.group(1) if species_match else None)
-            metadata_dict[record.id] = new_record
-            all_seqs.append(record)
-
-    out_path = None
-    if output_folder:
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
-        filename = f"merged_user_fasta-{datetime.datetime.now().strftime('%d-%m-%y_%H-%M')}.fasta"
-        out_path = os.path.join(output_folder, filename)
-        write(all_seqs, out_path, 'fasta')
-
-    return all_seqs, metadata_dict, out_path
 
 
 # def parse_user_files(user_file_paths: list[str | os.PathLike], logger: Logger = getLogger()) \
@@ -257,8 +205,8 @@ def merge_data_sources(cazy_seqs: list[SeqRecord] | None, cazy_metadata: dict[st
     all_metadata: dict[str:CazymeMetadataRecord] = cazy_metadata | non_cazy_metadata
     all_seqs: list[SeqRecord] = cazy_seqs + non_cazy_seqs
 
-    if len(all_seqs) == len(all_metadata):
-        duplicate_ids = find_duplicates(all_seqs)
+    if len(all_seqs) != len(all_metadata):
+        duplicate_ids = find_duplicates(map(lambda seq: seq.id, all_seqs))
         raise PipelineException("Length of user sequence array and user sequence metadata array do not match. This "
                                 "error occurs because there are duplicate accession IDs across user files, CAZy "
                                 f"sequences, and NCBI sequences. Duplicated IDs: {duplicate_ids}")
@@ -273,12 +221,12 @@ def merge_data_sources(cazy_seqs: list[SeqRecord] | None, cazy_metadata: dict[st
                 print(f"Valid User ID: {user_record.id}")
     except UserError as error:
         rename = False
-        if not auto_rename:
+        if not auto_rename and not skip_user_ask:
             logger.error(f"{error.msg}")
             rename = ask_func("Would you like to prepend your user sequences with the proper header?",
                               "Prepending user headers in new file...",
                               "Cancelling SACCHARIS pipeline...")
-        if rename or auto_rename:
+        if rename or auto_rename or skip_user_ask:
             prepend_user_headers(all_seqs, all_metadata, inplace=True)
         else:
             sys.exit(3)

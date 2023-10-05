@@ -145,6 +145,7 @@ def cli_cazome():
     cats_to_print = args.family_categories
 
     family_dict = extract_families_hmmer(input_fasta, out_dir, args.threads, args.hmm_eval, args.hmm_cov)
+    print("Screening complete!")
 
     found_file = os.path.join(out_dir, re.sub(r"\.fa.*", "_families.json", os.path.basename(input_fasta)))
 

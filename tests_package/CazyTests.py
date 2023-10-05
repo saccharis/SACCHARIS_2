@@ -5,9 +5,9 @@ import sys
 import unittest
 from inspect import getsourcefile
 
-from saccharis.Cazy_Scrape import cazy_query, main
-from saccharis.Cazy_Scrape import Mode
-from saccharis.Cazy_Scrape import Domain
+from saccharis.CazyScrape import cazy_query, main
+from saccharis.CazyScrape import Mode
+from saccharis.CazyScrape import Domain
 from saccharis.utils.Formatting import CazymeMetadataRecord
 
 all_domains = Domain.ARCHAEA.value | Domain.BACTERIA.value | Domain.EUKARYOTA.value | Domain.VIRUSES.value | \

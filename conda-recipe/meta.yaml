@@ -10,8 +10,9 @@ package:
 source:
 #  url: https://github.com/saccharis/SACCHARIS_2/releases/download/v{{ version }}/saccharis-{{ version }}.tar.gz
 #  sha256: {{ hash|lower }}
-  git_url: https://github.com/saccharis/SACCHARIS_2.git
-  git_depth: 1 # latest only
+#  git_url: https://github.com/saccharis/SACCHARIS_2.git
+#  git_depth: 1 # latest only
+  source: ./..
 
 build:
   noarch: python
@@ -81,7 +82,9 @@ test:
 about:
   home: https://github.com/saccharis/SACCHARIS_2
   dev_url: https://github.com/saccharis/SACCHARIS_2
-  description: Bioinformatics pipeline to automate phylogenetic analysis of CAZyme families in FASTA sequences via creation of phylogenetic trees.
+  description: |
+    Bioinformatics pipeline to automate phylogenetic analysis of CAZyme families in FASTA sequences via creation of
+    phylogenetic trees.
   license: GPL v3
   license_file: LICENSE
   summary: A CAZyme discovery tool. Easily create phylogenetic trees from FASTA files and CAZyme families.

@@ -18,7 +18,7 @@ from PyQt5.QtCore import pyqtSignal
 from saccharis.ParseUserSequences import merge_data_sources
 from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.PipelineErrors import PipelineException, UserError, make_logger
-from saccharis import Cazy_Scrape
+from saccharis import CazyScrape
 from saccharis import ChooseAAModel
 from saccharis.ExtractAndPruneCAZymes import main as extract_pruned
 from saccharis import FastTree_Build
@@ -32,14 +32,14 @@ from saccharis.utils.Formatting import make_metadata_dict, format_time, CazymeMe
 
 
 def single_pipeline(family: str, output_folder: str | os.PathLike,
-                    scrape_mode: Cazy_Scrape.Mode = Cazy_Scrape.Mode.ALL_CAZYMES, domain_mode: int = 0b11111,
+                    scrape_mode: CazyScrape.Mode = CazyScrape.Mode.ALL_CAZYMES, domain_mode: int = 0b11111,
                     threads: int = math.ceil(os.cpu_count() * 0.75),
                     tree_program: ChooseAAModel.TreeBuilder = ChooseAAModel.TreeBuilder.FASTTREE,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
                     force_update: bool = False, user_files: list[str | os.PathLike] = None,
                     ncbi_genomes: list[str] = None, ncbi_genes: list[str] = None, auto_rename: bool = False,
                     settings: dict = None, gui_step_signal: pyqtSignal = None,
-                    logger: logging.Logger = logging.getLogger(), skip_user_ask=False, render_trees: bool = False,
+                    logger: logging.Logger = logging.getLogger(), skip_user_ask: bool =False, render_trees: bool = False,
                     ask_func=None):
 
     # todo: remove windows block once WSL support is fully implemented
@@ -65,7 +65,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
 
     # Set up family and group folders
     domain_dir_name = "ALL_DOMAINS" if domain_mode == 0b11111 else \
-        ''.join([dom.name[0] for dom in Cazy_Scrape.Domain if dom.value & domain_mode])
+        ''.join([dom.name[0] for dom in CazyScrape.Domain if dom.value & domain_mode])
     if not prune_seqs:
         domain_dir_name += "_noprune"
     if get_fragments:
@@ -93,7 +93,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
     # family_folder = os.path.join(output_folder, family)
     # group_folder = os.path.join(output_folder, family, scrape_mode.name)
     # domain_dir_name = "ALL_DOMAINS" if domain_mode == 0b11111 else \
-    #     ''.join([dom.name[0] for dom in Cazy_Scrape.Domain if dom.value & domain_mode])
+    #     ''.join([dom.name[0] for dom in CazyScrape.Domain if dom.value & domain_mode])
     # if not prune_seqs:
     #     domain_dir_name += "_noprune"
     # if get_fragments:
@@ -140,7 +140,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
     print(f"Cazy Extract is proceeding for {scrape_mode.name} of family {family}...")
     cazy_file, cazy_metadata, cazy_stats, cazy_seqs = \
-        Cazy_Scrape.main(family, cazy_folder, scrape_mode, get_fragments, verbose, force_update, ncbi_query_size,
+        CazyScrape.main(family, cazy_folder, scrape_mode, get_fragments, verbose, force_update, ncbi_query_size,
                          domain_mode, skip_ask=bool(gui_step_signal) or skip_user_ask, logger=logger)
     cazy_t = time.time()
     print("Completed Cazy Extract")
@@ -179,7 +179,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         all_seqs_file_path = cazy_file
         user_run_id = None
 
-    user_run_insert = f"_UserRun{user_run_id:05d}" if user_run_id else ""
+    user_run_insert = f"_UserRun{user_run_id:05d}" if user_run_id is not None else ""
 
     #######################################
     # Step Three - dbCAN, extract & prune

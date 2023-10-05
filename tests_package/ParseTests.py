@@ -3,7 +3,7 @@ import re
 import unittest
 from inspect import getsourcefile
 
-from saccharis.ParseUserSequences import parse_multiple_fasta
+from saccharis.utils.FastaHelpers import parse_multiple_fasta
 from saccharis.utils.Formatting import seqs_to_string
 from saccharis.utils.PipelineErrors import UserError
 

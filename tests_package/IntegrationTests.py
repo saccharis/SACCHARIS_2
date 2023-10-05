@@ -5,7 +5,7 @@ import os
 from inspect import getsourcefile
 
 from saccharis.Pipeline import single_pipeline
-from saccharis.Cazy_Scrape import Mode
+from saccharis.CazyScrape import Mode
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.utils.Formatting import CazymeMetadataRecord
 from saccharis.utils.PipelineErrors import AAModelError
@@ -24,15 +24,18 @@ class IntegrationTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         print("Deleting temp files")
-        shutil.rmtree(test_out_folder)
+        try:
+            shutil.rmtree(test_out_folder)
+        except PermissionError as err:
+            print(err)
 
     def run_pipeline(self, family, scrape_mode: Mode, tree_program: TreeBuilder = TreeBuilder.FASTTREE,
-                     user_file: str = None, force_update=True, render_trees=False):
+                     user_files: list[str] = None, force_update=True, render_trees=False):
         single_pipeline(family=family, output_folder=test_out_folder, scrape_mode=scrape_mode,
                         tree_program=tree_program, verbose=True, force_update=force_update, skip_user_ask=True,
-                        render_trees=render_trees)
+                        render_trees=render_trees, user_files=user_files)
         domain_folder = f"{family}_{scrape_mode.name}_ALL_DOMAINS"
-        file_prefix = f"{family}_{scrape_mode.name}_ALL_DOMAINS{'_UserRun00000' if user_file else ''}"
+        file_prefix = f"{family}_{scrape_mode.name}_ALL_DOMAINS{'_UserRun00000' if user_files else ''}"
         tree_prog = tree_program.name
         json_path = os.path.join(test_out_folder, domain_folder, f"{file_prefix}.json")
         self.assertTrue(os.path.exists(json_path))
@@ -58,14 +61,14 @@ class IntegrationTestCase(unittest.TestCase):
         self.run_pipeline("PL9", Mode.CHARACTERIZED)
 
     def test_PL9_raxml(self):
-        self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML, user_file=small_user_testfile)
+        self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML, user_files=[small_user_testfile])
 
     def test_PL9_raxml_ng(self):
-        self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML_NG, user_file=small_user_testfile,
+        self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML_NG, user_files=[small_user_testfile],
                           render_trees=True)
 
     def test_GH5_25_raxml_structure(self):
-        self.run_pipeline("GH5_25", Mode.STRUCTURE, tree_program=TreeBuilder.RAXML, user_file=small_user_testfile)
+        self.run_pipeline("GH5_25", Mode.STRUCTURE, tree_program=TreeBuilder.RAXML, user_files=[small_user_testfile])
 
     def test_GH5_25(self):
         self.run_pipeline("GH5_25", Mode.CHARACTERIZED)

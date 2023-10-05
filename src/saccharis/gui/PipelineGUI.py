@@ -34,7 +34,6 @@ from saccharis.gui import CategoryDialog
 from saccharis.gui import SettingsDialog
 from saccharis.gui import ScreenDialog
 
-from saccharis.ParseUserSequences import concatenate_multiple_fasta
 from saccharis.ScreenUserFile import extract_families_hmmer
 from saccharis.Pipeline import single_pipeline
 from saccharis.CLI import get_version
@@ -48,8 +47,8 @@ from saccharis.utils.AdvancedConfig import get_user_settings, load_from_env, val
     get_default_settings, get_log_folder, get_output_folder
 from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile, make_logger
 
-from saccharis.Cazy_Scrape import Mode
-from saccharis.Cazy_Scrape import Domain
+from saccharis.CazyScrape import Mode
+from saccharis.CazyScrape import Domain
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.utils.Formatting import rename_header_ids
 
@@ -298,9 +297,11 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
             args.__setattr__("fasta_file", None)
             args.__setattr__("fasta_source_dict", None)
         else:
-            user_merged_file, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_files, output_folder=args.output_path)
-            args.__setattr__("fasta_file", user_merged_file)
-            args.__setattr__("fasta_source_dict", user_merged_dict)
+            # user_merged_file, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_files, output_folder=args.output_path)
+            # args.__setattr__("fasta_file", user_merged_file)
+            # args.__setattr__("fasta_source_dict", user_merged_dict)
+            args.__setattr__("user_fasta_files", user_files)
+            # todo: more refactoring to make gui work properly
 
         if self.fasttree_radiobutton.isChecked():
             args.__setattr__("tree_program", TreeBuilder.FASTTREE)
@@ -784,7 +785,7 @@ class SettingsDlg(QDialog):
             # print(key)
             # print(email)
             validate_settings(settings)
-            save_to_file(settings, email, key)
+            save_to_file(settings, email)
             self.ncbi_key = key
             self.ncbi_email = email
             tell_user("Successfully updated advanced settings!")

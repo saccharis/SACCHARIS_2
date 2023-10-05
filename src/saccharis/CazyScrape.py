@@ -20,7 +20,8 @@ from html.parser import HTMLParser
 # noinspection PyUnresolvedReferences
 import lxml
 import requests
-from Bio import SeqIO
+from Bio import SeqIO, SeqRecord
+from Bio.SeqIO import parse
 from bs4 import BeautifulSoup
 
 from saccharis.NCBIQueries import valid_genbank_gene, ncbi_protein_query
@@ -447,7 +448,8 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
 
 
 def main(family, output_folder: str | os.PathLike, scrape_mode, get_fragments=False, verbose=False, force_update=False,
-         ncbi_query_size=200, domain_mode=0b11111, skip_ask=False, logger: Logger = getLogger()):
+         ncbi_query_size=200, domain_mode=0b11111, skip_ask=False, logger: Logger = getLogger()) \
+        -> (str | os.PathLike, dict[str:CazymeMetadataRecord], list[int], list[SeqRecord]):
     api_key, ncbi_email, ncbi_tool = load_from_env(skip_ask=skip_ask)
     # Folder and file output setup
     fasta_file = os.path.join(output_folder, f"{family}_{scrape_mode.name}_cazy.fasta")
@@ -464,7 +466,8 @@ def main(family, output_folder: str | os.PathLike, scrape_mode, get_fragments=Fa
                 cazymes = {id: CazymeMetadataRecord(**record) for id, record in cazyme_dict.items()}
             with open(stats_file, 'r', encoding='utf-8') as f:
                 stats = json.loads(f.read())
-            return fasta_file, cazymes, stats
+            seq_list = parse(fasta_file, "fasta")
+            return fasta_file, cazymes, stats, seq_list
     except (IOError, JSONDecodeError) as e:
         logger.debug(e)
         logger.warning(f"Error reading data from previous run... Data file: {data_file} Stats file: {stats_file}")
@@ -554,9 +557,9 @@ if __name__ == "__main__":
     test_scrape_mode = Mode.CHARACTERIZED
     test_get_fragments = False
     test_verbose = True
-    output_folder = os.path.join(os.getcwd(), "output")
-    family_folder = os.path.join(output_folder, test_family)
-    test_group_folder = os.path.join(output_folder, test_family, test_scrape_mode.name)
+    test_output_folder = os.path.join(os.getcwd(), "output")
+    family_folder = os.path.join(test_output_folder, test_family)
+    test_group_folder = os.path.join(test_output_folder, test_family, test_scrape_mode.name)
 
     if not os.path.isdir(family_folder):
         os.mkdir(family_folder, 0o755)
