@@ -246,7 +246,7 @@ def ncbi_query_dna_from_protein_accessions(accessions: list[str]):
     return fasta_sequences
 
 
-def ncbi_protein_query(accession_list: list[str], api_key: str, ncbi_email: str, ncbi_tool: str, verbose: bool = False,
+def ncbi_protein_query(accession_list: list[str], api_key: str | None, ncbi_email: str, ncbi_tool: str, verbose: bool = False,
                        logger: Logger = getLogger(), ncbi_query_size: int = 200) -> (str, int, int):
     accession_count = len(accession_list)
     queried = 0

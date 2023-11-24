@@ -7,7 +7,7 @@ import sys
 
 import wget
 
-from saccharis.utils.AdvancedConfig import get_db_folder
+from saccharis.utils.AdvancedConfig import get_db_folder, get_package_settings, save_package_settings
 from saccharis.utils.Formatting import convert_path_wsl
 
 links_last_updated = "September, 2023"
@@ -95,8 +95,24 @@ def cli_update_hmms():
     parser.add_argument("--keep_existing", "-k", action="store_false", help="Use this option if you don't want newly "
                                                                             "downloaded files to replace existing "
                                                                             "files.")
+    parser.add_argument("--directory", "-d", type=str, help="Use this option to download the database files into a "
+                                                            "non-default directory.", default=None)
+
     args = parser.parse_args()
-    download_database(force_download=args.keep_existing)
+    if args.directory is None:
+        old_dir = None
+        dir = get_db_folder()
+    else:
+        old_dir = get_db_folder()
+        dir = args.directory
+
+        shutil.move(old_dir, dir)
+
+        package_settings = get_package_settings()
+        package_settings["database_folder"] = args.directory
+        save_package_settings(package_settings)
+
+    download_database(db_install_folder=dir, force_download=args.keep_existing)
 
 
 def download_database(db_install_folder: str | os.PathLike = get_db_folder(), force_download: bool = False) -> int:

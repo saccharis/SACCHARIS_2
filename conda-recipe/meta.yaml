@@ -12,7 +12,7 @@ source:
 #  sha256: {{ hash|lower }}
 #  git_url: https://github.com/saccharis/SACCHARIS_2.git
 #  git_depth: 1 # latest only
-  source: ./..
+  path: ./..
 
 build:
   noarch: python

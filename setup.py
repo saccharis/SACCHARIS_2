@@ -74,7 +74,7 @@ setup(name='saccharis',
           # "hello.utils": ["*.csv"],
           # # Include any *.dat files found in the "data" subdirectory of the
           # # "mypkg" package:
-          # "mypkg": ["data/*.dat"],
+          "saccharis": ["data/*"],
       },
       license='GPL v3',
       install_requires=[
