@@ -357,6 +357,10 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                 domain = row[1]
                 organism = row[2]
                 genbank = row[3]
+                source = row[4]
+                if source != "ncbi":
+                    total_count -= 1
+                    continue
                 if genbank not in all_cazymes and genbank not in genbank_duplicates and genbank is not None and genbank != "":
                     uncharacterized_added += 1
                     try:
@@ -409,6 +413,9 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                 domain = row[1]
                 # organism = row[2]
                 genbank = row[3]
+                source = row[4]
+                if source != "ncbi":
+                    continue
                 if genbank in cazymes:
                     cazymes[genbank].domain = domain
 

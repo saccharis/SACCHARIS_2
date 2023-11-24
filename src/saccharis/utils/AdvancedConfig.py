@@ -11,6 +11,7 @@ import json
 import os
 import pathlib
 import time
+from json import JSONDecodeError
 from subprocess import run, CalledProcessError
 from dotenv import load_dotenv
 import textwrap as _textwrap
@@ -25,9 +26,11 @@ def get_default_package_settings():
 
 
 def load_from_file(path: str | os.PathLike):
-    with open(path, 'r', encoding="utf-8") as sfile:
-        settings = json.loads(sfile.read())
-
+    try:
+        with open(path, 'r', encoding="utf-8") as sfile:
+            settings = json.loads(sfile.read())
+    except JSONDecodeError:
+        return {}
     return settings
 
 
