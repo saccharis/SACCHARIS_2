@@ -4,6 +4,7 @@ from functools import reduce
 from hashlib import md5
 from inspect import getsourcefile
 import operator
+from io import StringIO
 
 from Bio import Entrez, SeqIO
 
@@ -39,8 +40,11 @@ class NCBITestCase(unittest.TestCase):
     def test_protein_query(self):
         fasta_data, queried, retrieved = ncbi_protein_query(self.accessions, api_key=None, ncbi_email=self.email,
                                                             ncbi_tool="saccharis2")
-        fasta_md5 = md5(fasta_data.encode()).hexdigest()
-        self.assertEqual(fasta_md5, "3d449e72be956635c45e48cb2d92caa7")
+        seqs = list(SeqIO.parse(StringIO(fasta_data), format='fasta'))
+        self.assertTrue(len(seqs) == len(self.accessions))
+        seq_data = ''.join([str(seq.seq) for seq in seqs])
+        seq_md5 = md5(seq_data.encode()).hexdigest()
+        self.assertEqual(seq_md5, 'cfd595efdb085e0862e83550ab72fd4d')
 
     def test_query_proteins_from_single_genome(self):
         b_uniformis_genbank = "GCA_018292165.1"
