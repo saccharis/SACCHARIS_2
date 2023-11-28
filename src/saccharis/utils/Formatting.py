@@ -99,6 +99,8 @@ def make_metadata_dict(metadata_dict: dict[str, CazymeMetadataRecord], module_li
         else:
             msg = f"Error in make_metadata_dict method, it failed to receive a CazymeMetadataRecord for accession id " \
                   f"{module_id} in it's arguments"
+            logger.error("metadata_dict:", metadata_dict)
+            logger.error("module_list:", module_list)
             logger.error(msg)
             raise PipelineException(msg)
 
