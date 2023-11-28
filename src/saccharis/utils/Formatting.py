@@ -149,6 +149,14 @@ def make_metadata_dict(metadata_dict: dict[str, CazymeMetadataRecord],
             logger.error(err)
             logger.error(msg)
             raise PipelineException(msg) from err
+        except KeyError:
+            msg = f"module: {module}\n" \
+                  f"module_id: {module_id}" \
+                  f"bounds_dict: {bounds_dict}"
+            logger.error(msg)
+            msg = f"{module} not found in bounds dict!"
+            logger.error(msg)
+            raise Exception(msg)
 
         new_cazyme_dict[module] = entry_item
 
