@@ -202,20 +202,11 @@ def merge_data_sources(cazy_seqs: list[SeqRecord] | None, cazy_metadata: dict[st
         non_cazy_seqs += gene_seqs
         non_cazy_metadata |= gene_metadata
 
-    all_metadata: dict[str:CazymeMetadataRecord] = cazy_metadata | non_cazy_metadata
-    all_seqs: list[SeqRecord] = cazy_seqs + non_cazy_seqs
-
-    if len(all_seqs) != len(all_metadata):
-        duplicate_ids = find_duplicates(map(lambda seq: seq.id, all_seqs))
-        raise PipelineException("Length of user sequence array and user sequence metadata array do not match. This "
-                                "error occurs because there are duplicate accession IDs across user files, CAZy "
-                                f"sequences, and NCBI sequences. Duplicated IDs: {duplicate_ids}")
-
     # Validate user seqs, including checking for valid user IDs, duplicate user ids, and querying user about renaming
     # logic when the file does not meet requirements
     validator = UIDValidator()
     try:
-        for user_record in all_seqs:
+        for user_record in non_cazy_seqs:
             validator.validate_uid(user_record)
             if verbose:
                 print(f"Valid User ID: {user_record.id}")
@@ -227,9 +218,18 @@ def merge_data_sources(cazy_seqs: list[SeqRecord] | None, cazy_metadata: dict[st
                               "Prepending user headers in new file...",
                               "Cancelling SACCHARIS pipeline...")
         if rename or auto_rename or skip_user_ask:
-            prepend_user_headers(all_seqs, all_metadata, inplace=True)
+            prepend_user_headers(non_cazy_seqs, non_cazy_metadata, inplace=True)
         else:
             sys.exit(3)
+
+    all_metadata: dict[str:CazymeMetadataRecord] = cazy_metadata | non_cazy_metadata
+    all_seqs: list[SeqRecord] = cazy_seqs + non_cazy_seqs
+
+    if len(all_seqs) != len(all_metadata):
+        duplicate_ids = find_duplicates(map(lambda seq: seq.id, all_seqs))
+        raise PipelineException("Length of user sequence array and user sequence metadata array do not match. This "
+                                "error occurs because there are duplicate accession IDs across user files, CAZy "
+                                f"sequences, and NCBI sequences. Duplicated IDs: {duplicate_ids}")
 
     all_seq_data = StringIO(seqs_to_string(all_seqs))
     _run_id, md5_hash = calculate_user_run_id(all_seq_data, output_folder)
