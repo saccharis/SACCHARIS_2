@@ -197,6 +197,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         extract_pruned(all_seqs_file_path, family, dbcan_folder, scrape_mode, force_update, prune_seqs,
                        threads=threads, hmm_cov=hmm_cov, hmm_eval=hmm_eval)
 
+    pruned_module_list = [seq_record.id for seq_record in pruned_list]
+
     metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}{user_run_insert}.json"
 
     final_metadata_filepath = os.path.join(domain_folder, metadata_filename)
@@ -214,10 +216,10 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
                   f"Falling back to recalculating fresh CazymeMetadataRecords, but NOT overwriting old ones. If you " \
                   f"want to overwrite the old records, run the pipeline again with the --fresh option."
             logger.error(msg)
-            final_metadata_dict = make_metadata_dict(all_metadata, list(id_convert_dict.values()), bound_dict,
+            final_metadata_dict = make_metadata_dict(all_metadata, pruned_module_list, bound_dict,
                                                      ecami_dict, diamond_dict, logger=logger)
     else:
-        final_metadata_dict = make_metadata_dict(all_metadata, list(id_convert_dict.values()), bound_dict,
+        final_metadata_dict = make_metadata_dict(all_metadata, pruned_module_list, bound_dict,
                                                  ecami_dict, diamond_dict, logger=logger)
         try:
             with open(final_metadata_filepath, 'w', encoding="utf-8") as meta_json:

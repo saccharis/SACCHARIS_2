@@ -41,7 +41,7 @@ class NCBITestCase(unittest.TestCase):
         fasta_data, queried, retrieved = ncbi_protein_query(self.accessions, api_key=None, ncbi_email=self.email,
                                                             ncbi_tool="saccharis2")
         seqs = list(SeqIO.parse(StringIO(fasta_data), format='fasta'))
-        self.assertTrue(len(seqs) == len(self.accessions))
+        self.assertEqual(len(seqs), len(self.accessions))
         seq_data = ''.join([str(seq.seq) for seq in seqs])
         seq_md5 = md5(seq_data.encode()).hexdigest()
         self.assertEqual(seq_md5, 'cfd595efdb085e0862e83550ab72fd4d')

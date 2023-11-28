@@ -68,7 +68,7 @@ def make_metadata_dict(metadata_dict: dict[str, CazymeMetadataRecord],
                        logger: Logger = getLogger()):
     new_cazyme_dict = {}
     new_module_list = metadata_dict.keys()
-    for module in new_module_list:
+    for module in module_list:
         if module.__contains__("<"):
             module_id = module.split("<")[0]
         else:
