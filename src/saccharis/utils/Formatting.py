@@ -60,13 +60,15 @@ def rename_header_ids(new_user_fasta_file: str, metadata_dict: dict[str, CazymeM
     return new_metadata_dict
 
 
-def make_metadata_dict(metadata_dict: dict[str, CazymeMetadataRecord], module_list: list[str],
+def make_metadata_dict(metadata_dict: dict[str, CazymeMetadataRecord],
+                       module_list: list[str],
                        # merged_dict: dict[str, CazymeMetadataRecord],
                        bounds_dict: dict[str, Tuple[int, int]],
                        ecami_dict: dict, diamond_dict: dict,
                        logger: Logger = getLogger()):
     new_cazyme_dict = {}
-    for module in module_list:
+    new_module_list = metadata_dict.keys()
+    for module in new_module_list:
         if module.__contains__("<"):
             module_id = module.split("<")[0]
         else:
@@ -98,7 +100,7 @@ def make_metadata_dict(metadata_dict: dict[str, CazymeMetadataRecord], module_li
             entry_item = deepcopy(metadata_dict[module_id])
         else:
             msg = f"metadata_dict: {metadata_dict}\n" \
-                  f"module_list: {module_list}"
+                  # f"module_list: {module_list}"
             logger.error(msg)
             msg = f"Error in make_metadata_dict method, it failed to receive a CazymeMetadataRecord for accession id " \
                   f"{module_id} in it's arguments"
