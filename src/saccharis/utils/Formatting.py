@@ -97,10 +97,11 @@ def make_metadata_dict(metadata_dict: dict[str, CazymeMetadataRecord], module_li
         elif module_id in metadata_dict:
             entry_item = deepcopy(metadata_dict[module_id])
         else:
+            msg = f"metadata_dict: {metadata_dict}\n" \
+                  f"module_list: {module_list}"
+            logger.error(msg)
             msg = f"Error in make_metadata_dict method, it failed to receive a CazymeMetadataRecord for accession id " \
                   f"{module_id} in it's arguments"
-            logger.error("metadata_dict:", metadata_dict)
-            logger.error("module_list:", module_list)
             logger.error(msg)
             raise PipelineException(msg)
 
