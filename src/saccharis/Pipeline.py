@@ -203,6 +203,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         msg = f"pruned_list: {pruned_list}"
         logger.error(msg)
         logger.error(err.args[0])
+        raise PipelineException("error with pruned_list conversion") from err
 
     metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}{user_run_insert}.json"
 
