@@ -197,7 +197,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         extract_pruned(all_seqs_file_path, family, dbcan_folder, scrape_mode, force_update, prune_seqs,
                        threads=threads, hmm_cov=hmm_cov, hmm_eval=hmm_eval)
 
-    pruned_module_list = [seq_record.id for seq_record in pruned_list]
+    pruned_module_list = [id_convert_dict[seq_record.id] for seq_record in pruned_list]
 
     metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}{user_run_insert}.json"
 
