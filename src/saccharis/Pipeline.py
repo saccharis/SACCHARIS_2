@@ -202,6 +202,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
     except KeyError as err:
         msg = f"pruned_list: {pruned_list}"
         logger.error(msg)
+        msg = f"id_convert_dict: {pruned_list}"
+        logger.error(msg)
         logger.error(err.args[0])
         raise PipelineException("error with pruned_list conversion") from err
 
