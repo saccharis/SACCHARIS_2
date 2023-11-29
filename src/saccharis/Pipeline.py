@@ -205,7 +205,9 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         msg = f"id_convert_dict: {pruned_list}"
         logger.error(msg)
         logger.error(err.args[0])
-        raise PipelineException("error with pruned_list conversion") from err
+        raise PipelineException("Error with pruned_list conversion. This may be caused by loading incorrectly "
+                                "formatted data, try running the pipeline with --fresh to skip loading partial "
+                                "run data.") from err
 
     metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}{user_run_insert}.json"
 
