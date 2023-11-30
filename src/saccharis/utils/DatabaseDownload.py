@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 import wget
+from saccharis.utils.PipelineErrors import PipelineException
 
 from saccharis.utils.AdvancedConfig import get_db_folder, get_package_settings, save_package_settings
 from saccharis.utils.Formatting import convert_path_wsl
@@ -55,7 +56,15 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
 
     if not os.path.exists(processed_filepath) or force_download:
         print(f"dbCAN file {processed_filepath} not found, downloading...")
-        wget.download(url, output_folder)
+        try:
+            wget.download(url, output_folder)
+        except TimeoutError as err:
+            msg = f"Failed to download file {processed_filepath} from url {url} due to timeout."
+            raise PipelineException(msg) from err
+        except Exception as err:
+            msg = f"Failed to download file {processed_filepath} from url {url}."
+            raise PipelineException(msg) from err
+
         downloaded = True
         if new_filename:
             shutil.move(downloaded_file, output_path)
