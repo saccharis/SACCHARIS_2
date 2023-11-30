@@ -91,6 +91,6 @@ setup(name='saccharis',
           'pyqt5',
           'PyQt5-sip',
       ],
-      python_requires='>=3.8',
+      python_requires='>=3.11',
       zip_safe=False
       )

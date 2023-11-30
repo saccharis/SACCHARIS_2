@@ -136,7 +136,7 @@ All of the following programs installed and available on $PATH variable:
     * RAxML version 8.2.12
     * RAxML-ng version 1.2.0
   * R, with 'Rscript' available on PATH (optional, but needed to automatically rendering phylogenic trees)
-* Python 3.10 with following python libraries 
+* Python 3.11 with following python libraries 
   (you can just run `pip install <latest tarball path under the release page>` ):
 
   * beautifulsoup4

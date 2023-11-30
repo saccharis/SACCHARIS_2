@@ -52,7 +52,7 @@ requirements:
     - modeltest-ng >=0.1.7  # [not win]
     - muscle >=3.8  # [not win]
     - psutil
-    - python >=3.8
+    - python >=3.11
     - python-dotenv >=0.20.0
     - python-wget >=3.2
     - raxml >=8.2.12 # [not win]
