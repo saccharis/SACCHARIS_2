@@ -45,10 +45,14 @@ def get_package_settings():
 
 
 def save_package_settings(new_package_settings):
-    base_dir = pathlib.PurePath(inspect.getsourcefile(lambda: 0)).parents[3]
+    base_dir = pathlib.PurePath(inspect.getsourcefile(lambda: 0)).parents[1]
     data_folder = base_dir / "data"
     config_path = data_folder / "config.json"
-    old_package_settings = load_from_file(config_path)
+    if os.path.isfile(config_path):
+        old_package_settings = load_from_file(config_path)
+    else:
+        old_package_settings = {}
+
     for key in old_package_settings:
         if key not in new_package_settings:
             new_package_settings[key] = old_package_settings[key]
@@ -308,19 +312,20 @@ def cli_config():
                                                                         "supports the oldest hardware.",
                         choices=["raxmlHPC-PTHREADS-AVX2", "raxmlHPC-PTHREADS-SSE3", "raxmlHPC-PTHREADS",
                                  "raxmlHPC-AVX2", "raxmlHPC-SSE3", "raxmlHPC"])
-    parser.add_argument("user_data_folder", default=None, type=str, help="This is the folder to store SACCHARIS files "
-                                                                         "containing software_settings, databases, "
-                                                                         "temporary files, etc. By default, this is "
-                                                                         "your user home folder as determined by "
-                                                                         "expanding '~' on your operating system. "
-                                                                         "For example:\n"
-                                                                         "Windows: C:\\Users\\username\\ \n"
-                                                                         "Linux: /home/username/\n"
-                                                                         "MacOS: /Users/username/\n"
-                                                                         "A folder named 'saccharis' will be created "
-                                                                         "in this folder and used to store data. When "
-                                                                         "changed, existing data will be moved if "
-                                                                         "present."
+    parser.add_argument("--user_data_folder", default=None, type=str, help="This is the folder to store SACCHARIS "
+                                                                           "files containing software_settings, "
+                                                                           "databases, temporary files, etc. By "
+                                                                           "default, this is your user home folder "
+                                                                           "as determined by expanding '~' on your "
+                                                                           "operating system. "
+                                                                           "For example:\n"
+                                                                           "Windows: C:\\Users\\username\\ \n"
+                                                                           "Linux: /home/username/\n"
+                                                                           "MacOS: /Users/username/\n"
+                                                                           "A folder named 'saccharis' will be created "
+                                                                           "in this folder and used to store data. "
+                                                                           "When changed, existing data will be "
+                                                                           "moved if present."
                         )
     # old argument from Pipeline.py
     # parser.add_argument("--raxml", "-r", type=str, default="raxmlHPC-PTHREADS-AVX2", help="There are 3 different "
@@ -355,11 +360,12 @@ def cli_config():
         software_settings["raxml_command"] = args.raxml_command
         changes = True
     if args.user_data_folder:
-        if not os.path.exists("args.user_data_folder"):
-            print(f"{args.user_data_folder} folder for SACCHARIS files does not exist!")
+        if not os.path.exists(args.user_data_folder):
+            print(f"{args.user_data_folder} folder for SACCHARIS files does not exist!\nPlease choose an existing "
+                  f"folder to store SACCHARIS data folder in.")
         else:
 
-            current_package_settings["user_data_folder"] = args.directory
+            current_package_settings["user_data_folder"] = args.user_data_folder
             save_package_settings(current_package_settings)
 
             new_user_dir = current_package_settings["user_data_folder"]
