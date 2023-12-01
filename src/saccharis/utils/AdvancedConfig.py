@@ -10,6 +10,7 @@ import inspect
 import json
 import os
 import pathlib
+import shutil
 import time
 from json import JSONDecodeError
 from subprocess import run, CalledProcessError
@@ -26,22 +27,22 @@ def get_default_package_settings():
 
 
 def load_from_file(path: str | os.PathLike):
-    try:
-        with open(path, 'r', encoding="utf-8") as sfile:
-            settings = json.loads(sfile.read())
-    except JSONDecodeError:
-        return {}
+    with open(path, 'r', encoding="utf-8") as sfile:
+        settings = json.loads(sfile.read())
     return settings
 
 
 def get_package_settings():
-    base_dir = pathlib.PurePath(inspect.getsourcefile(lambda: 0)).parents[3]
+    base_dir = pathlib.PurePath(inspect.getsourcefile(lambda: 0)).parents[1]
     data_folder = base_dir / "data"
     config_path = data_folder / "config.json"
     if not os.path.isfile(config_path):
         return get_default_package_settings()
     else:
-        return load_from_file(config_path)
+        try:
+            return load_from_file(config_path)
+        except JSONDecodeError:
+            return get_default_package_settings()
 
 
 def save_package_settings(new_package_settings):
@@ -49,7 +50,10 @@ def save_package_settings(new_package_settings):
     data_folder = base_dir / "data"
     config_path = data_folder / "config.json"
     if os.path.isfile(config_path):
-        old_package_settings = load_from_file(config_path)
+        try:
+            old_package_settings = load_from_file(config_path)
+        except JSONDecodeError:
+            old_package_settings = {}
     else:
         old_package_settings = {}
 
@@ -176,7 +180,10 @@ def get_user_settings():
     if not os.path.isfile(default_settings_path):
         save_to_file(get_default_settings())
 
-    user_settings = load_from_file(default_settings_path)
+    try:
+        user_settings = load_from_file(default_settings_path)
+    except JSONDecodeError:
+        user_settings = {}
     settings = get_default_settings()
     for item in settings.keys():
         if item in user_settings:
@@ -364,14 +371,19 @@ def cli_config():
             print(f"{args.user_data_folder} folder for SACCHARIS files does not exist!\nPlease choose an existing "
                   f"folder to store SACCHARIS data folder in.")
         else:
-
+            old_user_data_folder = current_package_settings["user_data_folder"]
+            old_saccharis_folder = os.path.join(old_user_data_folder, "saccharis")
             current_package_settings["user_data_folder"] = args.user_data_folder
-            save_package_settings(current_package_settings)
-
             new_user_dir = current_package_settings["user_data_folder"]
-            new_folder_saccharis_user = os.path.join(new_user_dir, "saccharis")
-            config_folder = os.path.join(new_folder_saccharis_user, "config")
+            new_saccharis_folder = os.path.join(new_user_dir, "saccharis")
+            config_folder = os.path.join(new_saccharis_folder, "config")
             settings_path = os.path.join(config_folder, "advanced_settings.json")
+
+            if old_user_data_folder != current_package_settings["user_data_folder"]:
+                changes = True
+                shutil.copytree(old_saccharis_folder, new_saccharis_folder, dirs_exist_ok=True)
+                shutil.rmtree(old_saccharis_folder)
+                save_package_settings(current_package_settings)
 
     if args.restore_defaults:
         software_settings = get_default_settings()
