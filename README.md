@@ -38,6 +38,10 @@ Installation on base windows is possible but requires several dependencies to be
 WSL2 environment (SACCHARIS won't be able to know anything about virtual environments in your WSL environment) and 
 should only be attempted by advanced users familiar with using a CLI, linux/WSL2, conda, bioconda, etc.
 
+#### Installation guides
+
+Step by step installation guides are available on the wiki: https://github.com/saccharis/SACCHARIS_2/wiki
+
 ### Beta installation
 
 #### Installation option 1: Conda CLI Install
