@@ -19,8 +19,8 @@ Public release is available through the bioconda channel of the conda package ma
 
 ## Citation
 
-[//]: # (todo: update this to new paper when it's published?)
-Publication information coming soon.
+[//]: # (updated by Kristin)
+Fraser, A.S.C. et al. (2024). SACCHARIS v2: Streamlining Prediction of Carbohydrate-Active Enzyme Specificities Within Large Datasets. In: Lisacek, F. (eds) Protein Bioinformatics. Methods in Molecular Biology, vol 2836. Humana, New York, NY. https://doi.org/10.1007/978-1-0716-4007-4_16
 
 ## Installation
 
