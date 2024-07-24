@@ -26,7 +26,7 @@ setup(name='saccharis',
       # - First bugfix to public release might be "2.0.1"
       # - The first public release after 2.0.* that breaks anything reliant on 2.0.* will be 2.1.0
 
-      version="2.0.0.dev22",
+      version="2.0.1",
       build=0,
       # version=meta_yaml_data["package"]["version"],
       # build=meta_yaml_data["build"]["number"],
@@ -38,8 +38,8 @@ setup(name='saccharis',
       url='https://github.com/saccharis/SACCHARIS_2',
       classifiers=[
           # Uncomment the release status below which best describes the state of this release.
-          'Development Status :: 3 - Alpha',
-          # 'Development Status :: 4 - Beta',
+          # 'Development Status :: 3 - Alpha',
+          'Development Status :: 4 - Beta',
           # 'Development Status :: 5 - Stable',
           'Environment :: Console',
           'Intended Audience :: Science/Research',
