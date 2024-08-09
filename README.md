@@ -12,11 +12,6 @@ phylogenetic methods.
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/license.svg)](https://anaconda.org/bioconda/saccharis)
 ![SACCHARIS Conda Test Suite](https://github.com/saccharis/SACCHARIS_2/actions/workflows/python-package-conda.yml/badge.svg)
 
-## Beta information
-
-SACCHARIS 2.0 is currently under active development and is currently in open beta. 
-Public release is available through the bioconda channel of the conda package manager.
-
 ## Citation
 
 [//]: # (updated by Kristin)
