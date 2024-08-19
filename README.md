@@ -12,6 +12,10 @@ phylogenetic methods.
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/license.svg)](https://anaconda.org/bioconda/saccharis)
 ![SACCHARIS Conda Test Suite](https://github.com/saccharis/SACCHARIS_2/actions/workflows/python-package-conda.yml/badge.svg)
 
+#### Current issues with 2.0.1
+There are some current bugs with the released version on bioconda. While we work on a solution, please install the older version for use: `conda install saccharis=2.0.0.dev21`
+Thank you for your patience.
+
 ## Citation
 
 [//]: # (updated by Kristin)
