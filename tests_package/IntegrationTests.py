@@ -67,6 +67,10 @@ class IntegrationTestCase(unittest.TestCase):
         self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML_NG, user_files=[small_user_testfile],
                           render_trees=True)
 
+    def test_GH102_raxml_ng(self):
+        self.run_pipeline("GH102", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML_NG,
+                          user_files=[small_user_testfile], render_trees=True)
+
     def test_GH5_25_raxml_structure(self):
         self.run_pipeline("GH5_25", Mode.STRUCTURE, tree_program=TreeBuilder.RAXML, user_files=[small_user_testfile])
 

@@ -1,3 +1,4 @@
 /dist/
 /env/
 **/__pycache__/
+/tests_package/test_files/temp/

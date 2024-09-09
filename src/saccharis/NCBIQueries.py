@@ -221,10 +221,13 @@ def ncbi_query_dna_from_protein_accessions(accessions: list[str]):
     for source in dna_sources:
         try:
             complement = False
+            strand = '+'
             # Handling complement format
             if source.startswith('complement(') and source.endswith(')'):
                 source = source[len('complement('):-1]
                 complement = True
+                strand = '-'
+            #     todo:  verify that noting complemented sequence in record.name and description works
             # Extract the start and end positions from the provided string
             accession_id = source.split(":")[0]
             start, end = map(int, source.split(":")[1].split(".."))
@@ -236,9 +239,14 @@ def ncbi_query_dna_from_protein_accessions(accessions: list[str]):
             record.id = nucleotide_to_accession[record.id.replace('-', '..')]
 
             if complement:
+                #     todo:  verify that noting complemented sequence in record.name and description works
                 record.seq = record.seq.reverse_complement()
+                record.description = record.description.replace(f"{start}-{end}", f"{end}-{start} (-) strand")
+                record.name = record.name.replace(f"{start}-{end}", f"{end}-{start} (-) strand")
                 fasta_sequences.append(record)
             else:
+                record.description = record.description.replace(f"{start}-{end}", f"{start}-{end} (+) strand")
+                record.name = record.name.replace(f"{start}-{end}", f"{start}-{end} (+) strand")
                 fasta_sequences.append(record)
         except Exception as e:
             print(f"Error fetching sequence for source {source}: {e}")
