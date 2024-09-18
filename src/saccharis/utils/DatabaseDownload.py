@@ -6,8 +6,9 @@ import subprocess
 import sys
 
 import wget
+from saccharis.utils.PipelineErrors import PipelineException
 
-from saccharis.utils.AdvancedConfig import get_db_folder
+from saccharis.utils.AdvancedConfig import get_db_folder, get_package_settings, save_package_settings
 from saccharis.utils.Formatting import convert_path_wsl
 
 links_last_updated = "September, 2023"
@@ -25,6 +26,8 @@ urls_and_process_and_rename = \
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/dbCAN-HMMdb-V12.txt", "hmmpress", "dbCAN.txt"),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/CAZyDB.07262023.fa", "diamond", "CAZy.fa")
      ]
+
+files_to_skip_deletion = ["dbCAN.txt"]
 
 
 def download_and_process(url, output_folder: str | os.PathLike, process: str = None, new_filename: str = None,
@@ -48,12 +51,20 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
         downloaded_file = output_path
 
     processed_filepath = f"{output_path}.h3f" if process == "hmmpress" else \
-                         f"{pathlib.PurePath(output_path).parent / pathlib.PurePath(output_path).stem}.dmnd" if process == "diamond" else \
-                         output_path
+        f"{pathlib.PurePath(output_path).parent / pathlib.PurePath(output_path).stem}.dmnd" if process == "diamond" else \
+            output_path
 
     if not os.path.exists(processed_filepath) or force_download:
         print(f"dbCAN file {processed_filepath} not found, downloading...")
-        wget.download(url, output_folder)
+        try:
+            wget.download(url, output_folder)
+        except TimeoutError as err:
+            msg = f"Failed to download file {processed_filepath} from url {url} due to timeout."
+            raise PipelineException(msg) from err
+        except Exception as err:
+            msg = f"Failed to download file {processed_filepath} from url {url}."
+            raise PipelineException(msg) from err
+
         downloaded = True
         if new_filename:
             shutil.move(downloaded_file, output_path)
@@ -64,7 +75,8 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
                 subprocess.run(["wsl", "hmmpress", win_hmmpress_path], check=True)
             else:
                 subprocess.run(["hmmpress", output_path], check=True)
-            os.remove(output_path)
+            if os.path.basename(output_path) not in files_to_skip_deletion:
+                os.remove(output_path)
         elif process == "tar":
             if sys.platform.startswith("win"):
                 win_tar_path = convert_path_wsl(output_path)
@@ -77,7 +89,8 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
             output_path_obj = pathlib.PurePath(output_path)
             diamond_output_path = output_path_obj.parent / output_path_obj.stem
             subprocess.run(["diamond", "makedb", "--in", output_path, "-d", diamond_output_path], check=True)
-            os.remove(output_path)
+            if os.path.basename(output_path) not in files_to_skip_deletion:
+                os.remove(output_path)
 
     return downloaded
 
@@ -91,8 +104,24 @@ def cli_update_hmms():
     parser.add_argument("--keep_existing", "-k", action="store_false", help="Use this option if you don't want newly "
                                                                             "downloaded files to replace existing "
                                                                             "files.")
+    parser.add_argument("--directory", "-d", type=str, help="Use this option to download the database files into a "
+                                                            "non-default directory.", default=None)
+
     args = parser.parse_args()
-    download_database(force_download=args.keep_existing)
+    if args.directory is None:
+        old_dir = None
+        dir = get_db_folder()
+    else:
+        old_dir = get_db_folder()
+        dir = args.directory
+
+        shutil.move(old_dir, dir)
+
+        package_settings = get_package_settings()
+        package_settings["database_folder"] = args.directory
+        save_package_settings(package_settings)
+
+    download_database(db_install_folder=dir, force_download=args.keep_existing)
 
 
 def download_database(db_install_folder: str | os.PathLike = get_db_folder(), force_download: bool = False) -> int:

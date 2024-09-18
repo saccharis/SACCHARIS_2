@@ -26,7 +26,7 @@ setup(name='saccharis',
       # - First bugfix to public release might be "2.0.1"
       # - The first public release after 2.0.* that breaks anything reliant on 2.0.* will be 2.1.0
 
-      version="2.0.0.dev21",
+      version="2.0.1.dev21",
       build=1,
       # version=meta_yaml_data["package"]["version"],
       # build=meta_yaml_data["build"]["number"],
