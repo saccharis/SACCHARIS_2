@@ -13,6 +13,7 @@ from saccharis.utils.PipelineErrors import AAModelError, PipelineException
 tests_folder = os.path.dirname(getsourcefile(lambda: 0))
 test_out_folder = os.path.join(tests_folder, "test_files", "temp")
 small_user_testfile = os.path.join(tests_folder, "test_files", "user_test_GH102_UserFormat.fasta")
+user_test_file_gh5_4 = os.path.join(tests_folder, "test_files", "Ruminococcus bicirculans GH5_4.faa")
 partial_modeltest_folder = os.path.join(tests_folder, "test_files", "partial_run_modeltest", "PL9_CHARACTERIZED_ALL_DOMAINS")
 
 
@@ -79,6 +80,9 @@ class IntegrationTestCase(unittest.TestCase):
 
     def test_GH5_4(self):
         self.run_pipeline("GH5_4", Mode.CHARACTERIZED)
+
+    def test_GH5_4_user_seqs(self):
+        self.run_pipeline("GH5_4", Mode.CHARACTERIZED, user_files=[user_test_file_gh5_4])
 
     def test_bad_partial_modeltest_pl9(self):
         out_folder = os.path.join(test_out_folder, "PL9_CHARACTERIZED_ALL_DOMAINS")

@@ -44,7 +44,6 @@ class UserInputTestCase(unittest.TestCase):
         fam_list = get_user_selection(initial_dict)
         self.assertEqual(2, len(fam_list))
 
-    @unittest.skipUnless(sys.gettrace(), "expensive test, should not be run automatically for CI/CD")
     def test_extract(self):
         expected_dict = {"PL9": 12, "PL9_1": 5, "PL9_4": 1}
         file_path = os.path.join(testfiles_folder, "PL9.fasta")

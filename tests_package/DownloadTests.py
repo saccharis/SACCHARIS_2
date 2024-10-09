@@ -26,7 +26,7 @@ class DownloadTestCase(unittest.TestCase):
 
     @unittest.skipUnless(sys.gettrace(), "expensive test, should not be run automatically for CI/CD")
     def test_db_download(self) -> None:
-        files = ["CAZy.dmnd", "PUL.faa", "tcdb.dmnd", "dbCAN-PUL.tar.gz"]
+        files = ["CAZy.dmnd", "PUL.faa", "tcdb.dmnd", "dbCAN-PUL.tar.gz", "dbCAN.txt"]
         files += get_hmm_suffices("dbCAN.txt")
         files += get_hmm_suffices("dbCAN_sub.hmm")
         files += get_hmm_suffices("stp.hmm")
