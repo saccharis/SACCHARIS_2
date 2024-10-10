@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 # import yaml
 # with open('conda-recipe/meta.yaml', 'r') as file:
 #     meta_yaml_data = yaml.safe_load(file)
@@ -7,8 +7,8 @@ from setuptools import setup
 #  https://packaging.python.org/en/latest/specifications/core-metadata/
 
 setup(name='saccharis',
-      # Broadly speaking, we will follow a major.minor.patch.dev semantic versioning structure, where the major release
-      # corresponds to major publications.
+      # We will follow a major.minor.patch.dev semantic versioning structure, where the major release corresponds to
+      # major publications.
       # See https://peps.python.org/pep-0440/ for info on what versioning conventions python packages typically follow.
       # Version num info:
       #     -   First digit is a publication release related to a specific academic paper. This will be Saccharis 2 at
@@ -49,6 +49,7 @@ setup(name='saccharis',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)'
       ],
       include_package_data=True,
+      packages=find_packages(),
       entry_points={
           "console_scripts": [
               "saccharis = saccharis.CLI:cli_main",

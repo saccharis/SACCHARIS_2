@@ -194,7 +194,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         print(f"dbCAN processing of {os.path.split(fasta_with_user_file)[1]} is underway...")
         pruned_list, pruned_file, id_convert_dict, bound_dict, ecami_dict, diamond_dict = \
             extract_pruned(fasta_with_user_file, family, dbcan_folder, scrape_mode, force_update, prune_seqs,
-                           threads=threads, hmm_cov=hmm_cov, hmm_eval=hmm_eval)
+                           threads=threads, hmm_cov=hmm_cov, hmm_eval=hmm_eval, logger=logger)
         metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}_UserRun{user_run_id:05d}.json"
     else:
         print(f"dbCAN processing of {os.path.split(fasta_file)[1]} is underway...")
