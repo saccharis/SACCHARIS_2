@@ -35,6 +35,7 @@ requirements:
   build:
     - python
     - setuptools
+    - pdoc
   host:
     - python >=3.6
     - setuptools
