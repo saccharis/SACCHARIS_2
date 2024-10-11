@@ -40,8 +40,10 @@ jobs:
       # - run: pip install -e .
       # ADJUST THIS: build your documentation into docs/.
       # We use a custom build script for pdoc itself, ideally you just run `pdoc -o docs/ ...` here.
-      - run: pdoc -o docs src/saccharis
-
+      - name: Install and run pdoc
+        run: |
+          conda install pdoc
+          pdoc -o docs src/saccharis --logo "https://github.com/saccharis/SACCHARIS_2/blob/main/logo_caps_light-dark.png?raw=true"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/
