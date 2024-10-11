@@ -1,7 +1,7 @@
   {% set name = "SACCHARIS" %}
   {% set version = "2.0.1.dev21" %}
-  {% set build_no = 1 %}
-  {% set hash = "B4D656E42C87ED46EC555445BBF3EB4496C6463ACE556D9FE0E43A3C1BE2CDB6" %}
+  {% set build_no = 2 %}
+  {% set hash = "327FCE45E7B50BF0C52064DA883CC4A21BCE183EBACF4C4A827FE2C5BE934CB3" %}
 
 package:
   name: "{{ name|lower }}"
@@ -9,7 +9,7 @@ package:
 
 source:
 #  url: https://github.com/saccharis/SACCHARIS_2/releases/download/v{{ version }}/saccharis-{{ version }}.tar.gz
-  url: https://github.com/saccharis/SACCHARIS_2/releases/download/v2.0.1.dev21/saccharis-2.0.1.dev21_1.tar.gz
+  url: https://github.com/saccharis/SACCHARIS_2/releases/download/v2.0.1.dev21/saccharis-2.0.1.dev21_2.tar.gz
   sha256: {{ hash|lower }}
 
 build:
@@ -37,6 +37,7 @@ requirements:
     - setuptools
   host:
     - python >=3.6
+    - setuptools
   run:
     - beautifulsoup4 >=4.11.1
     - biopython >=1.79
@@ -73,7 +74,7 @@ test:
   commands:
       # pipe test output to null for these tests, per https://bioconda.github.io/contributor/guidelines.html#tests
     - saccharis -v > /dev/null
-    - saccharis.show_family_categories > /dev/null
+    - saccharis.show_family_categories --help > /dev/null
     - saccharis.make_family_files --help > /dev/null
     - saccharis.add_family_category --help > /dev/null
     - saccharis.rename_user_file --help > /dev/null

@@ -84,7 +84,7 @@ def cli_main():
                                                               "\t characterized\n"
                                                               "\t structure\n"
                                                               "\t all_cazymes\n",
-                        choices=["characterized", "structure", "all_cazymes"], default="all_cazymes")
+                        choices=["characterized", "structure", "all_cazymes"], default="characterized")
     parser.add_argument("--domain", "-d", type=str, help="This is the domain of the organisms whose cazymes you wish "
                                                          "to query from the CAZy database. Default mode is all domains."
                                                          "\nAllowable modes:\n"

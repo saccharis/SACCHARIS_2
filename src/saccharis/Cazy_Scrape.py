@@ -1,10 +1,12 @@
 ###############################################################################
-#
-#
 # SACCHARIS 2.0 author: Alexander Fraser, https://github.com/AlexSCFraser
 # Original author for SACCHARIS 1.0: Dallas Thomas
 # License: GPL v3
 ###############################################################################
+"""
+The Cazy_Scrape module contains functions to download CAZyme metadata from http://www.cazy.org and subsequently
+retrieve amino acid sequence data from NCBI genbank.
+"""
 import time
 from enum import Enum
 import re
@@ -30,13 +32,24 @@ from saccharis.utils.Formatting import CazymeMetadataRecord
 
 
 class Mode(Enum):
+    """
+    An enumerated type to specify CAZy CAZyme characterization level for filtering purposes during the pipeline. Note
+    that this is NOT meant to be used with bitwise combinations, e.g. there are rare CAZymes that have structures but
+    not characterization which means there is no strict subsetting, and the pipeline treats values other than specified
+    as invalid.
+    """
     CHARACTERIZED = 0
     ALL_CAZYMES = 1
     STRUCTURE = 2
 
 
 class Domain(Enum):
-    # Using these values for a bitmask comparison to easily combine groups, which is why we use hex values
+    """
+    An enumerated binary number used to specify CAZy domain download combinations. These values are used in a bitmask
+    comparison to easily combine groups, which is why we use only a single binary digit in a unique position in each
+    group. e.g. 0b11111 is the correct value for all domains, since it is the bitwise combination of all named
+    values with the | operator. Note that ALL is not a named value for correct list comprehension behaviour.
+    """
     # ALL = 0b11111 # correct value for all, but is omitted so that list comprehension works correctly
     ARCHAEA = 0b00001
     BACTERIA = 0b00010
@@ -46,6 +59,10 @@ class Domain(Enum):
 
 
 class HTMLGetter:
+    """
+    A class to contain the code used to download HTML from CAZy and format it into a more consistent cleaned text,
+    complete with error handling.
+    """
 
     def __init__(self):
         self.fix_spaces = re.compile("> <")
@@ -109,6 +126,20 @@ class HTMLGetter:
 
 def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_mode,
                logger: Logger = getLogger("PipelineLogger")):
+    """
+    This function downloads metadata for specified CAZymes from http://cazy.org based on supplied filtering arguments
+    and returns the result in a dictionary of CazymeMetadataRecord objects with the genbank id as dictionary key. Data
+    is also saved to drive in the location specified by cazy_folder.
+
+    :param family: The family whose sequences will be downloaded from http://www.CAZy.org.
+    :param cazy_folder: The folder which final and intermediate results will be saved to.
+    :param scrape_mode:
+    :param get_fragments:
+    :param verbose:
+    :param domain_mode:
+    :param logger:
+    :return:
+    """
     print("Downloading", family, "Data from CAZy database...")
 
     url_cazy = "http://www.cazy.org/"+family+"_" + \
