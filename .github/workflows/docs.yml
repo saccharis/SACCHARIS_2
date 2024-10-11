@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 # security: restrict permissions for CI jobs.
 permissions:
@@ -36,10 +35,6 @@ jobs:
           conda install conda-build
           conda build .
           conda install --use-local saccharis
-      # ADJUST THIS: install all dependencies (including pdoc)
-      # - run: pip install -e .
-      # ADJUST THIS: build your documentation into docs/.
-      # We use a custom build script for pdoc itself, ideally you just run `pdoc -o docs/ ...` here.
       - name: Install and run pdoc
         run: |
           conda install pdoc
