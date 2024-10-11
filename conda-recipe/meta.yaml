@@ -37,8 +37,10 @@ requirements:
   build:
     - python
     - setuptools
+    - pdoc
   host:
     - python >=3.6
+    - setuptools
   run:
     - beautifulsoup4 >=4.11.1
     - biopython >=1.79
@@ -75,16 +77,22 @@ test:
   commands:
       # pipe test output to null for these tests, per https://bioconda.github.io/contributor/guidelines.html#tests
     - saccharis -v > /dev/null
-    - saccharis.show_family_categories > /dev/null
-#    below tests need to be commented out for successful build on bioconda because there is no file write permission
-#    - saccharis.make_family_files
+    - saccharis.show_family_categories --help > /dev/null
+    - saccharis.make_family_files --help > /dev/null
+    - saccharis.add_family_category --help > /dev/null
+    - saccharis.rename_user_file --help > /dev/null
+    - saccharis.prune_seqs --help > /dev/null
+    - saccharis.screen_cazome --help > /dev/null
+    - saccharis.config --help > /dev/null
+    - saccharis.update_db --help > /dev/null
 
 about:
   home: https://github.com/saccharis/SACCHARIS_2
   dev_url: https://github.com/saccharis/SACCHARIS_2
   description: |
-    Bioinformatics pipeline to automate phylogenetic analysis of CAZyme families in FASTA sequences via creation of
-    phylogenetic trees.
-  license: GPL v3
+    Bioinformatics pipeline to automate phylogenetic analysis of CAZyme families in FASTA sequences via 
+    creation of phylogenetic trees.
+  license: GPL-3.0-or-later
+  license_family: GPL3
   license_file: LICENSE
   summary: A CAZyme discovery tool. Easily create phylogenetic trees from FASTA files and CAZyme families.

@@ -4,6 +4,31 @@
 # Original author for SACCHARIS 1.0: Dallas Thomas
 # License: GPL v3
 ###############################################################################
+"""
+The Pipeline module contains the code for running the main pipeline. If you want to run the pipeline to create and
+optionally render a phylogeny on a single CAZy family with a set of user sequences and settings, you can call the
+`single_pipeline` method. The Pipeline module does not include code which processes data, but handles data flow to and
+from the code in other modules which handle their respective steps in the pipeline.
+
+There are seven steps in the core pipeline:
+    - Step One - CAZyme download
+    - Step Two - Load user sequence data
+    - Step Three - Module extraction & pruning
+    - Step Four - Multiple sequence alignment
+    - Step Five - Mutation modelling
+    - Step Six - Build Tree
+    - Step Seven - Render Tree (optional, requires separately installed R package)
+
+## Step One - CAZyme download
+Download specified CAZyme metadata from CAZy, then download sequence data from NCBI. Handled by the `Cazy_Scrape`
+module.
+## Step Two - Load user sequence data
+## Step Three - Module extraction & pruning
+## Step Four - Multiple sequence alignment
+## Step Five - Mutation modelling
+## Step Six - Build Tree
+## Step Seven - Render Tree (optional, requires separately installed R package)
+"""
 import datetime
 import json
 import logging
@@ -32,7 +57,7 @@ from saccharis.utils.Formatting import make_metadata_dict, format_time, CazymeMe
 
 
 def single_pipeline(family: str, output_folder: str | os.PathLike,
-                    scrape_mode: CazyScrape.Mode = CazyScrape.Mode.ALL_CAZYMES, domain_mode: int = 0b11111,
+                    scrape_mode: CazyScrape.Mode = CazyScrape.Mode.CHARACTERIZED, domain_mode: int = 0b11111,
                     threads: int = math.ceil(os.cpu_count() * 0.75),
                     tree_program: ChooseAAModel.TreeBuilder = ChooseAAModel.TreeBuilder.FASTTREE,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
@@ -41,7 +66,63 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
                     settings: dict = None, gui_step_signal: pyqtSignal = None,
                     logger: logging.Logger = logging.getLogger(), skip_user_ask: bool =False, render_trees: bool = False,
                     ask_func=None):
+    """
+    Runs the SACCHARIS pipeline on a single CAZyme family with optional user sequences to create a phylogenetic tree of
+    sequences from CAZy.org and user FASTA files.
 
+    :param family: The family whose sequences will be downloaded from http://www.CAZy.org.
+    :param output_folder: The folder which final and intermediate results will be saved to.
+    :param scrape_mode: A filter to choose what characterization level of cazymes will be downloaded from
+    http://www.CAZy.org. Default is characterized. When calling as a function, use the Cazy_Scrape.Mode enum type to
+    clearly indicate the scrape mode.
+        Allowable modes:
+            Cazy_Scrape.Mode.CHARACTERIZED
+            Cazy_Scrape.Mode.ALL_CAZYMES
+            Cazy_Scrape.Mode.STRUCTURE
+    :param domain_mode: A filter to choose which organism domains will have sequences downloaded from the CAZy
+    database. Default mode is all domains. When calling as a function, use the `saccharis.Cazy_Scrape.Domain` enum type to specify
+    a single domain, or combine them together with the | operator to form desired combinations of domains. This
+    argument is functionally just a binary number using a bitmask to indicate whether ot include different domains at
+    each position.
+        Allowable modes:
+        -    Cazy_Scrape.Domain.ARCHAEA
+        -    Cazy_Scrape.Domain.BACTERIA
+        -    Cazy_Scrape.Domain.EUKARYOTA
+        -    Cazy_Scrape.Domain.VIRUSES
+        -    Cazy_Scrape.Domain.UNCLASSIFIED
+
+        Any combination of domains can be joined together with | operator like the following examples:
+        -    Cazy_Scrape.Domain.ARCHAEA | Cazy_Scrape.Domain.BACTERIA
+        -    Cazy_Scrape.Domain.EUKARYOTA | Cazy_Scrape.Domain.VIRUSES | Cazy_Scrape.Domain.BACTERIA
+
+
+    :param threads: Some tools(e.g. RAxML) allow the use of multi-core processing.  Set a number in here from 1 to
+    `<max_cores>`. The default is set at 3/4 of the number of logical cores reported by your operating system. This is
+    to prevent lockups if other programs are running.
+    :param tree_program: Choice of tree building program. FastTree is the default because it is substantially faster
+    than RAxML. RAxML may take days or even weeks to build large trees, but can build higher quality
+    trees than FastTree. Both RAxML and RAxML-NG are supported. When calling as a function, use the
+    `ChooseAAModel.TreeBuilder` enum type to clearly indicate the tree building program.
+        Allowable modes:
+            ChooseAAModel.TreeBuilder.RAXML
+            ChooseAAModel.TreeBuilder.FASTTREE
+            ChooseAAModel.TreeBuilder.RAXML_NG
+    :param get_fragments:
+    :param prune_seqs:
+    :param verbose:
+    :param force_update:
+    :param user_file:
+    :param genbank_genomes:
+    :param genbank_genes:
+    :param auto_rename:
+    :param settings:
+    :param gui_step_signal:
+    :param merged_dict:
+    :param logger:
+    :param skip_user_ask:
+    :param render_trees:
+    :return:
+    """
     # todo: remove windows block once WSL support is fully implemented
     if sys.gettrace():
         print("Debug is active")
@@ -355,7 +436,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
                           ) from error
 
     #######################################
-    # Step Seven - Build Tree
+    # Step Seven - Render Tree
     #######################################
     if gui_step_signal:
         # noinspection PyUnresolvedReferences

@@ -4,16 +4,18 @@ import pathlib
 import shutil
 import subprocess
 import sys
+from logging import Logger, getLogger
 
 import wget
-from saccharis.utils.PipelineErrors import PipelineException
+from saccharis.utils.PipelineErrors import PipelineException, FileError, make_logger
 
-from saccharis.utils.AdvancedConfig import get_db_folder, get_package_settings, save_package_settings
+from saccharis.utils.AdvancedConfig import get_db_folder, get_package_settings, save_package_settings, get_log_folder
 from saccharis.utils.Formatting import convert_path_wsl
 
 links_last_updated = "September, 2023"
 urls_and_process_and_rename = \
-    [("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb", None),
+    [("https://bcb.unl.edu/dbCAN2/download/Databases/V12/dbCAN-HMMdb-V12.txt", "hmmpress", "dbCAN.txt"),
+     ("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz", "tar", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08252022.tsv", None, None),
      ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_07-01-2022.xlsx", None, None),
@@ -23,15 +25,15 @@ urls_and_process_and_rename = \
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-1.hmm", "hmmpress", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-2.hmm", "hmmpress", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/stp.hmm", "hmmpress", None),
-     ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/dbCAN-HMMdb-V12.txt", "hmmpress", "dbCAN.txt"),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/CAZyDB.07262023.fa", "diamond", "CAZy.fa")
      ]
 
 files_to_skip_deletion = ["dbCAN.txt"]
+dbcan_txt_files = ["dbCAN.txt.h3f", "dbCAN.txt.h3i", "dbCAN.txt.h3m", "dbCAN.txt.h3p"]
 
 
 def download_and_process(url, output_folder: str | os.PathLike, process: str = None, new_filename: str = None,
-                         force_download: bool = False) -> bool:
+                         force_download: bool = False, logger: Logger = getLogger()) -> bool:
     """
     Downloads and formats a database file used for dbCAN HMMer analysis.
 
@@ -51,24 +53,34 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
         downloaded_file = output_path
 
     processed_filepath = f"{output_path}.h3f" if process == "hmmpress" else \
-                         f"{pathlib.PurePath(output_path).parent / pathlib.PurePath(output_path).stem}.dmnd" if process == "diamond" else \
-                         output_path
+        f"{pathlib.PurePath(output_path).parent / pathlib.PurePath(output_path).stem}.dmnd" if process == "diamond" else \
+            output_path
 
     if not os.path.exists(processed_filepath) or force_download:
         print(f"dbCAN file {processed_filepath} not found, downloading...")
+        logger.info(f"dbCAN file {processed_filepath} not found, downloading...")
         try:
             wget.download(url, output_folder)
         except TimeoutError as err:
             msg = f"Failed to download file {processed_filepath} from url {url} due to timeout."
+            logger.error(msg)
             raise PipelineException(msg) from err
         except Exception as err:
             msg = f"Failed to download file {processed_filepath} from url {url}."
+            logger.error(msg)
+            logger.debug(err)
+            logger.error(err.args[0])
+            logger.debug(err.__traceback__)
             raise PipelineException(msg) from err
 
         downloaded = True
         if new_filename:
             shutil.move(downloaded_file, output_path)
-        assert(os.path.isfile(output_path))
+        if not os.path.isfile(output_path):
+            msg = f"{output_path} file does not exist! Error downloading and/or processing this file."
+            logger.error(msg)
+            raise FileError(msg)
+
         if process == "hmmpress":
             if sys.platform.startswith("win"):
                 win_hmmpress_path = convert_path_wsl(output_path)
@@ -77,6 +89,7 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
                 subprocess.run(["hmmpress", output_path], check=True)
             if os.path.basename(output_path) not in files_to_skip_deletion:
                 os.remove(output_path)
+                logger.debug(f"Removed {output_path}")
         elif process == "tar":
             if sys.platform.startswith("win"):
                 win_tar_path = convert_path_wsl(output_path)
@@ -91,11 +104,28 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
             subprocess.run(["diamond", "makedb", "--in", output_path, "-d", diamond_output_path], check=True)
             if os.path.basename(output_path) not in files_to_skip_deletion:
                 os.remove(output_path)
+                logger.debug(f"Removed {output_path}")
+
+    # Below code exists to create a dbCAN.txt dummy file if it's accidentally deleted. It's not strictly
+    # necessary, but run-dbcan checks for it and fails if not present even if the dbCAN.txt.h3* files are present.
+    # In theory this is unneeded since we don't delete files in the files_to_skip_deletion list, but some systems
+    # delete dbCAN.txt anyway for mysterious reasons, so I added this check.
+    if new_filename == "dbCAN.txt" and not os.path.isfile(output_path):
+        dbcan_txt_exists = [os.path.exists(os.path.join(output_folder, dbcan_txt_file))
+                                for dbcan_txt_file in dbcan_txt_files]
+        if all(dbcan_txt_exists):
+            pathlib.Path(output_path).touch(exist_ok=True)
 
     return downloaded
 
 
 def cli_update_hmms():
+    """
+    Command line interface to download/update database files used for dbCAN HMMer analysis. Can also be used to
+    move/install the database in a custom location, useful for systems where the home folder is limited in size
+    (e.g. computing clusters). User calls this function using the 'saccharis.update_db' command.
+    """
+    logger = make_logger("CLILogger", get_log_folder(), "cli_logs.txt")
     parser = argparse.ArgumentParser(description="Downloads the database files for HMM analysis, overwriting old files "
                                                  "if present. Note that the software may have be updated via bioconda "
                                                  "to update the internal links to download files from. Database "
@@ -121,10 +151,15 @@ def cli_update_hmms():
         package_settings["database_folder"] = args.directory
         save_package_settings(package_settings)
 
-    download_database(db_install_folder=dir, force_download=args.keep_existing)
+    try:
+        download_database(db_install_folder=dir, force_download=args.keep_existing, logger=logger)
+    except PipelineException:
+        logger.error(PipelineException.args[0])
+        logger.debug(PipelineException.__traceback__)
 
 
-def download_database(db_install_folder: str | os.PathLike = get_db_folder(), force_download: bool = False) -> int:
+def download_database(db_install_folder: str | os.PathLike = get_db_folder(), force_download: bool = False,
+                      logger: Logger = getLogger()) -> int:
     """
     Downloads and formats all database files used for dbCAN HMMer analysis.
 
@@ -168,7 +203,7 @@ def download_database(db_install_folder: str | os.PathLike = get_db_folder(), fo
 
     for url, process_type, new_file in urls_and_process_and_rename:
         result = download_and_process(url, db_install_folder, process_type, new_filename=new_file,
-                                      force_download=force_download)
+                                      force_download=force_download, logger=logger)
         if result:
             downloaded += 1
 
