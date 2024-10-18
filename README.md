@@ -10,6 +10,7 @@ phylogenetic methods.
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/version.svg)](https://anaconda.org/bioconda/saccharis)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/latest_release_date.svg)](https://anaconda.org/bioconda/saccharis)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/license.svg)](https://anaconda.org/bioconda/saccharis)
+[![DOI link](https://img.shields.io/badge/DOI-10.1007%2F978--1--0716--4007--4__16-FAB70C?logo=doi)](https://doi.org/10.1007/978-1-0716-4007-4_16)
 ![SACCHARIS Conda Test Suite](https://github.com/saccharis/SACCHARIS_2/actions/workflows/python-package-conda.yml/badge.svg)
 
 #### Current issues with 2.0.1
