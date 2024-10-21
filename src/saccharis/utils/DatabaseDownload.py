@@ -4,6 +4,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import urllib.error
 from logging import Logger, getLogger
 
 import wget
@@ -62,8 +63,16 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
         try:
             wget.download(url, output_folder)
         except TimeoutError as err:
-            msg = f"Failed to download file {processed_filepath} from url {url} due to timeout."
+            msg = f"Failed to download file {processed_filepath} from url {url} due to timeout. {url} may be down " \
+                  f"temporarily."
             logger.error(msg)
+            logger.debug(err.__traceback__)
+            raise PipelineException(msg) from err
+        except urllib.error.URLError as err:
+            msg = f"Failed to download file {processed_filepath} from url {url} due to URL error. Check your DNS " \
+                  f"settings, especially if using WSL. VPN software can cause DNS resolution failure in WSL."
+            logger.error(msg)
+            logger.debug(err.__traceback__)
             raise PipelineException(msg) from err
         except Exception as err:
             msg = f"Failed to download file {processed_filepath} from url {url}."
