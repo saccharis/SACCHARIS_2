@@ -50,8 +50,12 @@ class Domain(IntFlag):
     """
     An enumerated binary number used to specify CAZy domain download combinations. These values are used in a bitmask
     comparison to easily combine groups, which is why we use only a single binary digit in a unique position in each
-    group. e.g. 0b11111 is the correct value for all domains, since it is the bitwise combination of all named
-    values with the | operator. Note that ALL is not a named value for correct list comprehension behaviour.
+    group. Arbitrary combinations can be made with the | operator. e.g. `Domain.Archea | Domain.Bacteria` will produce
+    a new Domain object that has value 0b00011, and will be interpreted to include both Archeal and Bacterial CAZymes
+    for analysis. 0b11111 is the correct value for all domains, since it is the bitwise combination of all named
+    values with the | operator. Note that ALL is not a specifically named value for correct list comprehension
+    behaviour. For more information, refer to [python docs](https://docs.python.org/3/library/enum.html#enum.IntFlag)
+    for integer flags.
     """
     # ALL = 0b11111 # correct value for all, but is omitted so that list comprehension works correctly
     ARCHAEA = 0b00001
