@@ -10,6 +10,7 @@ phylogenetic methods.
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/version.svg)](https://anaconda.org/bioconda/saccharis)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/latest_release_date.svg)](https://anaconda.org/bioconda/saccharis)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/saccharis/badges/license.svg)](https://anaconda.org/bioconda/saccharis)
+[![DOI link](https://img.shields.io/badge/DOI-10.1007%2F978--1--0716--4007--4__16-FAB70C?logo=doi)](https://doi.org/10.1007/978-1-0716-4007-4_16)
 ![SACCHARIS Conda Test Suite](https://github.com/saccharis/SACCHARIS_2/actions/workflows/python-package-conda.yml/badge.svg)
 
 #### Current issues with 2.0.1
@@ -23,7 +24,16 @@ Thank you for your patience.
 [//]: # (updated by Kristin)
 Fraser, A.S.C. et al. (2024). SACCHARIS v2: Streamlining Prediction of Carbohydrate-Active Enzyme Specificities Within Large Datasets. In: Lisacek, F. (eds) Protein Bioinformatics. Methods in Molecular Biology, vol 2836. Humana, New York, NY. https://doi.org/10.1007/978-1-0716-4007-4_16
 
+## Documentation
+Usage documentation is described in the [publication](https://doi.org/10.1007/978-1-0716-4007-4_16), as well as on the 
+[github wiki](https://github.com/saccharis/SACCHARIS_2/wiki).
+
+Developer documentation is on github pages: https://saccharis.github.io/SACCHARIS_2/
+
 ## Installation
+
+#### Installation guides
+Step by step installation guides are available on the [github wiki](https://github.com/saccharis/SACCHARIS_2/wiki).
 
 [//]: # (Run the linux_install script to set up the virtual environment, or run )
 
@@ -39,9 +49,7 @@ Installation on base windows is possible but requires several dependencies to be
 WSL2 environment (SACCHARIS won't be able to know anything about virtual environments in your WSL environment) and 
 should only be attempted by advanced users familiar with using a CLI, linux/WSL2, conda, bioconda, etc.
 
-#### Installation guides
 
-Step by step installation guides are available on the wiki: https://github.com/saccharis/SACCHARIS_2/wiki
 
 ### Beta installation
 
@@ -176,13 +184,11 @@ option 3, but on both your Windows environment AND WSL environment. Even this is
 a lot of manual steps, so right now we simply do not recommend doing this. If you must do this because your 
 organization does not support updating to WSL2, please reach out to the developer for installation advice.
 
-
-
-
-
-
-
 # Running SACCHARIS
+Detailed usage documentation is described in the [publication](https://doi.org/10.1007/978-1-0716-4007-4_16) and
+[github wiki](https://github.com/saccharis/SACCHARIS_2/wiki) for manual usage, or the 
+[developer docs](https://saccharis.github.io/SACCHARIS_2/) for scripted usage.
+
 ### GUI
 You can launch the gui from the command line via `saccharis-gui` or it can be launched from the anaconda navigator 
 (if navigator is installed).
@@ -190,7 +196,7 @@ You can launch the gui from the command line via `saccharis-gui` or it can be la
 [//]: # (todo: add start menu and/or desktop shortcuts to gui install?)
 
 ### CLI
-In terminal follow usage as given by
+In terminal follow usage directions as given by
   - `saccharis -h` or `saccharis --help`
 
 # License

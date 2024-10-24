@@ -316,9 +316,17 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
         esearch_result1 = requests.get(esearch + genbank_list)
     # todo: consider catching specific exceptions here. These are intermittent and not repeatable, since they happen
     #  when the NCBI server has errors, so I am not sure which specific exceptions to catch.
+    except ConnectionError as e:
+        msg = "Connection error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #1"
+        logger.debug(e.args[0])
+        logger.debug(e.__traceback__)
+        logger.error(msg)
+        raise NCBIException(msg) from e
     except Exception as e:
-        logger.error("Error querying NCBI. Error message:", e.args[0])
         msg = "Error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #1.\n"
+        logger.debug(e.args[0])
+        logger.debug(e.__traceback__)
+        logger.error(msg)
         raise NCBIException(msg) from e
 
     # Extract the count and submit search again to retrieve XML based results
@@ -362,9 +370,18 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
         esearch_result2 = requests.get(esearch + genbank_list + '&usehistory=y')
     # todo: consider catching specific exceptions here. These are intermittent and not repeatable, since they happen
     #  when the NCBI server has errors, so I'm not sure which specific exceptions to catch.
+    except ConnectionError as e:
+        msg = "Connection error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #2"
+        logger.debug(e.args[0])
+        logger.debug(e.__traceback__)
+        logger.error(msg)
+        raise NCBIException(msg) from e
     except Exception as e:
-        logger.error("NCBI query #2 error:", e.args[0])
-        raise NCBIException("Error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #2") from e
+        msg = "Error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #2"
+        logger.debug(e.args[0])
+        logger.debug(e.__traceback__)
+        logger.error(msg)
+        raise NCBIException(msg) from e
 
     result2 = BeautifulSoup(esearch_result2.text, features='xml')
     if result2.find('QueryKey') is None and result2.find('querykey') is None:
@@ -391,14 +408,25 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
         efetch_result = requests.get(efetch)
         result_count = efetch_result.text.count(">")
     # todo: consider catching specific exceptions here. These are intermittent and not repeatable, since they happen
-    #  when the NCBI server has errors, so I have no idea which specific exceptions to catch.
+    #  when the NCBI server has errors, so I am not sure specific exceptions to catch. Check debug logs for more info
+    #  on specific errors which have occurred.
+    except ConnectionError as e:
+        msg = "Connection error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #3"
+        logger.debug(e.args[0])
+        logger.debug(e.__traceback__)
+        logger.error(msg)
+        raise NCBIException(msg) from e
     except Exception as e:
-        logger.warning("Failed NCBI request #3. Error:", e.args[0])
-        raise NCBIException("HTTP error querying NCBI. NCBI might be down, try again later.") from e
+        msg = "Error querying NCBI. NCBI might be down, try again later. Failed NCBI request #3."
+        logger.debug(e.args[0])
+        logger.debug(e.__traceback__)
+        logger.error(msg)
+        raise NCBIException(msg) from e
 
     if valid_accession_count != result_count:
-        logger.error(f"Incomplete NCBI query FASTA results: {result_count}/{valid_accession_count} returned")
-        raise NCBIException(f"Incomplete NCBI query FASTA results: {result_count}/{valid_accession_count} returned")
+        msg = f"Incomplete NCBI query FASTA results: {result_count}/{valid_accession_count} returned"
+        logger.error(msg)
+        raise NCBIException(msg)
 
     # Returns empty result if fetch failed
     if efetch_result.text.__contains__("<ERROR>Empty result - nothing to do</ERROR>"):

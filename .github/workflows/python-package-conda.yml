@@ -39,17 +39,22 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v3
         with:
-          python-version: '3.11'
+          python-version: '3.11'     
+      - name: Set up conda/mamba
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          mamba-version: "*"
+          channel-priority: true
+          channels: conda-forge,bioconda,defaults
+          environment-file: environment.yml
       - name: Add conda to system path
         run: |
           # $CONDA is an environment variable pointing to the root of the miniconda directory
           echo $CONDA/bin >> $GITHUB_PATH
-      - name: Install conda dependencies
-        run: |
-          conda config --add channels defaults
-          conda config --add channels bioconda
-          conda config --add channels conda-forge
-          conda env update --file environment.yml --name base
+      # - name: Install conda dependencies
+      #   run: conda env update --file environment.yml --name base
       - name: Build and install SACCHARIS
         run: |
           conda install conda-build
