@@ -14,7 +14,7 @@ from saccharis.utils.Formatting import convert_path_wsl
 
 links_last_updated = "September, 2023"
 urls_and_process_and_rename = \
-    [("https://bcb.unl.edu/dbCAN2/download/Databases/V12/dbCAN-HMMdb-V12.txt", "hmmpress", "dbCAN.txt"),
+    [("https://bcb.unl.edu/dbCAN2/download/Databases/V13/dbCAN-HMMdb-V13.txt", "hmmpress", "dbCAN.txt"),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz", "tar", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08252022.tsv", None, None),
@@ -25,7 +25,7 @@ urls_and_process_and_rename = \
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-1.hmm", "hmmpress", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-2.hmm", "hmmpress", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/stp.hmm", "hmmpress", None),
-     ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/CAZyDB.07262023.fa", "diamond", "CAZy.fa")
+     ("https://bcb.unl.edu/dbCAN2/download/Databases/V13/CAZyDB.07142024.fa", "diamond", "CAZy.fa")
      ]
 
 files_to_skip_deletion = ["dbCAN.txt"]
