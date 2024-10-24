@@ -8,7 +8,7 @@ The Cazy_Scrape module contains functions to download CAZyme metadata from http:
 retrieve amino acid sequence data from NCBI genbank.
 """
 import time
-from enum import Enum
+from enum import Enum, IntFlag
 import re
 import os
 import csv
@@ -46,7 +46,7 @@ class Mode(Enum):
     STRUCTURE = 2
 
 
-class Domain(Enum):
+class Domain(IntFlag):
     """
     An enumerated binary number used to specify CAZy domain download combinations. These values are used in a bitmask
     comparison to easily combine groups, which is why we use only a single binary digit in a unique position in each

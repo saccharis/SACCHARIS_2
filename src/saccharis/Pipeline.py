@@ -54,10 +54,11 @@ from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder
 from saccharis.utils.AdvancedConfig import save_to_file
 from saccharis.utils.FamilyCategories import check_deleted_families
 from saccharis.utils.Formatting import make_metadata_dict, format_time, CazymeMetadataRecord
+from saccharis.CazyScrape import Domain
 
 
 def single_pipeline(family: str, output_folder: str | os.PathLike,
-                    scrape_mode: CazyScrape.Mode = CazyScrape.Mode.CHARACTERIZED, domain_mode: int = 0b11111,
+                    scrape_mode: CazyScrape.Mode = CazyScrape.Mode.CHARACTERIZED, domain_mode: Domain | int = 0b11111,
                     threads: int = math.ceil(os.cpu_count() * 0.75),
                     tree_program: ChooseAAModel.TreeBuilder = ChooseAAModel.TreeBuilder.FASTTREE,
                     get_fragments: bool = False, prune_seqs: bool = True, verbose: bool = False,
