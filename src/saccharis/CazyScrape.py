@@ -57,6 +57,9 @@ class Domain(IntFlag):
     behaviour. For more information, refer to [python docs](https://docs.python.org/3/library/enum.html#enum.IntFlag)
     for integer flags.
     """
+    def __str__(self):
+        return str(self.name)
+
     # ALL = 0b11111 # correct value for all, but is omitted so that list comprehension works correctly
     ARCHAEA = 0b00001
     BACTERIA = 0b00010
