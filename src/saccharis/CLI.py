@@ -5,31 +5,19 @@
 # License: GPL v3
 ###############################################################################
 import argparse
-import importlib.metadata
 import math
 import os
 import sys
-from importlib.metadata import version
 
-from Bio.Entrez import efetch
-
-from saccharis.NCBIQueries import download_proteins_from_genomes
 from saccharis.Cazy_Scrape import Mode, Domain
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
 from saccharis.Pipeline import single_pipeline
 from saccharis.ScreenUserFile import choose_families_from_fasta
-from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder
+from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder, get_version
 from saccharis.utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
 from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile, make_logger
 from saccharis.utils.Formatting import rename_header_ids
-
-
-def get_version():
-    try:
-        return version("SACCHARIS")
-    except importlib.metadata.PackageNotFoundError:
-        return "dev-build"
 
 
 def cli_main():
