@@ -40,6 +40,7 @@ import time
 
 from PyQt5.QtCore import pyqtSignal
 
+from saccharis.CLI import get_version
 from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.PipelineErrors import PipelineException, UserError, make_logger
 from saccharis import Cazy_Scrape
@@ -133,6 +134,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
 
     if logger is None:
         logger = make_logger("PipelineLogger", get_log_folder(), "pipeline_logs.txt")
+    msg = f"Pipeline start, version: {get_version()} "
+    logger.debug(msg)
 
     family = family.upper()
     matcher = Matcher()

@@ -103,7 +103,6 @@ dependencies:
   - pyqt=5.15.7=py310h29803b5_0
   - pysocks=1.7.1=py310hff52083_5
   - python=3.10.5=h582c2e5_0_cpython
-  - python-wget=3.2=py_0
   - python_abi=3.10=2_cp310
   - qt-main=5.15.4=ha5833f6_2
   - raxml=8.2.12=hec16e2b_4
