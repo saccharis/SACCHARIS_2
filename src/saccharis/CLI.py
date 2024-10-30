@@ -5,7 +5,6 @@
 # License: GPL v3
 ###############################################################################
 import argparse
-import importlib.metadata
 import math
 import os
 import sys
@@ -21,18 +20,11 @@ from saccharis.ParseUserSequences import merge_data_sources
 from saccharis.utils.FastaHelpers import parse_multiple_fasta
 from saccharis.Pipeline import single_pipeline
 from saccharis.ScreenUserFile import choose_families_from_fasta
-from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder
+from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder, get_version
 from saccharis.utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
 from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile, make_logger
 from saccharis.utils.Formatting import rename_header_ids
 from saccharis.utils.UserInput import ask_yes_no
-
-
-def get_version():
-    try:
-        return version("SACCHARIS")
-    except importlib.metadata.PackageNotFoundError:
-        return "dev-build"
 
 
 def cli_main():
@@ -212,6 +204,8 @@ def cli_main():
     if not os.path.isdir(output_path):
         os.mkdir(output_path)
 
+    # OLD WAY (dev21) OF MANAGING SEQFILE DATA
+    # TODO: DELETE ONCE SEQ DOWNLOAD FIXED
     # # user_path = os.path.abspath(args.seqfile) if args.seqfile else None
     # if args.seqfile is None:
     #     user_path = None
@@ -232,6 +226,9 @@ def cli_main():
         raise Exception("Error parsing user sequence file(s) from command line. This shouldn't happen, "
                         "please report as a bug through github.")
 
+    # instead of downloading seqs from NCBI here, do it in pipeline to be concordant
+    # with an API method of calling SACCHARIS
+    # TODO: get args form user and pass into pipeline call where download will occur
     if True:  # ncbi genes
         ncbi_genes = None
 
@@ -262,7 +259,7 @@ def cli_main():
         try:
             fam_list = get_category_list(args.family_category)
         except UserError as error:
-            logger.error(error.msg)
+            logger.exception(error.msg)
             sys.exit(3)
 
         for fam in fam_list:
@@ -281,6 +278,7 @@ def cli_main():
             print("Exiting...")
             sys.exit(3)
         try:
+            # todo: should this be an explore API call...?
             user_seqs, user_metadata, merged_file_path, _ = \
                 merge_data_sources(cazy_seqs=None, cazy_metadata=None, user_file_paths=user_fasta_paths,
                                    ncbi_genomes=ncbi_genomes, ncbi_genes=ncbi_genes,

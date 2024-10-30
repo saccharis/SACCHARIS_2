@@ -6,18 +6,27 @@
 ###############################################################################
 # Built in libraries
 import argparse
+import importlib.metadata
 import inspect
 import json
 import os
 import pathlib
 import shutil
 import time
+from importlib.metadata import version
 from json import JSONDecodeError
 from subprocess import run, CalledProcessError
 from dotenv import load_dotenv
 import textwrap as _textwrap
 # Internal imports
 from saccharis.utils.UserInput import ask_yes_no
+
+
+def get_version():
+    try:
+        return version("SACCHARIS")
+    except importlib.metadata.PackageNotFoundError:
+        return "dev-build"
 
 
 def get_default_package_settings():

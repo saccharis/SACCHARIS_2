@@ -50,7 +50,7 @@ from saccharis import FastTree_Build
 from saccharis import Muscle_Alignment
 from saccharis import RAxML_Build
 from saccharis.Rendering import render_phylogeny
-from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder
+from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder, get_version
 from saccharis.utils.AdvancedConfig import save_to_file
 from saccharis.utils.FamilyCategories import check_deleted_families
 from saccharis.utils.Formatting import make_metadata_dict, format_time, CazymeMetadataRecord
@@ -135,6 +135,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
 
     if logger is None:
         logger = make_logger("PipelineLogger", get_log_folder(), "pipeline_logs.txt")
+    msg = f"Pipeline start, version: {get_version()} "
+    logger.debug(msg)
 
     if verbose:
         logger.setLevel(logging.INFO)
