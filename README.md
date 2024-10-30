@@ -155,7 +155,6 @@ All of the following programs installed and available on $PATH variable:
   * beautifulsoup4
   * biopython
   * requests
-  * wget
   * dbcan
   * lxml
   * ncbi-datasets-pylib

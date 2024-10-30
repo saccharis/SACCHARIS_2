@@ -1,21 +1,21 @@
 import argparse
 import os
 import pathlib
+import requests
 import shutil
 import subprocess
 import sys
-import urllib.error
 from logging import Logger, getLogger
+from requests.exceptions import RequestException, ConnectionError
+from urllib3.exceptions import ReadTimeoutError
 
-import wget
 from saccharis.utils.PipelineErrors import PipelineException, FileError, make_logger
-
 from saccharis.utils.AdvancedConfig import get_db_folder, get_package_settings, save_package_settings, get_log_folder
 from saccharis.utils.Formatting import convert_path_wsl
 
 links_last_updated = "September, 2023"
 urls_and_process_and_rename = \
-    [("https://bcb.unl.edu/dbCAN2/download/Databases/V12/dbCAN-HMMdb-V12.txt", "hmmpress", "dbCAN.txt"),
+    [("https://bcb.unl.edu/dbCAN2/download/Databases/V13/dbCAN-HMMdb-V13.txt", "hmmpress", "dbCAN.txt"),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz", "tar", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08252022.tsv", None, None),
@@ -26,7 +26,7 @@ urls_and_process_and_rename = \
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-1.hmm", "hmmpress", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-2.hmm", "hmmpress", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/stp.hmm", "hmmpress", None),
-     ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/CAZyDB.07262023.fa", "diamond", "CAZy.fa")
+     ("https://bcb.unl.edu/dbCAN2/download/Databases/V13/CAZyDB.07142024.fa", "diamond", "CAZy.fa")
      ]
 
 files_to_skip_deletion = ["dbCAN.txt"]
@@ -60,31 +60,67 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
     if not os.path.exists(processed_filepath) or force_download:
         print(f"dbCAN file {processed_filepath} not found, downloading...")
         logger.info(f"dbCAN file {processed_filepath} not found, downloading...")
+
+        # todo: remove this old wget file download code once confirmed requests download works
+        # try:
+        #     wget.download(url, output_folder)
+        # except TimeoutError as err:
+        #     msg = f"Failed to download file {processed_filepath} from url {url} due to timeout."
+        #     logger.exception(msg)
+        #     raise PipelineException(msg) from err
+        # except Exception as err:
+        #     msg = f"Failed to download file {processed_filepath} from url {url}."
+        #     logger.debug(err)
+        #     logger.exception(msg)
+        #     raise PipelineException(msg) from err
+
         try:
-            wget.download(url, output_folder)
-        except TimeoutError as err:
-            msg = f"Failed to download file {processed_filepath} from url {url} due to timeout. {url} may be down " \
-                  f"temporarily."
-            logger.error(msg)
-            logger.debug(err.__traceback__)
+            response = requests.get(url, stream=True, timeout=30)
+
+            if response.status_code == 200:
+                with open(output_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                logger.info(f"requests did not error on {url}")
+            else:
+                raise PipelineException(f"Failed to download file from url {url} due to HTTP error code: {response.status_code}")
+        except {TimeoutError, ReadTimeoutError} as err:
+            msg = f"Failed to download file {processed_filepath} from url {url} due to timeout. Please try again later."
+            logger.debug(err)
+            logger.exception(msg)
             raise PipelineException(msg) from err
-        except urllib.error.URLError as err:
-            msg = f"Failed to download file {processed_filepath} from url {url} due to URL error. Check your DNS " \
-                  f"settings, especially if using WSL. VPN software can cause DNS resolution failure in WSL."
-            logger.error(msg)
-            logger.debug(err.__traceback__)
+        except ConnectionError as err:
+            msg = f"Failed to download file from url {url} due to a connection error. May be caused by DNS issues, " \
+                  f"check that your system can communicate with DNS servers, sometimes VPN software or enterprise " \
+                  f"network settings interfere with DNS resolution."
+            logger.debug(err)
+            logger.exception(msg)
+            raise PipelineException(msg) from err
+        except RequestException as err:
+            msg = f"Failed to download file from url {url} due to a request error. There may be issues with the " \
+                  f"server, please try again later."
+            logger.debug(err)
+            logger.exception(msg)
+            raise PipelineException(msg) from err
+        except OSError as err:
+            msg = f"File I/O error occurred while accessing {output_path}. Check that you have write permissions for " \
+                  f"this directory. You can change the database installation folder with the saccharis.update_db " \
+                  f"command if necessary."
+            logger.debug(err)
+            logger.exception(msg)
             raise PipelineException(msg) from err
         except Exception as err:
-            msg = f"Failed to download file {processed_filepath} from url {url}."
-            logger.error(msg)
+            msg = f"Failed to download file {processed_filepath} from url {url} due to generic Exception."
             logger.debug(err)
-            logger.error(err.args[0])
-            logger.debug(err.__traceback__)
+            logger.exception(msg)
             raise PipelineException(msg) from err
 
         downloaded = True
-        if new_filename:
-            shutil.move(downloaded_file, output_path)
+
+        # todo: delete this rename, unneeded with reworked requests download
+        # if new_filename:
+        #     shutil.move(downloaded_file, output_path)
+
         if not os.path.isfile(output_path):
             msg = f"{output_path} file does not exist! Error downloading and/or processing this file."
             logger.error(msg)
