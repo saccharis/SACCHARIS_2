@@ -48,10 +48,8 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
     downloaded = False
     if new_filename:
         output_path = os.path.join(output_folder, new_filename)
-        downloaded_file = os.path.join(output_folder, os.path.basename(url))
     else:
         output_path = os.path.join(output_folder, os.path.basename(url))
-        downloaded_file = output_path
 
     processed_filepath = f"{output_path}.h3f" if process == "hmmpress" else \
         f"{pathlib.PurePath(output_path).parent / pathlib.PurePath(output_path).stem}.dmnd" if process == "diamond" else \
@@ -84,7 +82,7 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
                 logger.info(f"requests did not error on {url}")
             else:
                 raise PipelineException(f"Failed to download file from url {url} due to HTTP error code: {response.status_code}")
-        except {TimeoutError, ReadTimeoutError} as err:
+        except (TimeoutError, ReadTimeoutError) as err:
             msg = f"Failed to download file {processed_filepath} from url {url} due to timeout. Please try again later."
             logger.debug(err)
             logger.exception(msg)
@@ -129,9 +127,9 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
         if process == "hmmpress":
             if sys.platform.startswith("win"):
                 win_hmmpress_path = convert_path_wsl(output_path)
-                subprocess.run(["wsl", "hmmpress", win_hmmpress_path], check=True)
+                subprocess.run(["wsl", "hmmpress", "-f", win_hmmpress_path], check=True)
             else:
-                subprocess.run(["hmmpress", output_path], check=True)
+                subprocess.run(["hmmpress", "-f", output_path], check=True)
             if os.path.basename(output_path) not in files_to_skip_deletion:
                 os.remove(output_path)
                 logger.debug(f"Removed {output_path}")
