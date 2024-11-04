@@ -15,6 +15,7 @@ import shutil
 import time
 from importlib.metadata import version
 from json import JSONDecodeError
+from logging import Logger, getLogger
 from subprocess import run, CalledProcessError
 from dotenv import load_dotenv
 import textwrap as _textwrap
@@ -29,9 +30,10 @@ def get_version():
         return "dev-build"
 
 
-def get_default_package_settings():
+def get_default_package_settings(logger: Logger = getLogger()):
     default_package_settings = {"user_data_folder": os.path.expanduser('~')}
-
+    msg = f"Default package settings: {default_package_settings}"
+    logger.info(msg)
     return default_package_settings
 
 
@@ -41,17 +43,28 @@ def load_from_file(path: str | os.PathLike):
     return settings
 
 
-def get_package_settings():
+def get_package_settings(logger: Logger = getLogger()):
     base_dir = pathlib.PurePath(inspect.getsourcefile(lambda: 0)).parents[1]
+    msg = f"Base saccharis install directory: {base_dir}"
+    logger.debug(msg)
     data_folder = base_dir / "data"
     config_path = data_folder / "config.json"
     if not os.path.isfile(config_path):
-        return get_default_package_settings()
+        msg = f"No file found at {config_path}, loading default package settings."
+        logger.info(msg)
+        return get_default_package_settings(logger)
     else:
         try:
-            return load_from_file(config_path)
+            msg = f"Attempting to load package settings from {config_path}"
+            logger.debug(msg)
+            current_package_settings = load_from_file(config_path)
+            logger.debug(f"Package settings: {current_package_settings}")
+            return current_package_settings
         except JSONDecodeError:
-            return get_default_package_settings()
+            msg = f"JSON decode error encountered trying to load package settings from {config_path}, using defaults " \
+                  f"instead."
+            logger.exception(msg)
+            return get_default_package_settings(logger)
 
 
 def save_package_settings(new_package_settings):
@@ -72,7 +85,7 @@ def save_package_settings(new_package_settings):
     save_to_file(new_package_settings, config_path)
 
 
-# IMPROVEMENT: Consider refactoring to a global settings object with all the settings and get/set methods.
+# IMPROVEMENT TODO: Consider refactoring to a global settings object with all the settings and get/set methods.
 package_settings = get_package_settings()
 user_dir = package_settings["user_data_folder"] if "user_data_folder" in package_settings else os.path.expanduser('~')
 folder_saccharis_user = os.path.join(user_dir, "saccharis")
@@ -85,7 +98,9 @@ folder_default_output = os.path.join(folder_saccharis_user, "output")
 folder_ncbi = os.path.join(folder_saccharis_user, "ncbi_downloads")
 
 
-def get_db_folder():
+def get_db_folder(logger: Logger = getLogger()):
+    msg = f"Current database_folder: {folder_db}"
+    logger.debug(msg)
     return folder_db
 
 
@@ -306,26 +321,26 @@ def cli_config():
     parser.add_argument('--hmm_eval', default=None, type=float, help='HMMER E Value for dbcan2')
     parser.add_argument('--hmm_cov', default=None, type=float, help='HMMER Coverage val for dbcan2')
     parser.add_argument("--querysize", "-q", default=None, type=int, help="Number of accession numbers to query genbank"
-                                                                          "with per HTTP request. Going above 350 often causes URL resolution errors. The program "
-                                                                          "automatically lowers this value when timeouts occur. It should not be necessary to specify"
-                                                                          " this value, but is left as an option in case of persistent NCBI errors.")
+                        "with per HTTP request. Going above 350 often causes URL resolution errors. The program "
+                        "automatically lowers this value when timeouts occur. It should not be necessary to specify"
+                        " this value, but is left as an option in case of persistent NCBI errors.")
     parser.add_argument('--ncbi_api_key', default=None, type=str, help='This is your API key for accessing the NCBI '
-                                                                       'Entrez system. "You can get an NCBI API key from your NCBI account software_settings page, '
-                                                                       'see https://www.ncbi.nlm.nih.gov/account/settings/')
+                        'Entrez system. "You can get an NCBI API key from your NCBI account software_settings page, '
+                        'see https://www.ncbi.nlm.nih.gov/account/settings/')
     parser.add_argument('--ncbi_email', default=None, type=str, help='This email is used for identifying your queries '
                                                                      'to NCBI in case there are errors or problems. '
                                                                      'This email address should match the account your '
                                                                      'API key is from.')
     parser.add_argument("--raxml_command", default=None, type=str, help="This is the name of the raxml command that is"
-                                                                        "available on your PATH variable. There are 6 different raxml programs that you can run, which "
-                                                                        "one you choose will be based off of the age and type of your CPU. Older "
-                                                                        "hardware may not support AVX2 or SSE3, or "
-                                                                        "multithreading. Select an option with "
-                                                                        "PTHREADS for multithreading, and AVX2 or SSE3 "
-                                                                        "for those instruction sets. AVX2 is the "
-                                                                        "fastest, SSE3 is faster than no special "
-                                                                        "instructions, and neither is slow but "
-                                                                        "supports the oldest hardware.",
+                        "available on your PATH variable. There are 6 different raxml programs that you can run, which "
+                        "one you choose will be based off of the age and type of your CPU. Older "
+                        "hardware may not support AVX2 or SSE3, or "
+                        "multithreading. Select an option with "
+                        "PTHREADS for multithreading, and AVX2 or SSE3 "
+                        "for those instruction sets. AVX2 is the "
+                        "fastest, SSE3 is faster than no special "
+                        "instructions, and neither is slow but "
+                        "supports the oldest hardware.",
                         choices=["raxmlHPC-PTHREADS-AVX2", "raxmlHPC-PTHREADS-SSE3", "raxmlHPC-PTHREADS",
                                  "raxmlHPC-AVX2", "raxmlHPC-SSE3", "raxmlHPC"])
     parser.add_argument("--user_data_folder", default=None, type=str, help="This is the folder to store SACCHARIS "
@@ -363,6 +378,11 @@ def cli_config():
     settings_path = default_settings_path
     config_folder = default_folder_config
 
+    # Note: Using both expanduser and abspath so that relative paths with '.' for current working directory
+    # or '~' for user's home folders are saved correctly. Otherwise, ambiguous locations might try to save/load
+    # database files form incorrect locations in the future and cause database installation/update issues.
+    user_data_folder = os.path.abspath(os.path.expanduser(args.user_data_folder))
+
     if args.hmm_eval:
         software_settings["hmm_eval"] = args.hmm_eval
         changes = True
@@ -376,13 +396,13 @@ def cli_config():
         software_settings["raxml_command"] = args.raxml_command
         changes = True
     if args.user_data_folder:
-        if not os.path.exists(args.user_data_folder):
-            print(f"{args.user_data_folder} folder for SACCHARIS files does not exist!\nPlease choose an existing "
+        if not os.path.exists(user_data_folder):
+            print(f"{user_data_folder} folder for SACCHARIS files does not exist!\nPlease choose an existing "
                   f"folder to store SACCHARIS data folder in.")
         else:
             old_user_data_folder = current_package_settings["user_data_folder"]
             old_saccharis_folder = os.path.join(old_user_data_folder, "saccharis")
-            current_package_settings["user_data_folder"] = args.user_data_folder
+            current_package_settings["user_data_folder"] = user_data_folder
             new_user_dir = current_package_settings["user_data_folder"]
             new_saccharis_folder = os.path.join(new_user_dir, "saccharis")
             config_folder = os.path.join(new_saccharis_folder, "config")
@@ -392,6 +412,8 @@ def cli_config():
                 changes = True
                 shutil.copytree(old_saccharis_folder, new_saccharis_folder, dirs_exist_ok=True)
                 shutil.rmtree(old_saccharis_folder)
+                if current_package_settings["database_folder"] == os.path.join(old_saccharis_folder, "db"):
+                    current_package_settings["database_folder"] = os.path.join(new_saccharis_folder, "db")
                 save_package_settings(current_package_settings)
 
     if args.restore_defaults:

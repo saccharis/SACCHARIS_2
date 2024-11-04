@@ -7,6 +7,7 @@ import subprocess
 import sys
 from logging import Logger, getLogger
 from requests.exceptions import RequestException, ConnectionError
+from pathlib import PurePath
 from urllib3.exceptions import ReadTimeoutError
 
 from saccharis.utils.PipelineErrors import PipelineException, FileError, make_logger
@@ -45,15 +46,19 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
     :param force_download: Forces a new download and process operation even if the files already exist.
     :return: Returns whether a file was downloaded from the URL.
     """
+    logger.debug(f"download_and_process() called with url:{url}; output_folder:{output_folder}; process:{process}; "
+                 f"new_filename:{new_filename}; force_download:{force_download}")
+
     downloaded = False
     if new_filename:
         output_path = os.path.join(output_folder, new_filename)
     else:
         output_path = os.path.join(output_folder, os.path.basename(url))
 
+    # processed_filepath = f"{output_path}.h3f" if process == "hmmpress" else \
+    #     f"{PurePath(output_path).parent / PurePath(output_path).stem}.dmnd" if process == "diamond" else output_path
     processed_filepath = f"{output_path}.h3f" if process == "hmmpress" else \
-        f"{pathlib.PurePath(output_path).parent / pathlib.PurePath(output_path).stem}.dmnd" if process == "diamond" else \
-            output_path
+        PurePath(output_path).with_suffix(".dmnd") if process == "diamond" else output_path
 
     if not os.path.exists(processed_filepath) or force_download:
         print(f"dbCAN file {processed_filepath} not found, downloading...")
@@ -148,6 +153,9 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
             if os.path.basename(output_path) not in files_to_skip_deletion:
                 os.remove(output_path)
                 logger.debug(f"Removed {output_path}")
+    else:
+        logger.debug(f"Size of {processed_filepath}: {os.path.getsize(processed_filepath)}")
+        logger.info(f"{processed_filepath} already exists!")
 
     # Below code exists to create a dbCAN.txt dummy file if it's accidentally deleted. It's not strictly
     # necessary, but run-dbcan checks for it and fails if not present even if the dbCAN.txt.h3* files are present.
@@ -168,34 +176,57 @@ def cli_update_hmms():
     move/install the database in a custom location, useful for systems where the home folder is limited in size
     (e.g. computing clusters). User calls this function using the 'saccharis.update_db' command.
     """
-    logger = make_logger("CLILogger", get_log_folder(), "cli_logs.txt")
     parser = argparse.ArgumentParser(description="Downloads the database files for HMM analysis, overwriting old files "
                                                  "if present. Note that the software may have be updated via bioconda "
                                                  "to update the internal links to download files from. Database "
                                                  f"download links last updated in {links_last_updated}")
     # fasta_filepath, bounds_file, family, output_folder, source
-    parser.add_argument("--keep_existing", "-k", action="store_false", help="Use this option if you don't want newly "
+    parser.add_argument("--keep_existing", "-k", action="store_true", help="Use this option if you don't want newly "
                                                                             "downloaded files to replace existing "
                                                                             "files.")
-    parser.add_argument("--directory", "-d", type=str, help="Use this option to download the database files into a "
-                                                            "non-default directory.", default=None)
-
+    directory_group = parser.add_mutually_exclusive_group(required=False)
+    directory_group.add_argument("--directory", "-d", type=str, help="Use this option to download the database files "
+                                                                     "into a non-default directory.", default=None)
+    directory_group.add_argument("--default_directory", action="store_true", help="Use this option to download the "
+                                                                                  "database files into the default "
+                                                                                  "directory.")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Use this option to print more detailed "
+                                                                     "information to the console.")
     args = parser.parse_args()
+
+    logger = make_logger("CLILogger", get_log_folder(), "cli_logs.txt", verbose=args.verbose)
+
+    msg = f"cli_update_hmms() called with user arguments directory:{args.directory} and " \
+          f"keep_existing:{args.keep_existing}"
+    logger.info(msg)
+
     if args.directory is None:
         old_dir = None
-        dir = get_db_folder()
+        dir = get_db_folder(logger)
+        msg = f"User did not specify directory, will attempt to download into current saccharis db directory: {dir}"
+        logger.info(msg)
     else:
-        old_dir = get_db_folder()
-        dir = args.directory
+        old_dir = get_db_folder(logger)
+        # Note: Using both expanduser and abspath so that relative paths with '.' for current working directory
+        # or '~' for user's home folders are saved correctly. Otherwise, ambiguous locations might try to save/load
+        # database files form incorrect locations in the future and cause database installation/update issues.
+        dir = os.path.abspath(os.path.expanduser(args.directory))
+
+        msg = f"User specified a directory: {dir} and current saccharis db directory exists at: {dir} ." \
+              f"Attempting to move existing files to new directory."
+        logger.info(msg)
 
         shutil.move(old_dir, dir)
 
-        package_settings = get_package_settings()
-        package_settings["database_folder"] = args.directory
+        package_settings = get_package_settings(logger)
+        package_settings["database_folder"] = dir
+        msg = f"Setting database_folder in package_settings to {dir} and attempting to save."
+        logger.info(msg)
         save_package_settings(package_settings)
 
     try:
-        download_database(db_install_folder=dir, force_download=args.keep_existing, logger=logger)
+        logger.info(f"Attempting to download database files into {dir}")
+        download_database(db_install_folder=dir, force_download=not args.keep_existing, logger=logger)
     except PipelineException:
         logger.error(PipelineException.args[0])
         logger.debug(PipelineException.__traceback__)
@@ -212,9 +243,13 @@ def download_database(db_install_folder: str | os.PathLike = get_db_folder(), fo
     downloaded files are processed into multiple output files.
     """
 
+    msg = f"download_database() called with db_install_folder:{db_install_folder} and force_download:{force_download}"
+    logger.debug(msg)
     downloaded: int = 0
     # set up folder and download dbCAN2 database files if not already present
     if not os.path.isdir(db_install_folder):
+        msg = f"{db_install_folder} not found, creating directory..."
+        logger.info(msg)
         os.makedirs(db_install_folder, 0o755)
 
     # todo: delete below after confirmed it's been replaced properly
@@ -249,5 +284,6 @@ def download_database(db_install_folder: str | os.PathLike = get_db_folder(), fo
                                       force_download=force_download, logger=logger)
         if result:
             downloaded += 1
+        logger.debug(f"{downloaded} files downloaded.")
 
     return downloaded
