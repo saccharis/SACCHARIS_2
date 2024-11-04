@@ -43,28 +43,12 @@ def load_from_file(path: str | os.PathLike):
     return settings
 
 
-def get_package_settings(logger: Logger = getLogger()):
-    base_dir = pathlib.PurePath(inspect.getsourcefile(lambda: 0)).parents[1]
-    msg = f"Base saccharis install directory: {base_dir}"
-    logger.debug(msg)
-    data_folder = base_dir / "data"
-    config_path = data_folder / "config.json"
-    if not os.path.isfile(config_path):
-        msg = f"No file found at {config_path}, loading default package settings."
-        logger.info(msg)
-        return get_default_package_settings(logger)
-    else:
-        try:
-            msg = f"Attempting to load package settings from {config_path}"
-            logger.debug(msg)
-            current_package_settings = load_from_file(config_path)
-            logger.debug(f"Package settings: {current_package_settings}")
-            return current_package_settings
-        except JSONDecodeError:
-            msg = f"JSON decode error encountered trying to load package settings from {config_path}, using defaults " \
-                  f"instead."
-            logger.exception(msg)
-            return get_default_package_settings(logger)
+def save_dict_to_file(settings_dict, settings_path: str | os.PathLike):
+    if not os.path.exists(os.path.dirname(settings_path)):
+        os.makedirs(os.path.dirname(settings_path))
+
+    with open(settings_path, 'w', encoding="utf-8") as sfile:
+        json.dump(settings_dict, sfile, ensure_ascii=False, indent=4)
 
 
 def save_package_settings(new_package_settings):
@@ -82,15 +66,47 @@ def save_package_settings(new_package_settings):
     for key in old_package_settings:
         if key not in new_package_settings:
             new_package_settings[key] = old_package_settings[key]
-    save_to_file(new_package_settings, config_path)
+    save_dict_to_file(new_package_settings, config_path)
 
 
-# IMPROVEMENT TODO: Consider refactoring to a global settings object with all the settings and get/set methods.
+def get_package_settings(logger: Logger = getLogger()):
+    base_dir = pathlib.PurePath(inspect.getsourcefile(lambda: 0)).parents[1]
+    msg = f"Base saccharis install directory: {base_dir}"
+    logger.debug(msg)
+    data_folder = base_dir / "data"
+    config_path = data_folder / "config.json"
+    if not os.path.isfile(config_path):
+        msg = f"No file found at {config_path}, loading and saving default package settings."
+        logger.info(msg)
+        current_package_settings = get_default_package_settings(logger)
+        save_package_settings(current_package_settings)
+        return current_package_settings
+    elif os.path.getsize(config_path) == 0:
+        msg = f"Settings file found at {config_path} has no data, loading and saving default package settings."
+        logger.info(msg)
+        current_package_settings = get_default_package_settings(logger)
+        save_package_settings(current_package_settings)
+        return current_package_settings
+    else:
+        try:
+            msg = f"Attempting to load package settings from {config_path}"
+            logger.debug(msg)
+            current_package_settings = load_from_file(config_path)
+            logger.debug(f"Package settings: {current_package_settings}")
+            return current_package_settings
+        except JSONDecodeError:
+            msg = f"JSON decode error encountered trying to load package settings from {config_path}, using defaults " \
+                  f"instead."
+            logger.exception(msg)
+            return get_default_package_settings(logger)
+
+
+# IMPROVEMENT TODO: Consider refactoring to a global settings object(s) with all the settings and get/set methods.
 package_settings = get_package_settings()
 user_dir = package_settings["user_data_folder"] if "user_data_folder" in package_settings else os.path.expanduser('~')
 folder_saccharis_user = os.path.join(user_dir, "saccharis")
 default_folder_config = os.path.join(folder_saccharis_user, "config")
-default_settings_path = os.path.join(default_folder_config, "advanced_settings.json")
+default_software_settings_path = os.path.join(default_folder_config, "advanced_settings.json")
 default_db_dir = os.path.join(folder_saccharis_user, "db")
 folder_db = package_settings["database_folder"] if "database_folder" in package_settings else default_db_dir
 folder_logs = os.path.join(folder_saccharis_user, "logs")
@@ -113,11 +129,47 @@ def get_output_folder():
 
 
 def get_config_folder():
+    # todo: return current config folder path from file and/or object
     return default_folder_config
 
 
 def get_ncbi_folder():
     return folder_ncbi
+
+
+def get_software_settings_path():
+    # todo: return current software settings path from file and/or object
+    return default_software_settings_path
+
+
+def save_to_env(api_key: str, folder_config:  str | os.PathLike = get_config_folder(), logger: Logger = getLogger()):
+    env_path = os.path.join(folder_config, ".env")
+    try:
+        with open(env_path, 'r', encoding="utf-8") as env_file:
+            lines = env_file.readlines()
+    except IOError:
+        lines = []
+        msg = f"Could not read user data (e.g. ncbi api key) from .env file at {env_path}"
+        logger.exception(msg)
+
+    new_lines = [(line + '\n' if line[-1] != '\n' else line) for line in lines]
+
+    # note: email sent with ncbi queries is to be developer email, so saving user email is deprecated
+    # if email:
+    #     new_lines = [line for line in new_lines if line[0:5] != "EMAIL"]
+    #     new_lines.append(f"EMAIL={email}\n")
+
+    if api_key:
+        new_lines = [line for line in new_lines if line[0:7] != "API_KEY"]
+        new_lines.append(f"API_KEY={api_key}\n")
+
+    try:
+        with open(os.path.join(folder_config, ".env"), 'w', encoding="utf-8") as env_file:
+            env_file.writelines(new_lines)
+    except IOError:
+        msg = f"Could not write user data (e.g. ncbi api key) to .env file at {env_path}"
+        logger.exception(msg)
+
 
 
 class MultilineFormatter(argparse.HelpFormatter):
@@ -201,11 +253,11 @@ def load_from_env(gui_object=None, ask_method=None, get_method=None, show_user_m
 
 
 def get_user_settings():
-    if not os.path.isfile(default_settings_path):
-        save_to_file(get_default_settings())
+    if not os.path.isfile(default_software_settings_path):
+        save_dict_to_file(get_default_settings(), default_software_settings_path)
 
     try:
-        user_settings = load_from_file(default_settings_path)
+        user_settings = load_from_file(default_software_settings_path)
     except JSONDecodeError:
         user_settings = {}
     settings = get_default_settings()
@@ -281,35 +333,6 @@ def validate_settings(settings):
     return True
 
 
-def save_to_file(settings_dict, settings_path: str | os.PathLike = default_settings_path, api_key=None,
-                 folder_config=default_folder_config):
-    if not os.path.exists(os.path.dirname(settings_path)):
-        os.makedirs(os.path.dirname(settings_path))
-
-    with open(settings_path, 'w', encoding="utf-8") as sfile:
-        json.dump(settings_dict, sfile, ensure_ascii=False, indent=4)
-
-    if api_key:
-        try:
-            with open(os.path.join(folder_config, ".env"), 'r', encoding="utf-8") as env_file:
-                lines = env_file.readlines()
-        except IOError:
-            lines = []
-
-        new_lines = [(line + '\n' if line[-1] != '\n' else line) for line in lines]
-
-        # if email:
-        #     new_lines = [line for line in new_lines if line[0:5] != "EMAIL"]
-        #     new_lines.append(f"EMAIL={email}\n")
-
-        if api_key:
-            new_lines = [line for line in new_lines if line[0:7] != "API_KEY"]
-            new_lines.append(f"API_KEY={api_key}\n")
-
-        with open(os.path.join(folder_config, ".env"), 'w', encoding="utf-8") as env_file:
-            env_file.writelines(new_lines)
-
-
 def cli_config():
     parser = argparse.ArgumentParser(description="A utility to configure advanced software_settings. If you need "
                                                  "deeper explanations of a setting, refer to the documentation of the "
@@ -327,10 +350,10 @@ def cli_config():
     parser.add_argument('--ncbi_api_key', default=None, type=str, help='This is your API key for accessing the NCBI '
                         'Entrez system. "You can get an NCBI API key from your NCBI account software_settings page, '
                         'see https://www.ncbi.nlm.nih.gov/account/settings/')
-    parser.add_argument('--ncbi_email', default=None, type=str, help='This email is used for identifying your queries '
-                                                                     'to NCBI in case there are errors or problems. '
-                                                                     'This email address should match the account your '
-                                                                     'API key is from.')
+    # parser.add_argument('--ncbi_email', default=None, type=str, help='This email is used for identifying your queries '
+    #                                                                  'to NCBI in case there are errors or problems. '
+    #                                                                  'This email address should match the account your '
+    #                                                                  'API key is from.')
     parser.add_argument("--raxml_command", default=None, type=str, help="This is the name of the raxml command that is"
                         "available on your PATH variable. There are 6 different raxml programs that you can run, which "
                         "one you choose will be based off of the age and type of your CPU. Older "
@@ -375,7 +398,7 @@ def cli_config():
     changes = False
     software_settings = get_user_settings()
     current_package_settings = get_package_settings()
-    settings_path = default_settings_path
+    settings_path = default_software_settings_path
     config_folder = default_folder_config
 
     # Note: Using both expanduser and abspath so that relative paths with '.' for current working directory
@@ -422,10 +445,13 @@ def cli_config():
 
     try:
         validate_settings(software_settings)
-        save_to_file(software_settings, settings_path=settings_path, folder_config=config_folder,
-                     api_key=args.ncbi_api_key)
+        # save_to_file(software_settings, settings_path=settings_path, folder_config=config_folder,
+        #              api_key=args.ncbi_api_key)
+        save_dict_to_file(software_settings, settings_path)
+        if args.api_key is not None:
+            save_to_env(args.api_key)
         if args.show:
-            print(f"NCBI email: {args.ncbi_email}")
+            # print(f"NCBI email: {args.ncbi_email}")
             print(f"NCBI API key: {args.ncbi_api_key}")
             print("Settings: ", json.dumps(software_settings, indent=4))
         if changes:

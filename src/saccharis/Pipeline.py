@@ -50,8 +50,7 @@ from saccharis import FastTree_Build
 from saccharis import Muscle_Alignment
 from saccharis import RAxML_Build
 from saccharis.Rendering import render_phylogeny
-from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder, get_version
-from saccharis.utils.AdvancedConfig import save_to_file
+from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder, get_version, save_dict_to_file
 from saccharis.utils.FamilyCategories import check_deleted_families
 from saccharis.utils.Formatting import make_metadata_dict, format_time, CazymeMetadataRecord
 from saccharis.CazyScrape import Domain
@@ -432,7 +431,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         settings_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}{user_run_insert}_settings-" \
                             f"{datetime.datetime.now().strftime('%d-%m-%y_%H-%M')}.json"
         run_settings_path = os.path.join(domain_folder, settings_filename)
-        save_to_file(settings, settings_path=run_settings_path)
+        save_dict_to_file(settings, settings_path=run_settings_path)
     except IOError as error:
         raise UserWarning("Problem writing final tree output information to file. Make sure you have access "
                           "permissions for your output folder, as this is a common source of write errors of this type."

@@ -42,8 +42,9 @@ from saccharis.utils.FamilyCategories import get_default_family_categories
 from saccharis.utils.FamilyCategories import write_family_files
 from saccharis.utils.FamilyCategories import Matcher
 from saccharis.utils.FamilyCategories import save_family_iterable_json
-from saccharis.utils.AdvancedConfig import get_user_settings, load_from_env, validate_settings, save_to_file, \
-    get_default_settings, get_log_folder, get_output_folder, get_version
+from saccharis.utils.AdvancedConfig import get_user_settings, load_from_env, validate_settings, \
+    get_default_settings, get_log_folder, get_output_folder, get_version, save_dict_to_file, get_software_settings_path, \
+    save_to_env
 from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile, make_logger
 
 from saccharis.CazyScrape import Mode
@@ -783,10 +784,13 @@ class SettingsDlg(QDialog):
             # print(settings)
             # print(key)
             # print(email)
-            validate_settings(settings)
-            save_to_file(settings, email)
             self.ncbi_key = key
             self.ncbi_email = email
+            validate_settings(settings)
+            # save_to_file(settings, email)
+            save_dict_to_file(settings, get_software_settings_path())
+            if key is not None:
+                save_to_env(api_key=key)
             tell_user("Successfully updated advanced settings!")
         except BadInputException as error:
             tell_user(error.msg, error.detail)
