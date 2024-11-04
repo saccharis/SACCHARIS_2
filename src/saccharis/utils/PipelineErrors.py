@@ -39,7 +39,7 @@ class NewUserFile(PipelineException):
         super().__init__(msg)
 
 
-def make_logger(name: str, log_dir: str, filename: str):
+def make_logger(name: str, log_dir: str, filename: str, verbose: bool = False):
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
 
@@ -49,6 +49,8 @@ def make_logger(name: str, log_dir: str, filename: str):
     logger.setLevel(logging.DEBUG)
     if sys.gettrace():
         c_handler.setLevel(logging.DEBUG)
+    elif verbose:
+        c_handler.setLevel(logging.INFO)
     else:
         c_handler.setLevel(logging.WARNING)
     f_handler.setLevel(logging.DEBUG)
