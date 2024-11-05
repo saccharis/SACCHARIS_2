@@ -247,13 +247,14 @@ def ncbi_protein_query(accession_list: list[str], api_key, ncbi_email, ncbi_tool
     queried = 0
     retrieved = 0
     fasta_data = ""
+    delay = NCBI_DEFAULT_DELAY
     print("Querying NCBI...", end='')
     logger.debug("Begin querying NCBI...")
     while queried < accession_count:
         # fasta_output, success_count = ncbi_query(accession_list[queried:queried+ncbi_query_size])
         try:
             fasta_output, success_count = ncbi_single_query(accession_list[queried:queried + ncbi_query_size], api_key,
-                                                            ncbi_email, ncbi_tool, logger=logger)
+                                                            ncbi_email, ncbi_tool, logger=logger, delay=delay)
             fasta_data += fasta_output
             retrieved += success_count
             queried += ncbi_query_size
@@ -264,11 +265,13 @@ def ncbi_protein_query(accession_list: list[str], api_key, ncbi_email, ncbi_tool
         except NCBIException as error:
             global ncbi_exception_count
             ncbi_exception_count += 1
+            delay *= 2
             logger.warning(error.msg)
             logger.warning("MISSING FASTA DATA FROM NCBI")
             if ncbi_exception_count < NCBI_EXCEPTION_MAX_TRIES:
                 ncbi_query_size = math.ceil(ncbi_query_size/2)
-                msg = f"Automatically reducing query size to {ncbi_query_size} and retrying..."
+                msg = f"Automatically reducing query size to {ncbi_query_size}, increasing delay to {delay} and " \
+                      f"retrying..."
                 print(f"INFO: {msg}\n")
                 logger.info(msg)
             else:
@@ -281,7 +284,8 @@ def ncbi_protein_query(accession_list: list[str], api_key, ncbi_email, ncbi_tool
     return fasta_data, queried, retrieved
 
 
-def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=None, verbose=False, logger=getLogger()):
+def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=None, verbose=False, logger=getLogger(),
+                      delay=NCBI_DEFAULT_DELAY):
     genbank_list = format_list(accession_list)
 
     # Set up the Query URL
@@ -298,14 +302,20 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
 
     # Submit the search to retrieve a count of total number of sequences
     try:
-        time.sleep(NCBI_DEFAULT_DELAY)
-        esearch_result1 = requests.get(esearch + genbank_list)
+        time.sleep(delay)
+        esearch_result1 = requests.get(esearch + genbank_list, timeout=30)
+        esearch_result1.raise_for_status()
     # todo: consider catching specific exceptions here. These are intermittent and not repeatable, since they happen
     #  when the NCBI server has errors, so I am not sure which specific exceptions to catch.
+    except ConnectionError as e:
+        logger.exception("NCBI query #1 error, did not get esearch result on Entrez API: Connection error occurred.")
+        raise NCBIException("Error querying NCBI. NCBI might be down, try again later. Failed NCBI request #1") from e
+    except requests.exceptions.HTTPError as e:
+        logger.exception("NCBI query #1 error, did not get esearch result on Entrez API: HTTP error occurred.")
+        raise NCBIException("Error querying NCBI. Failed NCBI request #1.") from e
     except Exception as e:
-        logger.error("Error querying NCBI. Error message:", e.args[0])
-        msg = "Error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #1.\n"
-        raise NCBIException(msg) from e
+        logger.exception("NCBI query #1 generic exception, did not get esearch result on Entrez API.")
+        raise NCBIException("Error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #1.") from e
 
     # Extract the count and submit search again to retrieve XML based results
     # - set the number of results we want to count <retmax>
@@ -344,17 +354,22 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
 
     esearch = base_url + '&retmax=' + str(max_ret) + '&term='
     try:
-        time.sleep(NCBI_DEFAULT_DELAY)
-        esearch_result2 = requests.get(esearch + genbank_list + '&usehistory=y')
-    # todo: consider catching specific exceptions here. These are intermittent and not repeatable, since they happen
-    #  when the NCBI server has errors, so I'm not sure which specific exceptions to catch.
+        time.sleep(delay)
+        esearch_result2 = requests.get(esearch + genbank_list + '&usehistory=y', timeout=30)
+        esearch_result2.raise_for_status()
+    except ConnectionError as e:
+        logger.exception("NCBI query #2 error, did not get esearch result on Entrez API: Connection error occurred.")
+        raise NCBIException("Error querying NCBI after multiple retries. NCBI might be down, try again later.") from e
+    except requests.exceptions.HTTPError as e:
+        logger.exception("NCBI query #2 error, did not get esearch result on Entrez API: HTTP error occurred.")
+        raise NCBIException("HTTP error querying NCBI. Failed NCBI request #2.") from e
     except Exception as e:
-        logger.error("NCBI query #2 error:", e.args[0])
+        logger.exception("NCBI query #2 generic exception, did not get esearch result on Entrez API.")
         raise NCBIException("Error querying NCBI. NCBI might be down, try again later.\nFailed NCBI request #2") from e
 
     result2 = BeautifulSoup(esearch_result2.text, features='xml')
     if result2.find('QueryKey') is None and result2.find('querykey') is None:
-        logger.error("ERROR: NCBI query Key not found. Usually this means query size is too large.")
+        logger.error("NCBI query Key not found. Usually this means query size is too large.")
         raise NCBIException("ERROR: NCBI query Key not found. Usually this means query size is too large.")
     if result2.find('QueryKey') is None:
         query_key = result2.find('querykey').text
@@ -371,21 +386,27 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
     # base_url = utils + '/efetch.fcgi?db=protein&email=' + ncbi_email + '&tool=' + ncbi_tool + '&api_key='+api_key
     # TODO: add email and tool fields to ncbi requests
     base_url = utils + f'/efetch.fcgi?db=protein' + api_key_string
-    efetch = base_url + '&query_key=' + query_key + '&WebEnv=' + web_env + '&rettype=fasta&retmode=text'
+    efetch_url = base_url + '&query_key=' + query_key + '&WebEnv=' + web_env + '&rettype=fasta&retmode=text'
 
     try:
-        time.sleep(NCBI_DEFAULT_DELAY)
-        efetch_result = requests.get(efetch)
+        time.sleep(delay)
+        efetch_result = requests.get(efetch_url, timeout=30)
+        efetch_result.raise_for_status()
         result_count = efetch_result.text.count(">")
-    # todo: consider catching specific exceptions here. These are intermittent and not repeatable, since they happen
-    #  when the NCBI server has errors, so I have no idea which specific exceptions to catch.
+    except ConnectionError as e:
+        logger.exception("NCBI query #3 error, did not get efetch result on Entrez API: Connection error occurred.")
+        raise NCBIException("Connection error querying NCBI. NCBI might be down, try again later.") from e
+    except requests.exceptions.HTTPError as e:
+        logger.exception("NCBI query #3 error, did not get efetch result on Entrez API: HTTP error occurred.")
+        raise NCBIException("HTTP Error querying NCBI. Failed NCBI request #3.") from e
     except Exception as e:
-        logger.warning("Failed NCBI request #3. Error:", e.args[0])
-        raise NCBIException("HTTP error querying NCBI. NCBI might be down, try again later.") from e
+        logger.exception("NCBI query #3 generic exception, did not get efetch result on Entrez API.")
+        raise NCBIException("Generic error querying NCBI. NCBI might be down, try again later.") from e
 
     if valid_accession_count != result_count:
-        logger.error(f"Incomplete NCBI query FASTA results: {result_count}/{valid_accession_count} returned")
-        raise NCBIException(f"Incomplete NCBI query FASTA results: {result_count}/{valid_accession_count} returned")
+        msg = f"Incomplete NCBI query FASTA results: {result_count}/{valid_accession_count} returned"
+        logger.error(msg)
+        raise NCBIException(msg)
 
     # Returns empty result if fetch failed
     if efetch_result.text.__contains__("<ERROR>Empty result - nothing to do</ERROR>"):

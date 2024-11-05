@@ -1,18 +1,24 @@
 import argparse
 import os
 import pathlib
+import time
+
 import requests
 import shutil
 import subprocess
 import sys
 from logging import Logger, getLogger
-from requests.exceptions import RequestException, ConnectionError
+from requests.exceptions import RequestException, ConnectionError, HTTPError
 from pathlib import PurePath
 from urllib3.exceptions import ReadTimeoutError
 
+from saccharis.utils.NetworkingHelpers import resolve_hostname, get_dns_servers
 from saccharis.utils.PipelineErrors import PipelineException, FileError, make_logger
 from saccharis.utils.AdvancedConfig import get_db_folder, get_package_settings, save_package_settings, get_log_folder
 from saccharis.utils.Formatting import convert_path_wsl
+
+MAX_RETRIES = 10
+DELAY = 30
 
 links_last_updated = "September, 2023"
 urls_and_process_and_rename = \
@@ -76,47 +82,69 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
         #     logger.debug(err)
         #     logger.exception(msg)
         #     raise PipelineException(msg) from err
+        global DELAY
 
-        try:
-            response = requests.get(url, stream=True, timeout=30)
-
-            if response.status_code == 200:
+        for attempt in range(MAX_RETRIES):
+            try:
+                response = requests.get(url, stream=True, timeout=120)
+                response.raise_for_status()
                 with open(output_path, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
                 logger.info(f"requests did not error on {url}")
-            else:
-                raise PipelineException(f"Failed to download file from url {url} due to HTTP error code: {response.status_code}")
-        except (TimeoutError, ReadTimeoutError) as err:
-            msg = f"Failed to download file {processed_filepath} from url {url} due to timeout. Please try again later."
-            logger.debug(err)
-            logger.exception(msg)
-            raise PipelineException(msg) from err
-        except ConnectionError as err:
-            msg = f"Failed to download file from url {url} due to a connection error. May be caused by DNS issues, " \
-                  f"check that your system can communicate with DNS servers, sometimes VPN software or enterprise " \
-                  f"network settings interfere with DNS resolution."
-            logger.debug(err)
-            logger.exception(msg)
-            raise PipelineException(msg) from err
-        except RequestException as err:
-            msg = f"Failed to download file from url {url} due to a request error. There may be issues with the " \
-                  f"server, please try again later."
-            logger.debug(err)
-            logger.exception(msg)
-            raise PipelineException(msg) from err
-        except OSError as err:
-            msg = f"File I/O error occurred while accessing {output_path}. Check that you have write permissions for " \
-                  f"this directory. You can change the database installation folder with the saccharis.update_db " \
-                  f"command if necessary."
-            logger.debug(err)
-            logger.exception(msg)
-            raise PipelineException(msg) from err
-        except Exception as err:
-            msg = f"Failed to download file {processed_filepath} from url {url} due to generic Exception."
-            logger.debug(err)
-            logger.exception(msg)
-            raise PipelineException(msg) from err
+                break  # exit retry loop on success
+            except (TimeoutError, ReadTimeoutError) as err:
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(DELAY)
+                    DELAY *= 2
+                    msg = f"Failed to download from {url} on attempt {attempt} due to ConnectionError. Retrying..."
+                    logger.debug(msg)
+                    continue
+                msg = f"Failed to download file {output_path} from url {url} due to timeout. Please try again later."
+                logger.debug(err)
+                logger.exception(msg)
+                raise PipelineException(msg) from err
+            except HTTPError as err:
+                msg = f"Failed to download file {output_path} from url {url} due to HTTP error. " \
+                      f"Please try again later."
+                logger.debug(err)
+                logger.debug(resolve_hostname(url))
+                logger.debug(get_dns_servers())
+                logger.exception(msg)
+                raise PipelineException(msg) from err
+            except ConnectionError as err:
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(DELAY)
+                    DELAY *= 2
+                    msg = f"Failed to download from {url} on attempt {attempt} due to ConnectionError. Retrying..."
+                    logger.debug(msg)
+                    continue
+                msg = f"Failed to download file from url {url} due to a connection error. May be caused by DNS issues, " \
+                      f"check that your system can communicate with DNS servers, sometimes VPN software or enterprise " \
+                      f"network settings interfere with DNS resolution."
+                logger.debug(err)
+                logger.debug(resolve_hostname(url))
+                logger.debug(get_dns_servers())
+                logger.exception(msg)
+                raise PipelineException(msg) from err
+            except RequestException as err:
+                msg = f"Failed to download file from url {url} due to a request error. There may be issues with the " \
+                      f"server, please try again later."
+                logger.debug(err)
+                logger.exception(msg)
+                raise PipelineException(msg) from err
+            except OSError as err:
+                msg = f"File I/O error occurred while accessing {output_path}. Check that you have write permissions for " \
+                      f"this directory. You can change the database installation folder with the saccharis.update_db " \
+                      f"command if necessary."
+                logger.debug(err)
+                logger.exception(msg)
+                raise PipelineException(msg) from err
+            except Exception as err:
+                msg = f"Failed to download file {output_path} from url {url} due to generic Exception."
+                logger.debug(err)
+                logger.exception(msg)
+                raise PipelineException(msg) from err
 
         downloaded = True
 
