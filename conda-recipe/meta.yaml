@@ -39,7 +39,7 @@ requirements:
     - setuptools
     - pdoc
   host:
-    - python >=3.6
+    - python >=3.11
     - setuptools
   run:
     - beautifulsoup4 >=4.11.1

@@ -5,6 +5,7 @@ import unittest
 from inspect import getsourcefile
 from unittest import mock
 
+
 from saccharis.utils.DatabaseDownload import download_database, cli_update_hmms
 
 tests_folder = os.path.dirname(getsourcefile(lambda: 0))
