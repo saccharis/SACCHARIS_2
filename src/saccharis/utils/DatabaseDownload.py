@@ -19,6 +19,7 @@ from saccharis.utils.Formatting import convert_path_wsl
 
 MAX_RETRIES = 10
 DELAY = 30
+CHUNK_SIZE: int = 4096
 
 links_last_updated = "September, 2023"
 urls_and_process_and_rename = \
@@ -83,13 +84,15 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
         #     logger.exception(msg)
         #     raise PipelineException(msg) from err
         global DELAY
+        global CHUNK_SIZE
 
         for attempt in range(MAX_RETRIES):
             try:
                 response = requests.get(url, stream=True, timeout=120)
                 response.raise_for_status()
                 with open(output_path, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
+                    # consider lowering chunk size to solve proteus download issues???
+                    for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
                         f.write(chunk)
                 logger.info(f"requests did not error on {url}")
                 break  # exit retry loop on success
@@ -97,6 +100,7 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
                 if attempt < MAX_RETRIES - 1:
                     time.sleep(DELAY)
                     DELAY *= 2
+                    CHUNK_SIZE = max(int(CHUNK_SIZE / 2), 512)
                     msg = f"Failed to download from {url} on attempt {attempt} due to ConnectionError. Retrying..."
                     logger.debug(msg)
                     continue
@@ -116,6 +120,7 @@ def download_and_process(url, output_folder: str | os.PathLike, process: str = N
                 if attempt < MAX_RETRIES - 1:
                     time.sleep(DELAY)
                     DELAY *= 2
+                    CHUNK_SIZE = max(int(CHUNK_SIZE / 2), 512)
                     msg = f"Failed to download from {url} on attempt {attempt} due to ConnectionError. Retrying..."
                     logger.debug(msg)
                     continue

@@ -237,8 +237,8 @@ def ncbi_query_dna_from_protein_accessions(accessions: list[str]):
         except Exception as e:
             print(f"Error fetching sequence for source {source}: {e}")
 
-
     return fasta_sequences
+
 
 def ncbi_protein_query(accession_list: list[str], api_key, ncbi_email, ncbi_tool, verbose=False, logger: Logger = getLogger(),
                        ncbi_query_size=200) \
