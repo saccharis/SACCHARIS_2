@@ -31,7 +31,8 @@ class IntegrationTestCase(unittest.TestCase):
             print(err)
 
     def run_pipeline(self, family, scrape_mode: Mode, tree_program: TreeBuilder = TreeBuilder.FASTTREE,
-                     user_files: list[str] = None, force_update=True, render_trees=False):
+                     user_files: list[str] = None, force_update=True, render_trees=False,
+                     min_expected_sequence_count=None):
         single_pipeline(family=family, output_folder=test_out_folder, scrape_mode=scrape_mode,
                         tree_program=tree_program, verbose=True, force_update=force_update, skip_user_ask=True,
                         render_trees=render_trees, user_files=user_files)
@@ -44,6 +45,7 @@ class IntegrationTestCase(unittest.TestCase):
         with open(json_path, 'r', encoding="utf-8") as meta_json:
             cazyme_dict = json.loads(meta_json.read())
             final_metadata_dict = {id: CazymeMetadataRecord(**record) for id, record in cazyme_dict.items()}
+        self.assertTrue(len(final_metadata_dict) >= min_expected_sequence_count)
         # asserts that there are no exactly overlapping modules from multiple genes
         for record in final_metadata_dict:
             if record.__contains__("<1>"):
@@ -70,7 +72,7 @@ class IntegrationTestCase(unittest.TestCase):
 
     def test_GH102_raxml_ng(self):
         self.run_pipeline("GH102", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML_NG,
-                          user_files=[small_user_testfile], render_trees=True)
+                          user_files=[small_user_testfile], render_trees=True, min_expected_sequence_count=4)
 
     def test_GH5_25_raxml_structure(self):
         self.run_pipeline("GH5_25", Mode.STRUCTURE, tree_program=TreeBuilder.RAXML, user_files=[small_user_testfile])
