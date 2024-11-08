@@ -21,7 +21,7 @@ MAX_RETRIES = 10
 DELAY = 30
 CHUNK_SIZE: int = 4096
 
-links_last_updated = "September, 2023"
+links_last_updated = "November, 2024"
 urls_and_process_and_rename = \
     [("https://bcb.unl.edu/dbCAN2/download/Databases/V13/dbCAN-HMMdb-V13.txt", "hmmpress", "dbCAN.txt"),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb", None),
