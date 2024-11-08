@@ -12,7 +12,6 @@ import re
 import time
 from zipfile import ZipFile
 # Dependency imports
-import Bio.SeqIO
 from Bio import Entrez, SeqIO
 from Bio.Entrez import efetch
 from Bio.SeqRecord import SeqRecord
