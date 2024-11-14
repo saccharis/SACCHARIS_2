@@ -4,7 +4,7 @@
 # License: GPL v3
 ###############################################################################
 """
-The Cazy_Scrape module contains functions to download CAZyme metadata from http://www.cazy.org and subsequently
+The Cazy_Scrape module contains functions to download CAZyme metadata from https://www.cazy.org and subsequently
 retrieve amino acid sequence data from NCBI genbank.
 """
 import time
@@ -82,7 +82,7 @@ class HTMLGetter:
                 timeout = int(r.headers["retry-after"]) + 1
                 msg = f"CAZy.org is unavailable, expected to be back up in {timeout} seconds..."
                 logger.warning(msg)
-            except KeyError as err:
+            except KeyError:
                 timeout = 60*tries
                 msg = f"CAZy.org is unavailable, no expected time when the website is back up returned. \n" \
                       f"Retrying in {timeout} seconds..."
@@ -127,11 +127,11 @@ class HTMLGetter:
 def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_mode,
                logger: Logger = getLogger("PipelineLogger")):
     """
-    This function downloads metadata for specified CAZymes from http://cazy.org based on supplied filtering arguments
+    This function downloads metadata for specified CAZymes from https://cazy.org based on supplied filtering arguments
     and returns the result in a dictionary of CazymeMetadataRecord objects with the genbank id as dictionary key. Data
     is also saved to drive in the location specified by cazy_folder.
 
-    :param family: The family whose sequences will be downloaded from http://www.CAZy.org.
+    :param family: The family whose sequences will be downloaded from https://www.CAZy.org.
     :param cazy_folder: The folder which final and intermediate results will be saved to.
     :param scrape_mode:
     :param get_fragments:
@@ -142,7 +142,7 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
     """
     print("Downloading", family, "Data from CAZy database...")
 
-    url_cazy = "http://www.cazy.org/"+family+"_" + \
+    url_cazy = "https://www.cazy.org/"+family+"_" + \
                ("structure" if scrape_mode == Mode.STRUCTURE or family.__contains__("CBM") else "characterized") \
                + ".html"
     html_get = HTMLGetter()
@@ -334,7 +334,6 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                     (get_fragments or not protein_name.__contains__("fragment")):
                 # todo: change cazymes from a dict of lists to a dict of dicts (or a dict of Namespace objects? or dict
                 #  of custom class?) to get named json categories in output. THIS WILL BREAK DATA IMPORT INTO R SCRIPT
-                # cazymes[genbank] = [protein_name, ec_num, org_name, None, uniprot, pdb, subfamily]  # None is domain, filled later
                 cazymes[genbank] = CazymeMetadataRecord(protein_name=protein_name, ec_num=ec_num, org_name=org_name,
                                                         uniprot=uniprot, pdb=pdb, family=family,
                                                         classfamily=family.split('_')[0], subfamily=subfamily,
@@ -367,7 +366,7 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
     unchar_char_duplicate = 0
 
     # download "all" file, used getting uncharacterized and also identifying domain
-    url_all = "http://www.cazy.org/IMG/cazy_data/" + family + ".txt"
+    url_all = "https://www.cazy.org/IMG/cazy_data/" + family + ".txt"
     full_list = requests.get(url_all)
     if full_list.status_code != 200:
         raise PipelineException(f"Bad HTTP response code {full_list.status_code} from {url_all}")
@@ -385,7 +384,8 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                 domain = row[1]
                 organism = row[2]
                 genbank = row[3]
-                if genbank not in all_cazymes and genbank not in genbank_duplicates and genbank is not None and genbank != "":
+                if genbank not in all_cazymes and genbank not in genbank_duplicates and \
+                        genbank is not None and genbank != "":
                     uncharacterized_added += 1
                     try:
                         classfam, subfam = cazyme_class.split('_')
@@ -394,7 +394,6 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                         subfam = None
                     # genbank_query = requests.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/" + )
 
-                    # all_cazymes[genbank] = [f"Uncharacterized {cazyme_class}", None, organism, domain, None, None, None]
                     all_cazymes[genbank] = CazymeMetadataRecord(protein_name=f"Uncharacterized {cazyme_class}",
                                                                 org_name=organism, domain=domain, protein_id=genbank,
                                                                 genbank=genbank, classfamily=classfam, subfamily=subfam,
@@ -490,7 +489,7 @@ def main(family, cazy_folder, scrape_mode, get_fragments=False, verbose=False, f
             logger.info(f"Loading data from previous run. Data file: {data_file} ; Stats file: {stats_file}")
             with open(data_file, 'r', encoding='utf-8') as f:
                 cazyme_dict = json.loads(f.read())
-                cazymes = {id: CazymeMetadataRecord(**record) for id, record in cazyme_dict.items()}
+                cazymes = {record_id: CazymeMetadataRecord(**record) for record_id, record in cazyme_dict.items()}
             with open(stats_file, 'r', encoding='utf-8') as f:
                 stats = json.loads(f.read())
             return fasta_file, cazymes, stats
