@@ -14,6 +14,8 @@ tests_folder = os.path.dirname(getsourcefile(lambda: 0))
 test_out_folder = os.path.join(tests_folder, "test_files", "temp")
 small_user_testfile = os.path.join(tests_folder, "test_files", "user_test_GH102_UserFormat.fasta")
 partial_modeltest_folder = os.path.join(tests_folder, "test_files", "partial_run_modeltest", "PL9_CHARACTERIZED_ALL_DOMAINS")
+sheep3_user_testfile = os.path.join(tests_folder, "test_files", "Sheep_3_protein.fasta")
+sheep4_user_testfile = os.path.join(tests_folder, "test_files", "Sheep_4_protein.fasta")
 
 
 class IntegrationTestCase(unittest.TestCase):
@@ -79,6 +81,10 @@ class IntegrationTestCase(unittest.TestCase):
             shutil.rmtree(out_folder)
         shutil.copytree(partial_modeltest_folder, out_folder)
         self.assertRaises(AAModelError, self.run_pipeline, "PL9", Mode.CHARACTERIZED, force_update=False)
+
+    def test_duplicate_user_files(self):
+        self.run_pipeline("GH1", Mode.CHARACTERIZED, render_trees=True, user_file=sheep3_user_testfile)
+        #todo: add sheep4 user test file in dev22 version
 
 
 if __name__ == '__main__':

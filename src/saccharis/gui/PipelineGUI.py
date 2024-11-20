@@ -297,7 +297,9 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
             args.__setattr__("fasta_file", None)
             args.__setattr__("fasta_source_dict", None)
         else:
-            user_merged_file, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_files, output_folder=args.output_path)
+            user_merged_file, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_files,
+                                                                                       output_folder=args.output_path,
+                                                                                       logger=logger)
             args.__setattr__("fasta_file", user_merged_file)
             args.__setattr__("fasta_source_dict", user_merged_dict)
 

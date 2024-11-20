@@ -11,20 +11,23 @@ from AAModelTests import AAModelTestCase
 
 
 def saccharis_test_suite():
+    """Create and return the test suite."""
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
-    suite.addTest(loader.loadTestsFromTestCase(CazyTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(NCBITestCase))
-    suite.addTest(loader.loadTestsFromTestCase(DownloadTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(PruneTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(UserRenameFastaTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(UserInputTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(AAModelTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(HelperTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(IntegrationTestCase))
+
+    # Add all the test cases to the suite
+    suite.addTests(loader.loadTestsFromTestCase(CazyTestCase))
+    suite.addTests(loader.loadTestsFromTestCase(NCBITestCase))
+    suite.addTests(loader.loadTestsFromTestCase(DownloadTestCase))
+    suite.addTests(loader.loadTestsFromTestCase(PruneTestCase))
+    suite.addTests(loader.loadTestsFromTestCase(UserRenameFastaTestCase))
+    suite.addTests(loader.loadTestsFromTestCase(UserInputTestCase))
+    suite.addTests(loader.loadTestsFromTestCase(AAModelTestCase))
+    suite.addTests(loader.loadTestsFromTestCase(HelperTestCase))
+    suite.addTests(loader.loadTestsFromTestCase(IntegrationTestCase))
+
     return suite
 
 
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner()
-    runner.run(saccharis_test_suite())
+    unittest.TextTestRunner().run(saccharis_test_suite())

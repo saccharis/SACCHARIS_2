@@ -105,10 +105,11 @@ def calculate_user_run_id(input_file, output_folder):
     return user_run
 
 
-def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_folder: str | os.PathLike, logger: logging.Logger = None)\
-                                                                                                        -> [str, dict, dict]:
+def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_folder: str | os.PathLike,
+                               logger: logging.Logger = None) -> [str, dict, dict]:
     metadata_dict = {}
     all_seqs = []
+    duplicate_counts = {}
     # if len(fasta_filenames) == 1:
     #     seqs = parse(fasta_filenames[0], 'fasta')
     #     return fasta_filenames[0], {record.id: CazymeMetadataRecord(source_file=fasta_filenames[0],
@@ -120,16 +121,28 @@ def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_
         seqs = parse(file, 'fasta')
         for record in seqs:
             if record.id in metadata_dict:
-                raise UserError(f"Multiple input files contain record id: '{record.id}'. Please rename record ids in "
-                                f"FASTA headers for uniqueness.")
+                # rename existing duplicated ID
+                duplicate_counts[record.id] = 1
+                new_id = metadata_dict[record.id].protein_id + "[Duplicate User ID - 1]"
+                metadata_dict[record.id].protein_id = new_id
+                metadata_dict[new_id] = metadata_dict[record.id]
+                metadata_dict.pop(record.id)
+                logger.debug(f"User sequence with ID: {record.id} renamed to {new_id}")
+
+            if record.id in duplicate_counts:
+                duplicate_counts[record.id] += 1
+                record_id = record.id + f"[Duplicate User ID - {duplicate_counts[record.id]}]"
+            else:
+                record_id = record.id
+
             if len(fasta_filenames) == 1:
                 record.description += f" SACCHARIS merged record from {file}"
             species_match = re.search(r'\[(.+)\]', record.description)
             new_record = CazymeMetadataRecord(source_file=file,
-                                              protein_id=record.id,
+                                              protein_id=record_id,
                                               protein_name=record.description,
                                               org_name=species_match.group(1) if species_match else None)
-            metadata_dict[record.id] = new_record
+            metadata_dict[record_id] = new_record
             all_seqs.append(record)
 
     if not os.path.isdir(output_folder):
