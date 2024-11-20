@@ -10,6 +10,15 @@ from Bio import SeqIO
 
 
 def rename_fasta_file(source_file_path, output_file_path=None):
+    """
+    Takes a fasta file and prepends new sequence ids (which are just the first contiguous block on non-whitespace
+    letters) onto the description line, saves to a new file, and then returns the new filepath.
+
+    :param source_file_path: Input fasta file path. Sequences are read from this file.
+    :param output_file_path: Optional output filepath. If not specified, a new file with '_UserFormat' appended to the
+    filename will be saved in the same folder as the input file.
+    :return: Returns the path of the output fasta file.
+    """
     if not os.path.isfile(source_file_path):
         raise UserWarning("Filename is not valid! Please check that you have entered the correct file location, "
                           "including spelling.")
@@ -59,6 +68,15 @@ def rename_fasta_file(source_file_path, output_file_path=None):
 
 
 def cli_main():
+    """
+    CLI utility to takes a fasta file and prepend new sequence ids (which are just the first contiguous block on
+    non-whitespace letters) onto the description line, saves to a new file, and then returns the new filepath.
+    Can be called with the command 'saccharis.rename_user_file' on the command line.
+
+    source_file: Input fasta file path. Sequences are read from this file.
+    destination_file: Optional output filepath. If not specified, a new file with '_UserFormat' appended to the
+    filename will be saved in the same folder as the input file.
+    """
     parser = argparse.ArgumentParser(description="SACCHARIS utility to rename entries in FASTA files with appropriate "
                                                  "headers to use in the SACCHARIS pipeline.")
     parser.add_argument("source_file", type=str, help="Path to the FASTA formatted file you would like to "

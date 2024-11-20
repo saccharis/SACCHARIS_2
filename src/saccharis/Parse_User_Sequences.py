@@ -55,10 +55,18 @@ def delete_files(folder):
             os.remove(os.path.join(root, file))
 
 
-# NOTE: This function does not guarantee that the file contains valid headers! Make sure to validate header ID before
-# calling!
-def calculate_user_run_id(input_file, output_folder):
-    #   Calculate md5 hash of the user file, so we can disambiguate multiple user file runs
+def calculate_user_run_id(input_file, output_folder, logger: logging.Logger = logging.getLogger()):
+    """
+    Calculates md5 hash of the user file and creates a user run ID number, so we can disambiguate multiple user file
+    runs to restore partially completed runs without redoing extra computation.
+
+    NOTE: This function DOES NOT guarantee that the file contains valid headers! Make sure to validate header ID
+    before calling!
+
+    :param input_file: The file to compute a hash from.
+    :param output_folder: The folder that stores a file which contains the mapping from hash to user run ID.
+    :return: Returns the user run ID number.
+    """
     md5 = hashlib.md5()
     try:
         with open(input_file, 'rb') as f:
@@ -83,9 +91,12 @@ def calculate_user_run_id(input_file, output_folder):
                 user_dict = json.loads(f.read())
         except Exception as e:
             print("WARNING:", e.args[0])
-            print("WARNING: Previous user run with user file detected, but data(corrupted?) was not loaded properly.\n"
-                  "WARNING: Script will continue with fresh user appended files, old files are being deleted.")
+            logger.exception(f"Uncaught exception caused failure to load user run hash mapping from JSON file at "
+                             f"{user_dict_path}.")
+            logger.warning("Previous user run with user file detected, but data(corrupted?) was not loaded properly.")
+            logger.warning("Script will continue with fresh user appended files, old files are being deleted.")
             #  json corrupt? need to delete all files in user directory, since we can't match hashes to user files
+            # todo: this would be better if it caught specific exceptions in case we need to debug this failure mode
             delete_files(output_folder)
             user_dict = {}
     else:
@@ -100,15 +111,29 @@ def calculate_user_run_id(input_file, output_folder):
         with open(user_dict_path, 'w', encoding="utf-8") as f:
             json.dump(user_dict, f, ensure_ascii=False, indent=4)
     except IOError as error:
-        raise FileError(f"Cannot write user file hash information to file: {user_dict_path}") from error
+        msg = f"Cannot write user file hash information to file: {user_dict_path}"
+        logger.exception(msg)
+        raise FileError(msg) from error
 
     return user_run
 
 
 def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_folder: str | os.PathLike,
-                               logger: logging.Logger = None) -> [str, dict, dict]:
+                               logger: logging.Logger = logging.getLogger()) -> [str, dict, dict]:
+    """
+    Takes multiple fasta files as input, concatenates them together, writes data to disk as a single FASTA file, and
+    returns the output file path, a dict or sequence data records and a dict of sequence metadata records. Duplicate
+    record IDs across multiple files are handled by appending duplicate IDs with '[Duplicate-User-ID-*]', with * being
+    the numbered duplicate (e.g. if the ID 123456789 was duplicated, the second occurrence would be appended like so
+    '123456789[Duplicate-User-ID-2]'.
+
+    :param fasta_filenames: A list of FASTA files which will be read in and concatenated together.
+    :param output_folder: A folder to write the output FASTA file to.
+    :param logger: Optional logging object to save logs for debugging purposes. Defaults to root logger.
+    :return: Output file path, dict of metadata records, dict of sequence records
+    """
     metadata_dict = {}
-    all_seqs = []
+    all_seqs = {}
     duplicate_counts = {}
     # if len(fasta_filenames) == 1:
     #     seqs = parse(fasta_filenames[0], 'fasta')
@@ -120,18 +145,30 @@ def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_
     for file in fasta_filenames:
         seqs = parse(file, 'fasta')
         for record in seqs:
+            old_id = record.id
             if record.id in metadata_dict:
                 # rename existing duplicated ID
-                duplicate_counts[record.id] = 1
-                new_id = metadata_dict[record.id].protein_id + "[Duplicate User ID - 1]"
-                metadata_dict[record.id].protein_id = new_id
-                metadata_dict[new_id] = metadata_dict[record.id]
-                metadata_dict.pop(record.id)
-                logger.debug(f"User sequence with ID: {record.id} renamed to {new_id}")
+                duplicate_counts[old_id] = 1
+                new_id = metadata_dict[old_id].protein_id + "[Duplicate-User-ID-1]"
+                metadata_dict[old_id].protein_id = new_id
+                metadata_dict[new_id] = metadata_dict[old_id]
+                metadata_dict.pop(old_id)
+
+                all_seqs[old_id].id = new_id
+                all_seqs[old_id].description = all_seqs[old_id].description.replace(old_id, new_id)
+                all_seqs[old_id].name = all_seqs[old_id].name.replace(old_id, new_id)
+                all_seqs[new_id] = all_seqs[old_id]
+                all_seqs.pop(old_id)
+                logger.debug(f"User sequence with duplicate ID: {record.id} renamed to {new_id}")
 
             if record.id in duplicate_counts:
                 duplicate_counts[record.id] += 1
-                record_id = record.id + f"[Duplicate User ID - {duplicate_counts[record.id]}]"
+                new_id = record.id + f"[Duplicate-User-ID-{duplicate_counts[record.id]}]"
+                record_id = new_id
+                record.id = record_id
+                record.name = record.name.replace(old_id, new_id)
+                record.description = record.description.replace(old_id, new_id)
+                logger.debug(f"User sequence with duplicate ID: {old_id} named to {new_id}")
             else:
                 record_id = record.id
 
@@ -143,19 +180,19 @@ def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_
                                               protein_name=record.description,
                                               org_name=species_match.group(1) if species_match else None)
             metadata_dict[record_id] = new_record
-            all_seqs.append(record)
+            all_seqs[record_id] = record
 
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
     filename = f"merged_user_fasta-{datetime.datetime.now().strftime('%d-%m-%y_%H-%M')}.fasta"
     out_path = os.path.join(output_folder, filename)
-    write(all_seqs, out_path, 'fasta')
+    write(list(all_seqs.values()), out_path, 'fasta')
 
     return out_path, metadata_dict, all_seqs
 
 
 def run(user_file_path, file_to_append, output_folder, verbose=False, force_update=False, auto_rename=False,
-        _run_id=None):
+        _run_id=None, logger: logging.Logger = logging.getLogger()):
     # Delete all files in user folder if doing a fresh run, since they may contain outdated data from CAZy/NCBI/User
     if force_update:
         delete_files(output_folder)
@@ -164,17 +201,22 @@ def run(user_file_path, file_to_append, output_folder, verbose=False, force_upda
     try:
         parsed_user = parse(user_file_path, 'fasta')
     except FileNotFoundError as e:
-        raise UserWarning(f"ERROR: File path \"{e.filename}\" for provided user sequences is invalid! Did you type "
-                          f"it correctly?")
+        msg = f"ERROR: File path \"{e.filename}\" for provided user sequences is invalid! Did you type "
+        f"it correctly?"
+        logger.exception(msg)
+        raise UserWarning(msg)
     except Exception as e:
         try:
             parsed_user = parse(user_file_path, 'fasta-2line')
         except Exception as other:
-            print("Exception 1:", e.args[0])
-            print("Exception 2:", other.args[0])
-            # todo: add error logging?
-            raise UserWarning("WARNING: Unknown error occurred while parsing user sequences. User sequences not "
-                              "included in analysis!\nPlease check that the file format is valid.")
+            msg1 = "Exception 1:" + e.args[0]
+            msg2 = "Exception 2:" + other.args[0]
+            msg = "WARNING: Unknown error occurred while parsing user sequences. User sequences not "
+            "included in analysis!\nPlease check that the file format is valid."
+            logger.debug(msg1)
+            logger.debug(msg2)
+            logger.exception(msg)
+            raise UserWarning(msg)
 
     # Validate user seqs, including checking for valid user IDs, duplicate user ids, and querying user about renaming
     # logic when the file does not meet requirements
@@ -194,6 +236,8 @@ def run(user_file_path, file_to_append, output_folder, verbose=False, force_upda
                                 "Prepending user headers in new file...",
                                 "Cancelling SACCHARIS pipeline...")
         if rename or auto_rename:
+            # todo: overhaul this whole method of renaming, we SHOULD NOT be raising an exception to do this, it
+            #  completely screws up the program flow and continues to make refactoring unnecessarily difficult
             new_user_path = rename_fasta_file(user_file_path)
             raise NewUserFile(new_user_path)
         else:
@@ -202,7 +246,7 @@ def run(user_file_path, file_to_append, output_folder, verbose=False, force_upda
     # Note: you should not be passing in arguments to _run_id from calls outside the pipeline, since it should be filled
     # with a value based on md5 hash information
     if not _run_id:
-        _run_id = calculate_user_run_id(user_file_path, output_folder)
+        _run_id = calculate_user_run_id(user_file_path, output_folder, logger)
 
     output_filename = re.sub(r"\.fasta", f"_UserFile{_run_id:05d}.fasta", os.path.split(file_to_append)[1])
     output_file_path = os.path.join(output_folder, output_filename)
@@ -210,8 +254,10 @@ def run(user_file_path, file_to_append, output_folder, verbose=False, force_upda
     #  Check for zero seq user file and preexisting output
     user_seq_count = len(user_seqs)
     if user_seq_count == 0:
-        raise UserWarning("ERROR: User sequences file does not contain any valid entries! \n"
-                          "Please check that file format is valid!")
+        msg = "ERROR: User sequences file does not contain any valid entries! \n"
+        "Please check that file format is valid!"
+        logger.exception(msg)
+        raise UserWarning(msg)
     if os.path.isfile(output_file_path):
         return output_file_path, user_seq_count, _run_id
 
@@ -219,7 +265,9 @@ def run(user_file_path, file_to_append, output_folder, verbose=False, force_upda
     try:
         family_seqs = list(parse(file_to_append, 'fasta'))
     except FileNotFoundError:
-        raise UserWarning("ERROR: Filename for file to append is invalid!")
+        msg = "ERROR: Filename for file to append is invalid!"
+        logger.exception(msg)
+        raise UserWarning(msg)
 
     #  Append user seqs to family seqs
     new_seqs = family_seqs + user_seqs

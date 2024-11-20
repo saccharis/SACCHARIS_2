@@ -17,7 +17,7 @@ from saccharis.ScreenUserFile import choose_families_from_fasta
 from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder, get_version
 from saccharis.utils.FamilyCategories import Matcher, get_category_list, load_family_list_from_file
 from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUserFile, make_logger
-from saccharis.utils.Formatting import rename_header_ids
+from saccharis.utils.Formatting import rename_metadata_dict_ids
 
 
 def cli_main():
@@ -301,7 +301,7 @@ def cli_main():
                             logger=logger, skip_user_ask=skip_user_ask, render_trees=render_trees)
         except NewUserFile as file_msg:
             user_path = file_msg.msg
-            user_merged_dict = rename_header_ids(user_path, user_merged_dict)
+            user_merged_dict = rename_metadata_dict_ids(user_path, user_merged_dict)
             try:
                 single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                 tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune, verbose=verbose_arg,
@@ -327,7 +327,7 @@ def cli_main():
                                 render_trees=render_trees)
             except NewUserFile as file_msg:
                 user_path = file_msg.msg
-                user_merged_dict = rename_header_ids(user_path, user_merged_dict)
+                user_merged_dict = rename_metadata_dict_ids(user_path, user_merged_dict)
                 try:
                     single_pipeline(family_arg, output_path, cazyme_mode, domain_mode=domain_val, threads=num_threads,
                                     tree_program=tree_prog, get_fragments=fragments, prune_seqs=prune,

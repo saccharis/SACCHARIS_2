@@ -242,7 +242,8 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         try:
             fasta_with_user_file, user_count, user_run_id = Parse_User_Sequences.run(user_file, fasta_file, user_folder,
                                                                                      verbose, force_update,
-                                                                                     auto_rename or skip_user_ask)
+                                                                                     auto_rename or skip_user_ask,
+                                                                                     logger=logger)
         #     todo: replace this with functions that return seq and cazymemetadatarecord lists to more easily concat
         #       mixtures of family(ies?), genbank genomes/genes, and user seqs
         except UserWarning as error:

@@ -1,21 +1,27 @@
 import json
 import shutil
+import sys
 import unittest
 import os
 from inspect import getsourcefile
+from pathlib import Path
+from unittest import mock
 
+from saccharis.CLI import cli_main
 from saccharis.Pipeline import single_pipeline
 from saccharis.Cazy_Scrape import Mode
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.utils.Formatting import CazymeMetadataRecord
 from saccharis.utils.PipelineErrors import AAModelError
+from saccharis.utils.UserFastaRename import rename_fasta_file
 
-tests_folder = os.path.dirname(getsourcefile(lambda: 0))
-test_out_folder = os.path.join(tests_folder, "test_files", "temp")
-small_user_testfile = os.path.join(tests_folder, "test_files", "user_test_GH102_UserFormat.fasta")
-partial_modeltest_folder = os.path.join(tests_folder, "test_files", "partial_run_modeltest", "PL9_CHARACTERIZED_ALL_DOMAINS")
-sheep3_user_testfile = os.path.join(tests_folder, "test_files", "Sheep_3_protein.fasta")
-sheep4_user_testfile = os.path.join(tests_folder, "test_files", "Sheep_4_protein.fasta")
+tests_folder = Path(os.path.dirname(getsourcefile(lambda: 0)))
+test_out_folder = tests_folder / "test_files" / "temp"
+small_user_testfile = tests_folder / "test_files" / "user_test_GH102_UserFormat.fasta"
+small_testfile = tests_folder / "test_files" / "user_test_GH102.fasta"
+partial_modeltest_folder = tests_folder / "test_files" / "partial_run_modeltest"/ "PL9_CHARACTERIZED_ALL_DOMAINS"
+sheep3_user_testfile = tests_folder / "test_files" / "Sheep_3_protein.fasta"
+sheep4_user_testfile = tests_folder / "test_files" / "Sheep_4_protein.fasta"
 
 
 class IntegrationTestCase(unittest.TestCase):
@@ -29,7 +35,7 @@ class IntegrationTestCase(unittest.TestCase):
         shutil.rmtree(test_out_folder)
 
     def run_pipeline(self, family, scrape_mode: Mode, tree_program: TreeBuilder = TreeBuilder.FASTTREE,
-                     user_file: str = None, force_update=True, render_trees=False):
+                     user_file: str | os.PathLike = None, force_update=True, render_trees=False):
         single_pipeline(family=family, output_folder=test_out_folder, scrape_mode=scrape_mode, skip_user_ask=True,
                         force_update=force_update, verbose=True, tree_program=tree_program, user_file=user_file,
                         render_trees=render_trees)
@@ -82,9 +88,20 @@ class IntegrationTestCase(unittest.TestCase):
         shutil.copytree(partial_modeltest_folder, out_folder)
         self.assertRaises(AAModelError, self.run_pipeline, "PL9", Mode.CHARACTERIZED, force_update=False)
 
-    def test_duplicate_user_files(self):
-        self.run_pipeline("GH1", Mode.CHARACTERIZED, render_trees=True, user_file=sheep3_user_testfile)
-        #todo: add sheep4 user test file in dev22 version
+    def test_cli_auto_rename(self):
+        testargs = ["saccharis", "-f", "GH102", "-c", "characterized", "-r", "--fresh", "-s", str(small_testfile), "-o",
+                    str(test_out_folder), "--rename_user"]
+        with mock.patch.object(sys, 'argv', testargs):
+            with self.assertRaises(SystemExit):
+                cli_main()
+
+    @unittest.skipUnless(sys.gettrace(), "expensive test, should not be run automatically for CI/CD")
+    def test_cli_duplicate_user_files(self):
+        args = ["saccharis", "-f", "PL9_3", "-c", "characterized", "-r", "--fresh", "-s", str(sheep3_user_testfile),
+                str(sheep4_user_testfile), "-o", str(test_out_folder), "--rename_user"]
+        with mock.patch.object(sys, 'argv', args):
+            with self.assertRaises(SystemExit):
+                cli_main()
 
 
 if __name__ == '__main__':
