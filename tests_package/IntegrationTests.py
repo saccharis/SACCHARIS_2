@@ -13,13 +13,12 @@ from saccharis.Cazy_Scrape import Mode
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.utils.Formatting import CazymeMetadataRecord
 from saccharis.utils.PipelineErrors import AAModelError
-from saccharis.utils.UserFastaRename import rename_fasta_file
 
 tests_folder = Path(os.path.dirname(getsourcefile(lambda: 0)))
 test_out_folder = tests_folder / "test_files" / "temp"
 small_user_testfile = tests_folder / "test_files" / "user_test_GH102_UserFormat.fasta"
 small_testfile = tests_folder / "test_files" / "user_test_GH102.fasta"
-partial_modeltest_folder = tests_folder / "test_files" / "partial_run_modeltest"/ "PL9_CHARACTERIZED_ALL_DOMAINS"
+partial_modeltest_folder = tests_folder / "test_files" / "partial_run_modeltest" / "PL9_CHARACTERIZED_ALL_DOMAINS"
 sheep3_user_testfile = tests_folder / "test_files" / "Sheep_3_protein.fasta"
 sheep4_user_testfile = tests_folder / "test_files" / "Sheep_4_protein.fasta"
 
@@ -47,7 +46,7 @@ class IntegrationTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(test_out_folder, domain_folder, f"{file_prefix}_{tree_prog}.tree")))
         with open(json_path, 'r', encoding="utf-8") as meta_json:
             cazyme_dict = json.loads(meta_json.read())
-            final_metadata_dict = {id: CazymeMetadataRecord(**record) for id, record in cazyme_dict.items()}
+            final_metadata_dict = {rec_id: CazymeMetadataRecord(**record) for rec_id, record in cazyme_dict.items()}
         # asserts that there are no exactly overlapping modules from multiple genes
         for record in final_metadata_dict:
             if record.__contains__("<1>"):
@@ -63,7 +62,7 @@ class IntegrationTestCase(unittest.TestCase):
                 self.assertTrue(os.path.isfile(os.path.join(test_out_folder, domain_folder, filename)))
 
     def test_PL9(self):
-        self.run_pipeline("PL9", Mode.CHARACTERIZED)
+        self.run_pipeline("PL9", Mode.CHARACTERIZED, render_trees=True)
 
     def test_PL9_raxml(self):
         self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML, user_file=small_user_testfile)
