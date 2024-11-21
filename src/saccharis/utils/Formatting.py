@@ -48,7 +48,7 @@ class CazymeMetadataRecord:
     source_file: Optional[str] = None
 
 
-def rename_header_ids(new_user_fasta_file: str, metadata_dict: dict[str, CazymeMetadataRecord]) \
+def rename_metadata_dict_ids(new_user_fasta_file: str, metadata_dict: dict[str, CazymeMetadataRecord]) \
                                                                                     -> dict[str, CazymeMetadataRecord]:
     new_metadata_dict: dict[str, CazymeMetadataRecord] = {}
     with open(new_user_fasta_file, 'r') as new_user_file:
