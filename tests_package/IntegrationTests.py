@@ -20,10 +20,10 @@ tests_folder = Path(os.path.dirname(getsourcefile(lambda: 0)))
 test_out_folder = tests_folder / "test_files" / "temp"
 small_user_testfile = tests_folder / "test_files" / "user_test_GH102_UserFormat.fasta"
 small_testfile = tests_folder / "test_files" / "user_test_GH102.fasta"
-partial_modeltest_folder = tests_folder / "test_files" / "partial_run_modeltest"/ "PL9_CHARACTERIZED_ALL_DOMAINS"
+partial_modeltest_folder = tests_folder / "test_files" / "partial_run_modeltest" / "PL9_CHARACTERIZED_ALL_DOMAINS"
 sheep3_user_testfile = tests_folder / "test_files" / "Sheep_3_protein.fasta"
 sheep4_user_testfile = tests_folder / "test_files" / "Sheep_4_protein.fasta"
-user_test_file_gh5_4 = os.path.join(tests_folder, "test_files", "Ruminococcus bicirculans GH5_4.faa")
+user_test_file_gh5_4 = tests_folder / "test_files" / "Ruminococcus bicirculans GH5_4.faa"
 
 
 class IntegrationTestCase(unittest.TestCase):
@@ -53,7 +53,7 @@ class IntegrationTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(test_out_folder, domain_folder, f"{file_prefix}_{tree_prog}.tree")))
         with open(json_path, 'r', encoding="utf-8") as meta_json:
             cazyme_dict = json.loads(meta_json.read())
-            final_metadata_dict = {id: CazymeMetadataRecord(**record) for id, record in cazyme_dict.items()}
+            final_metadata_dict = {rec_id: CazymeMetadataRecord(**record) for rec_id, record in cazyme_dict.items()}
         self.assertTrue(len(final_metadata_dict) >= min_expected_sequence_count)
         # asserts that there are no exactly overlapping modules from multiple genes
         for record in final_metadata_dict:
@@ -70,7 +70,7 @@ class IntegrationTestCase(unittest.TestCase):
                 self.assertTrue(os.path.isfile(os.path.join(test_out_folder, domain_folder, filename)))
 
     def test_PL9(self):
-        self.run_pipeline("PL9", Mode.CHARACTERIZED)
+        self.run_pipeline("PL9", Mode.CHARACTERIZED, render_trees=True)
 
     def test_PL9_raxml(self):
         self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML, user_files=[small_user_testfile])

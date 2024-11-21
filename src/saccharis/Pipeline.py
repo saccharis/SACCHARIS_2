@@ -349,6 +349,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         if sys.gettrace():
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
     print(f"Muscle alignment of {os.path.split(pruned_file)[1]} is underway...")
+    # todo: add logger to muscle alignment
     aligned_ren_path, aligned_path, aligned_fasttree = Muscle_Alignment.main(pruned_file, cazyme_module_count,
                                                                              family, scrape_mode,
                                                                              muscle_folder, id_convert_dict,
@@ -453,7 +454,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         print(f"rsaccharis - Tree rendering of {family} is underway")
 
         render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder,
-                         root=root)
+                         root=root, logger=logger)
 
         print("Completed Rendering of Graphics")
         print("==============================================================================\n")
