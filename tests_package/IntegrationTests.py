@@ -1,20 +1,29 @@
 import json
 import shutil
+import sys
 import unittest
 import os
 from inspect import getsourcefile
+from pathlib import Path
+from unittest import mock
 
+from saccharis.CLI import cli_main
 from saccharis.Pipeline import single_pipeline
 from saccharis.CazyScrape import Mode
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.utils.Formatting import CazymeMetadataRecord
+from saccharis.utils.PipelineErrors import AAModelError
+from saccharis.utils.UserFastaRename import rename_fasta_file
 from saccharis.utils.PipelineErrors import AAModelError, PipelineException
 
-tests_folder = os.path.dirname(getsourcefile(lambda: 0))
-test_out_folder = os.path.join(tests_folder, "test_files", "temp")
-small_user_testfile = os.path.join(tests_folder, "test_files", "user_test_GH102_UserFormat.fasta")
+tests_folder = Path(os.path.dirname(getsourcefile(lambda: 0)))
+test_out_folder = tests_folder / "test_files" / "temp"
+small_user_testfile = tests_folder / "test_files" / "user_test_GH102_UserFormat.fasta"
+small_testfile = tests_folder / "test_files" / "user_test_GH102.fasta"
+partial_modeltest_folder = tests_folder / "test_files" / "partial_run_modeltest"/ "PL9_CHARACTERIZED_ALL_DOMAINS"
+sheep3_user_testfile = tests_folder / "test_files" / "Sheep_3_protein.fasta"
+sheep4_user_testfile = tests_folder / "test_files" / "Sheep_4_protein.fasta"
 user_test_file_gh5_4 = os.path.join(tests_folder, "test_files", "Ruminococcus bicirculans GH5_4.faa")
-partial_modeltest_folder = os.path.join(tests_folder, "test_files", "partial_run_modeltest", "PL9_CHARACTERIZED_ALL_DOMAINS")
 
 
 class IntegrationTestCase(unittest.TestCase):
@@ -31,7 +40,7 @@ class IntegrationTestCase(unittest.TestCase):
             print(err)
 
     def run_pipeline(self, family, scrape_mode: Mode, tree_program: TreeBuilder = TreeBuilder.FASTTREE,
-                     user_files: list[str] = None, force_update=True, render_trees=False,
+                     user_files: list[str | os.PathLike] = None, force_update=True, render_trees=False,
                      min_expected_sequence_count=None):
         single_pipeline(family=family, output_folder=test_out_folder, scrape_mode=scrape_mode,
                         tree_program=tree_program, verbose=True, force_update=force_update, skip_user_ask=True,
@@ -94,6 +103,21 @@ class IntegrationTestCase(unittest.TestCase):
         # todo: change this back to AAmodelError after fixing incomplete data loading issue
         # self.assertRaises(AAModelError, self.run_pipeline, "PL9", Mode.CHARACTERIZED, force_update=False)
         self.assertRaises(PipelineException, self.run_pipeline, "PL9", Mode.CHARACTERIZED, force_update=False)
+
+    def test_cli_auto_rename(self):
+        testargs = ["saccharis", "-f", "GH102", "-c", "characterized", "-r", "--fresh", "-s", str(small_testfile), "-o",
+                    str(test_out_folder), "--rename_user"]
+        with mock.patch.object(sys, 'argv', testargs):
+            with self.assertRaises(SystemExit):
+                cli_main()
+
+    @unittest.skipUnless(sys.gettrace(), "expensive test, should not be run automatically for CI/CD")
+    def test_cli_duplicate_user_files(self):
+        args = ["saccharis", "-f", "PL9_3", "-c", "characterized", "-r", "--fresh", "-s", str(sheep3_user_testfile),
+                str(sheep4_user_testfile), "-o", str(test_out_folder), "--rename_user"]
+        with mock.patch.object(sys, 'argv', args):
+            with self.assertRaises(SystemExit):
+                cli_main()
 
 
 if __name__ == '__main__':

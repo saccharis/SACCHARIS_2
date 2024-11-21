@@ -50,7 +50,7 @@ from saccharis.utils.PipelineErrors import UserError, PipelineException, NewUser
 from saccharis.CazyScrape import Mode
 from saccharis.CazyScrape import Domain
 from saccharis.ChooseAAModel import TreeBuilder
-from saccharis.utils.Formatting import rename_header_ids
+from saccharis.utils.Formatting import rename_metadata_dict_ids
 
 # local trace function which returns itself
 # todo: either delete this or make it some kind of debug option, for sure delete it if the WSL segfault is fixed
@@ -297,7 +297,9 @@ class SACCHARISApp(QMainWindow, UIDesign.Ui_MainWindow):
             args.__setattr__("fasta_file", None)
             args.__setattr__("fasta_source_dict", None)
         else:
-            # user_merged_file, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_files, output_folder=args.output_path)
+            # user_merged_file, user_merged_dict, user_seqs = concatenate_multiple_fasta(user_files,
+            #                                                                            output_folder=args.output_path,
+            #                                                                            logger=logger)
             # args.__setattr__("fasta_file", user_merged_file)
             # args.__setattr__("fasta_source_dict", user_merged_dict)
             args.__setattr__("user_fasta_files", user_files)
@@ -1117,7 +1119,7 @@ class PipelineThread(QThread):
                 fam_status[fam] = 2
             except NewUserFile as error:
                 self.args.fasta_file = error.msg
-                self.args.fasta_source_dict = rename_header_ids(self.args.fasta_file, self.args.fasta_source_dict)
+                self.args.fasta_source_dict = rename_metadata_dict_ids(self.args.fasta_file, self.args.fasta_source_dict)
                 try:
                     single_pipeline(fam, self.args.output_path, self.args.cazyme_mode, domain_mode=self.args.domain,
                                     threads=self.args.threads, tree_program=self.args.tree_program,
@@ -1214,7 +1216,7 @@ class PipelineWorker(QObject):
                 fam_status[fam] = 2
             except NewUserFile as error:
                 self.args.fasta_file = error.msg
-                self.args.fasta_source_dict = rename_header_ids(self.args.fasta_file, self.args.fasta_source_dict)
+                self.args.fasta_source_dict = rename_metadata_dict_ids(self.args.fasta_file, self.args.fasta_source_dict)
                 try:
                     single_pipeline(fam, self.args.output_path, self.args.cazyme_mode, domain_mode=self.args.domain,
                                     threads=self.args.threads, tree_program=self.args.tree_program,

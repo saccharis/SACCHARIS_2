@@ -15,8 +15,11 @@ from tests_package.ParseTests import ParseTestCase
 
 
 def saccharis_test_suite():
+    """Create and return the test suite."""
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
+
+    # Add all the test cases to the suite
     suite.addTest(loader.loadTestsFromTestCase(CazyTestCase))
     suite.addTest(loader.loadTestsFromTestCase(NCBITestCase))
     suite.addTest(loader.loadTestsFromTestCase(DownloadTestCase))
@@ -34,5 +37,4 @@ def saccharis_test_suite():
 
 
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner()
-    runner.run(saccharis_test_suite())
+    unittest.TextTestRunner().run(saccharis_test_suite())
