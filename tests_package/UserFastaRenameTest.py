@@ -5,7 +5,7 @@ import unittest
 from inspect import getsourcefile
 from pathlib import Path
 
-from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
+from saccharis.ParseUserSequences import concatenate_multiple_fasta
 from saccharis.utils.Formatting import rename_metadata_dict_ids
 from saccharis.utils.UserFastaRename import rename_fasta_file
 

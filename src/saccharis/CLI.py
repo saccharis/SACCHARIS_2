@@ -11,7 +11,7 @@ import sys
 
 from saccharis.Cazy_Scrape import Mode, Domain
 from saccharis.ChooseAAModel import TreeBuilder
-from saccharis.Parse_User_Sequences import concatenate_multiple_fasta
+from saccharis.ParseUserSequences import concatenate_multiple_fasta
 from saccharis.Pipeline import single_pipeline
 from saccharis.ScreenUserFile import choose_families_from_fasta
 from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder, get_version
