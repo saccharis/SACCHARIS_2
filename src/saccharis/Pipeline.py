@@ -240,10 +240,10 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         if not os.path.isdir(user_folder):
             os.mkdir(user_folder, 0o755)
         try:
-            fasta_with_user_file, user_count, user_run_id = Parse_User_Sequences.run(user_file, fasta_file, user_folder,
-                                                                                     verbose, force_update,
-                                                                                     auto_rename or skip_user_ask,
-                                                                                     logger=logger)
+            fasta_with_user_file, user_count, user_run_id = ParseUserSequences.run(user_file, fasta_file, user_folder,
+                                                                                   verbose, force_update,
+                                                                                   auto_rename or skip_user_ask,
+                                                                                   logger=logger)
         #     todo: replace this with functions that return seq and cazymemetadatarecord lists to more easily concat
         #       mixtures of family(ies?), genbank genomes/genes, and user seqs
         except UserWarning as error:
@@ -284,7 +284,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         print(f"dbCAN processing of {os.path.split(fasta_file)[1]} is underway...")
         pruned_list, pruned_file, id_convert_dict, bound_dict, ecami_dict, diamond_dict = \
             extract_pruned(fasta_file, family, dbcan_folder, scrape_mode, force_update, prune_seqs,
-                           threads=threads, hmm_cov=hmm_cov, hmm_eval=hmm_eval)
+                           threads=threads, hmm_cov=hmm_cov, hmm_eval=hmm_eval, logger=logger)
         metadata_filename = f"{family}_{scrape_mode.name}_{domain_dir_name}.json"
 
     final_metadata_filepath = os.path.join(domain_folder, metadata_filename)
@@ -303,10 +303,10 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
                   f"want to overwrite the old records, run the pipeline again with the --fresh option."
             logger.error(msg)
             final_metadata_dict = make_metadata_dict(cazymes, list(id_convert_dict.values()), bound_dict, merged_dict,
-                                                     ecami_dict, diamond_dict)
+                                                     ecami_dict, diamond_dict, logger=logger)
     else:
         final_metadata_dict = make_metadata_dict(cazymes, list(id_convert_dict.values()), bound_dict, merged_dict,
-                                                 ecami_dict, diamond_dict)
+                                                 ecami_dict, diamond_dict, logger=logger)
         try:
             with open(final_metadata_filepath, 'w', encoding="utf-8") as meta_json:
                 json.dump(final_metadata_dict, meta_json, default=vars, ensure_ascii=False, indent=4)
@@ -340,6 +340,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         if sys.gettrace():
             time.sleep(2)  # this is only active while debugging, for gui testing on already run families
     print(f"Muscle alignment of {os.path.split(pruned_file)[1]} is underway...")
+    # todo: add logger to muscle alignment
     if user_file:
         aligned_ren_path, aligned_path, aligned_fasttree = Muscle_Alignment.main(pruned_file, cazyme_module_count,
                                                                                  family, scrape_mode,
@@ -456,7 +457,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
         print(f"rsaccharis - Tree rendering of {family} is underway")
 
         render_phylogeny(json_file=final_metadata_filepath, tree_file=final_tree_path, output_folder=domain_folder,
-                         root=root)
+                         root=root, logger=logger)
 
     print("Completed Rendering of Graphics")
     print("==============================================================================\n")

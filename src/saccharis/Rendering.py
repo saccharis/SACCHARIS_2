@@ -1,5 +1,8 @@
+import inspect
 import subprocess
 from logging import getLogger, Logger
+
+from saccharis.utils.PipelineErrors import PipelineException
 
 
 def render_phylogeny(json_file: str, tree_file: str, output_folder: str, logger: Logger = getLogger(),
@@ -16,14 +19,23 @@ def render_phylogeny(json_file: str, tree_file: str, output_folder: str, logger:
         # subprocess.run() on windows
         subprocess.run(' '.join(args), check=True)
         logger.info(f"Successfully rendered phylogenetic trees to folder: {output_folder} ")
-    except (subprocess.SubprocessError, subprocess.CalledProcessError) as error:
-        logger.debug(error)
-        logger.warning("Error running Rscript phylogeny rendering code. Check that rsaccharis is installed in R and "
-                       "'Rscript' executable is available on PATH. One some systems 'Rscript' needs to be available on "
-                       "the system path, not just user path.\n"
-                       "This does not affect the creation of the pipeline output files, you can still run the "
-                       "rsaccharis rendering scripts manually.")
+    except (subprocess.SubprocessError, subprocess.CalledProcessError):
+        logger.exception("Error running Rscript phylogeny rendering code. Check that rsaccharis is installed in R and "
+                         "'Rscript' executable is available on PATH. One some systems 'Rscript' needs to be available "
+                         "on the system path, not just user path.\n"
+                         "This does NOT affect the creation of the pipeline output files, you can still run the "
+                         "rsaccharis rendering scripts manually.")
+
+        for frame in inspect.stack():
+            if "unittest" in frame.filename:
+                raise PipelineException("Failed to render phylogeny.")
+
     except Exception as error:
-        logger.error(error)
-        logger.error(f"Failed to render phylogenetic trees to output folder: {output_folder}")
-        print("Check that rsaccharis is installed in R and 'Rscript' executable is available on PATH.")
+        logger.error(error.args[0])
+        msg = f"Failed to render phylogenetic trees to output folder: {output_folder}\n" \
+              f"Check that rsaccharis is installed in R and 'Rscript' executable is available on PATH."
+        logger.exception(msg)
+
+        for frame in inspect.stack():
+            if "unittest" in frame.filename:
+                raise PipelineException(msg)
