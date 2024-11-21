@@ -34,6 +34,7 @@ from saccharis.gui import CategoryDialog
 from saccharis.gui import SettingsDialog
 from saccharis.gui import ScreenDialog
 
+from saccharis.ParseUserSequences import concatenate_multiple_fasta
 from saccharis.ScreenUserFile import extract_families_hmmer
 from saccharis.Pipeline import single_pipeline
 from saccharis.utils.FamilyCategories import get_category_list, load_family_list_from_file

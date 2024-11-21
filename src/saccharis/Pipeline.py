@@ -48,6 +48,7 @@ from saccharis import ChooseAAModel
 from saccharis.ExtractAndPruneCAZymes import main as extract_pruned
 from saccharis import FastTree_Build
 from saccharis import Muscle_Alignment
+from saccharis import ParseUserSequences
 from saccharis import RAxML_Build
 from saccharis.Rendering import render_phylogeny
 from saccharis.utils.AdvancedConfig import get_user_settings, get_log_folder, get_version, save_dict_to_file

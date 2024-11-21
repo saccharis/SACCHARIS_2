@@ -6,27 +6,30 @@
 # Built in libraries
 import argparse
 import json
+import logging
 import os
 import re
 import hashlib
 import sys
+import datetime
 from collections import Counter
 from io import TextIOBase, StringIO
 from logging import Logger, getLogger
 from typing import Iterable
 
 # Dependency imports
-from Bio.SeqIO import write, SeqRecord
+from Bio.SeqIO import parse, write, SeqRecord
 
 # Internal imports
 from saccharis.NCBIQueries import download_proteins_from_genomes, download_from_genes
 from saccharis.utils.AdvancedConfig import get_ncbi_folder
 from saccharis.utils.FastaHelpers import parse_multiple_fasta
-from saccharis.utils.PipelineErrors import FileError, PipelineException
+from saccharis.utils.PipelineErrors import FileError, PipelineException, NewUserFile
 from saccharis.utils.PipelineErrors import UserError
 from saccharis.utils.UserInput import ask_yes_no
-from saccharis.utils.UserFastaRename import prepend_user_headers
+from saccharis.utils.UserFastaRename import prepend_user_headers, rename_fasta_file
 from saccharis.utils.Formatting import CazymeMetadataRecord, seqs_to_string
+
 
 buf_size = 1048576  # 1 megabyte chunks
 dict_filename = "user_runs.json"
@@ -64,10 +67,18 @@ def delete_files(folder):
             os.remove(os.path.join(root, file))
 
 
-# NOTE: This function does not guarantee that the file contains valid headers! Make sure to validate header ID before
-# calling!
-def calculate_user_run_id(input_handle: str | os.PathLike | TextIOBase, output_folder):
-    #   Calculate md5 hash of the user file, so we can disambiguate multiple user file runs
+def calculate_user_run_id(input_handle: str | os.PathLike | TextIOBase, output_folder, logger: logging.Logger = logging.getLogger()):
+    """
+    Calculates md5 hash of the user file and creates a user run ID number, so we can disambiguate multiple user file
+    runs to restore partially completed runs without redoing extra computation.
+
+    NOTE: This function DOES NOT guarantee that the file contains valid headers! Make sure to validate header ID
+    before calling!
+
+    :param input_file: The file to compute a hash from.
+    :param output_folder: The folder that stores a file which contains the mapping from hash to user run ID.
+    :return: Returns the user run ID number.
+    """
     md5 = hashlib.md5()
 
     try:
@@ -99,10 +110,12 @@ def calculate_user_run_id(input_handle: str | os.PathLike | TextIOBase, output_f
             with open(user_dict_path, 'r', encoding='utf-8') as f:
                 user_dict = json.loads(f.read())
         except Exception as e:
-            print("WARNING:", e.args[0])
-            print("WARNING: Previous user run with user file detected, but data(corrupted?) was not loaded properly.\n"
-                  "WARNING: Script will continue with fresh user appended files, old files are being deleted.")
+            logger.exception(f"Uncaught exception caused failure to load user run hash mapping from JSON file at "
+                             f"{user_dict_path}.")
+            logger.warning("Previous user run with user file detected, but data(corrupted?) was not loaded properly.")
+            logger.warning("Script will continue with fresh user appended files, old files are being deleted.")
             #  json corrupt? need to delete all files in user directory, since we can't match hashes to user files
+            # todo: this would be better if it caught specific exceptions in case we need to debug this failure mode
             delete_files(output_folder)
             user_dict = {}
     else:
@@ -117,7 +130,9 @@ def calculate_user_run_id(input_handle: str | os.PathLike | TextIOBase, output_f
         with open(user_dict_path, 'w', encoding="utf-8") as f:
             json.dump(user_dict, f, ensure_ascii=False, indent=4)
     except IOError as error:
-        raise FileError(f"Cannot write user file hash information to file: {user_dict_path}") from error
+        msg = f"Cannot write user file hash information to file: {user_dict_path}"
+        logger.exception(msg)
+        raise FileError(msg) from error
 
     return user_run, md5_string
 
@@ -150,6 +165,82 @@ def calculate_user_run_id(input_handle: str | os.PathLike | TextIOBase, output_f
 #             source_file[record.id] = path
 #
 #     return seqs, source_file
+
+# todo: concatenate_multiple_fasta IS FROM DEV21, AND WAS ADJUSTED TO FIX DUPLICATE IDS ACROSS USER FILES I NEED TO
+#  TAKE THE IDEA HERE AND BRING IT INTO THE REFACTORED DEV22 METHOD OF MERGING DATA SOURCES,
+#  THIS CODE MIGHT BE BETTER IN FastaHelpers MODULE
+def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_folder: str | os.PathLike,
+                               logger: logging.Logger = logging.getLogger()) -> [str, dict, dict]:
+    """
+    Takes multiple fasta files as input, concatenates them together, writes data to disk as a single FASTA file, and
+    returns the output file path, a dict or sequence data records and a dict of sequence metadata records. Duplicate
+    record IDs across multiple files are handled by appending duplicate IDs with '[Duplicate-User-ID-*]', with * being
+    the numbered duplicate (e.g. if the ID 123456789 was duplicated, the second occurrence would be appended like so
+    '123456789[Duplicate-User-ID-2]'.
+
+    :param fasta_filenames: A list of FASTA files which will be read in and concatenated together.
+    :param output_folder: A folder to write the output FASTA file to.
+    :param logger: Optional logging object to save logs for debugging purposes. Defaults to root logger.
+    :return: Output file path, dict of metadata records, dict of sequence records
+    """
+    metadata_dict = {}
+    all_seqs = {}
+    duplicate_counts = {}
+    # if len(fasta_filenames) == 1:
+    #     seqs = parse(fasta_filenames[0], 'fasta')
+    #     return fasta_filenames[0], {record.id: CazymeMetadataRecord(source_file=fasta_filenames[0],
+    #                                                                 protein_id=record.id,
+    #                                                                 protein_name=record.name)
+    #                                                                 for record in seqs}, seqs
+
+    for file in fasta_filenames:
+        seqs = parse(file, 'fasta')
+        for record in seqs:
+            old_id = record.id
+            if record.id in metadata_dict:
+                # rename existing duplicated ID
+                duplicate_counts[old_id] = 1
+                new_id = metadata_dict[old_id].protein_id + "[Duplicate-User-ID-1]"
+                metadata_dict[old_id].protein_id = new_id
+                metadata_dict[new_id] = metadata_dict[old_id]
+                metadata_dict.pop(old_id)
+
+                all_seqs[old_id].id = new_id
+                all_seqs[old_id].description = all_seqs[old_id].description.replace(old_id, new_id)
+                all_seqs[old_id].name = all_seqs[old_id].name.replace(old_id, new_id)
+                all_seqs[new_id] = all_seqs[old_id]
+                all_seqs.pop(old_id)
+                logger.debug(f"User sequence with duplicate ID: {record.id} renamed to {new_id}")
+
+            if record.id in duplicate_counts:
+                duplicate_counts[record.id] += 1
+                new_id = record.id + f"[Duplicate-User-ID-{duplicate_counts[record.id]}]"
+                record_id = new_id
+                record.id = record_id
+                record.name = record.name.replace(old_id, new_id)
+                record.description = record.description.replace(old_id, new_id)
+                logger.debug(f"User sequence with duplicate ID: {old_id} named to {new_id}")
+            else:
+                record_id = record.id
+
+            if len(fasta_filenames) == 1:
+                record.description += f" SACCHARIS merged record from {file}"
+            species_match = re.search(r'\[(.+)\]', record.description)
+            new_record = CazymeMetadataRecord(source_file=file,
+                                              protein_id=record_id,
+                                              protein_name=record.description,
+                                              org_name=species_match.group(1) if species_match else None)
+            metadata_dict[record_id] = new_record
+            all_seqs[record_id] = record
+
+    if not os.path.isdir(output_folder):
+        os.mkdir(output_folder)
+    filename = f"merged_user_fasta-{datetime.datetime.now().strftime('%d-%m-%y_%H-%M')}.fasta"
+    out_path = os.path.join(output_folder, filename)
+    write(list(all_seqs.values()), out_path, 'fasta')
+
+    return out_path, metadata_dict, all_seqs
+
 
 
 def merge_data_sources(cazy_seqs: list[SeqRecord] | None, cazy_metadata: dict[str:CazymeMetadataRecord] | None,
@@ -205,9 +296,11 @@ def merge_data_sources(cazy_seqs: list[SeqRecord] | None, cazy_metadata: dict[st
     # Validate user seqs, including checking for valid user IDs, duplicate user ids, and querying user about renaming
     # logic when the file does not meet requirements
     validator = UIDValidator()
+    user_seqs = []
     try:
         for user_record in non_cazy_seqs:
             validator.validate_uid(user_record)
+            user_seqs.append(user_record)
             if verbose:
                 print(f"Valid User ID: {user_record.id}")
     except UserError as error:
