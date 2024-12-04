@@ -14,7 +14,8 @@ from saccharis.utils.PipelineErrors import UserError
 
 # todo: concatenate_multiple_fasta IS FROM DEV21, AND WAS ADJUSTED TO FIX DUPLICATE IDS ACROSS USER FILES I NEED TO
 #  TAKE THE IDEA HERE AND BRING IT INTO THE REFACTORED DEV22 METHOD OF MERGING DATA SOURCES,
-#  THIS CODE MIGHT BE BETTER IN FastaHelpers MODULE
+#  THIS CODE MIGHT BE BETTER IN FastaHelpers MODULE. ***Delete*** concatenate_multiple_fasta() once
+#  parse_multiple_fasta() is fixed and working!
 def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_folder: str | os.PathLike,
                                logger: logging.Logger = logging.getLogger()) -> [str, dict, dict]:
     """
@@ -90,39 +91,68 @@ def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_
 
 def parse_multiple_fasta(fasta_handles: list[str | os.PathLike | TextIOBase], output_folder: str | os.PathLike = None,
                          logger: Logger = None, source_override: str = None) \
-        -> (list[SeqRecord], dict[str:CazymeMetadataRecord], str):
+        -> (dict[str:SeqRecord], dict[str:CazymeMetadataRecord], str):
 
     metadata_dict: dict[str:CazymeMetadataRecord] = {}
-    all_seqs: list[SeqRecord] = []
+    all_seqs: dict[str:SeqRecord] = {}
+    duplicate_counts: dict[str:int] = {}
 
     for path in fasta_handles:
         try:
             seqs = list(parse(path, 'fasta'))
         except FileNotFoundError as err:
-            raise UserWarning(f"ERROR: File path \"{err.filename}\" for provided user sequences is invalid! Did you "
-                              f"type it correctly?") from err
+            msg = f"ERROR: File path \"{err.filename}\" for provided user sequences is invalid! Did you "
+            f"type it correctly?"
+            logger.exception(msg)
+            raise UserWarning(msg) from err
         except Exception as err:
             try:
                 seqs = list(parse(path, 'fasta-2line'))
             except Exception as other:
+                msg = "WARNING: Unknown error occurred while parsing user sequences. User sequences not "
+                "included in analysis!\nPlease check that the file format is valid."
                 logger.error("Exception 1:", err.args[0])
                 logger.error("Exception 2:", other.args[0])
-                raise UserWarning("WARNING: Unknown error occurred while parsing user sequences. User sequences not "
-                                  "included in analysis!\nPlease check that the file format is valid.") from other
+                logger.exception(msg)
+                raise UserWarning(msg) from other
 
         for record in seqs:
+            old_id = record.id
             if record.id in metadata_dict:
-                raise UserError(f"Multiple input files contain record id: '{record.id}'. Please rename record ids in "
-                                f"FASTA headers for uniqueness.")
+                # rename existing duplicated ID
+                duplicate_counts[old_id] = 1
+                new_id = metadata_dict[old_id].protein_id + "[Duplicate-User-ID-1]"
+                metadata_dict[old_id].protein_id = new_id
+                metadata_dict[new_id] = metadata_dict[old_id]
+                metadata_dict.pop(old_id)
+
+                all_seqs[old_id].id = new_id
+                all_seqs[old_id].description = all_seqs[old_id].description.replace(old_id, new_id)
+                all_seqs[old_id].name = all_seqs[old_id].name.replace(old_id, new_id)
+                all_seqs[new_id] = all_seqs[old_id]
+                all_seqs.pop(old_id)
+                logger.debug(f"User sequence with duplicate ID: {record.id} renamed to {new_id}")
+
+            if record.id in duplicate_counts:
+                duplicate_counts[record.id] += 1
+                new_id = record.id + f"[Duplicate-User-ID-{duplicate_counts[record.id]}]"
+                record_id = new_id
+                record.id = record_id
+                record.name = record.name.replace(old_id, new_id)
+                record.description = record.description.replace(old_id, new_id)
+                logger.debug(f"User sequence with duplicate ID: {old_id} named to {new_id}")
+            else:
+                record_id = record.id
+
             if len(fasta_handles) > 1 and not source_override:
                 record.description += f" SACCHARIS merged record from {path}"
             species_match = re.search(r'\[(.+)\]', record.description)
-            new_record = CazymeMetadataRecord(source_file=source_override if source_override else path,
-                                              protein_id=record.id,
+            new_record = CazymeMetadataRecord(source_file=source_override if source_override else str(path),
+                                              protein_id=record_id,
                                               protein_name=record.description,
                                               org_name=species_match.group(1) if species_match else None)
-            metadata_dict[record.id] = new_record
-            all_seqs.append(record)
+            metadata_dict[record_id] = new_record
+            all_seqs[record_id] = record
 
     out_path = None
     if output_folder:
@@ -130,6 +160,6 @@ def parse_multiple_fasta(fasta_handles: list[str | os.PathLike | TextIOBase], ou
             os.mkdir(output_folder)
         filename = f"merged_user_fasta-{datetime.datetime.now().strftime('%d-%m-%y_%H-%M')}.fasta"
         out_path = os.path.join(output_folder, filename)
-        write(all_seqs, out_path, 'fasta')
+        write(list(all_seqs.values()), out_path, 'fasta')
 
     return all_seqs, metadata_dict, out_path

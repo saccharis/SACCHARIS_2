@@ -18,7 +18,6 @@ from saccharis.CazyScrape import Mode, Domain
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.ParseUserSequences import merge_data_sources
 from saccharis.utils.FastaHelpers import parse_multiple_fasta
-from saccharis.ParseUserSequences import concatenate_multiple_fasta
 from saccharis.Pipeline import single_pipeline
 from saccharis.ScreenUserFile import choose_families_from_fasta
 from saccharis.utils.AdvancedConfig import MultilineFormatter, get_log_folder, get_version
@@ -220,7 +219,7 @@ def cli_main():
 
     if args.seqfile is None:
         user_fasta_paths = None
-    elif type(args.seqfile) == List[str]:
+    elif isinstance(args.seqfile, list) and all(isinstance(item, str) for item in args.seqfile):
         user_fasta_paths = args.seqfile
     else:
         raise Exception("Error parsing user sequence file(s) from command line. This shouldn't happen, "

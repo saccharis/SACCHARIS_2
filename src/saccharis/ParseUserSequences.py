@@ -190,7 +190,7 @@ def merge_data_sources(cazy_seqs: list[SeqRecord] | None, cazy_metadata: dict[st
             if len(fasta_seqs) == 0:
                 raise UserWarning("ERROR: User sequence file(s) do not contain any valid entries! \n"
                                   "Please check that file format is valid!")
-            non_cazy_seqs += fasta_seqs
+            non_cazy_seqs += fasta_seqs.values()
             non_cazy_metadata |= fasta_metadata
         except (UserWarning, UserError) as error:
             logger.warning(error.args[0])
@@ -268,7 +268,7 @@ def merge_data_sources(cazy_seqs: list[SeqRecord] | None, cazy_metadata: dict[st
 
 
 def cli_main():
-    # todo: delete this CLI interface? It it outdated but also unused and doesn't seem particularly useful
+    # todo: delete this CLI interface? It it outdated and also unused and doesn't seem particularly useful
     parser = argparse.ArgumentParser()
     # user_file_path, file_to_append, output_folder, verbose=False, force_update=False
     parser.add_argument("--familyfile", "-f", type=str, help="These are the cazyme family sequences which user "

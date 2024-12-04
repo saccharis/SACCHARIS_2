@@ -249,8 +249,7 @@ def single_pipeline(family: str, output_folder: str | os.PathLike,
 
         all_seqs, all_metadata, all_seqs_file_path, user_run_id = \
             merge_data_sources(cazy_seqs, cazy_metadata, user_files, ncbi_genomes, ncbi_genes, user_folder,
-                               all_seqs_filename, verbose, force_update, auto_rename, logger, skip_user_ask, ask_func,
-                               logger=logger)
+                               all_seqs_filename, verbose, force_update, auto_rename, logger, skip_user_ask, ask_func)
         user_t = time.time()
         print("Added user FASTA/NCBI sequences to CAZy family sequences")
         print("==============================================================================\n")
