@@ -69,14 +69,16 @@ def prepend_user_headers(seqs: list[SeqRecord], metadata: dict[str, CazymeMetada
     if len(seqs) == 0:
         raise UserWarning("File contains no valid sequences! Check that the file is in a valid FASTA format.")
     new_seqs = []
-    new_metadata = {}
+    new_metadata = {} if metadata else None
     for i, record in enumerate(seqs):
         new_id = f"U{i:09d}"
         if inplace:
-            new_metadata[new_id] = metadata[record.id]
+            if metadata:
+                new_metadata[new_id] = metadata[record.id]
             new_record = record
         else:
-            new_metadata[new_id] = deepcopy(metadata[record.id])
+            if metadata:
+                new_metadata[new_id] = deepcopy(metadata[record.id])
             new_record = deepcopy(record)
 
         new_record.description = f"{new_id} {record.description}"

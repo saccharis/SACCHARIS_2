@@ -9,12 +9,9 @@ from Bio.SeqIO import parse, write
 from Bio.SeqRecord import SeqRecord
 
 from saccharis.utils.Formatting import CazymeMetadataRecord
-from saccharis.utils.PipelineErrors import UserError
 
 
-# todo: concatenate_multiple_fasta IS FROM DEV21, AND WAS ADJUSTED TO FIX DUPLICATE IDS ACROSS USER FILES I NEED TO
-#  TAKE THE IDEA HERE AND BRING IT INTO THE REFACTORED DEV22 METHOD OF MERGING DATA SOURCES,
-#  THIS CODE MIGHT BE BETTER IN FastaHelpers MODULE. ***Delete*** concatenate_multiple_fasta() once
+# todo: concatenate_multiple_fasta IS FROM DEV21! ***Delete*** concatenate_multiple_fasta() once
 #  parse_multiple_fasta() is fixed and working!
 def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_folder: str | os.PathLike,
                                logger: logging.Logger = logging.getLogger()) -> [str, dict, dict]:
@@ -90,9 +87,24 @@ def concatenate_multiple_fasta(fasta_filenames: list[str | os.PathLike], output_
 
 
 def parse_multiple_fasta(fasta_handles: list[str | os.PathLike | TextIOBase], output_folder: str | os.PathLike = None,
-                         logger: Logger = None, source_override: str = None) \
+                         logger: Logger = logging.getLogger(), source_override: str = None) \
         -> (dict[str:SeqRecord], dict[str:CazymeMetadataRecord], str):
+    """
+    Takes multiple fasta files as input, concatenates them together, optionally writes data to disk as a single FASTA file, and
+    returns the output file path, a dict or sequence data records and a dict of sequence metadata records. Duplicate
+    record IDs across multiple files are handled by appending duplicate IDs with '[Duplicate-User-ID-*]', with * being
+    the numbered duplicate (e.g. if the ID 123456789 was duplicated, the second occurrence would be appended like so
+    '123456789[Duplicate-User-ID-2]'.
 
+    :param fasta_handles: A list of FASTA files which will be read in and concatenated together.
+    :param output_folder: A folder to write the output FASTA file to.
+    :param logger: Optional logging object to save logs for debugging purposes. Defaults to root logger.
+    :return: Output file path, dict of metadata records, dict of sequence records
+    :param source_override: A string which will be set as the source_file variable in CazymeMetadatRecord objects
+    instead of the path in fasta_handles the data was read from. Used internally when parsing fasta files that
+    actually come from a web API (e.g. "NCBI Gene" is put in source_file when the record was downloaded using the NCBI
+    datasets API).
+    """
     metadata_dict: dict[str:CazymeMetadataRecord] = {}
     all_seqs: dict[str:SeqRecord] = {}
     duplicate_counts: dict[str:int] = {}

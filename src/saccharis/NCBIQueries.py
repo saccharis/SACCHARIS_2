@@ -12,7 +12,6 @@ import re
 import time
 from zipfile import ZipFile
 # Dependency imports
-import Bio.SeqIO
 from Bio import Entrez, SeqIO
 from Bio.Entrez import efetch
 from Bio.SeqRecord import SeqRecord
@@ -123,7 +122,8 @@ def download_proteins_from_genomes(genome_list: list[str] | str, out_dir: str = 
                 with io.TextIOWrapper(myzip.open(f"ncbi_dataset/data/{genome_id}/protein.faa"), encoding="utf-8") as myfile:
                     # genome_seqs = list(Bio.SeqIO.parse(myfile, "fasta"))
                     genome_seqs, genome_metadata, _ = parse_multiple_fasta([myfile],
-                                                                           source_override=f"NCBI Genome {genome_id}")
+                                                                           source_override=f"NCBI Genome {genome_id}",
+                                                                           logger=logger)
                     # source_dict |= dict.fromkeys(map(lambda seq: seq.id, genome_seqs), f"NCBI Genome: {genome_id}")
                     # todo: save seqs locally for later if out_dir is given
                     seqs += genome_seqs
@@ -171,7 +171,8 @@ def download_from_genes(gene_list: list[str], seq_type: str, out_dir: str = None
             for gene_id in gene_list:
                 with io.TextIOWrapper(myzip.open(f"ncbi_dataset/data/{gene_id}/{filename}"), encoding="utf-8") as myfile:
                     # gene_seqs = list(Bio.SeqIO.parse(myfile, "fasta"))
-                    gene_seqs, gene_metadata, _ = parse_multiple_fasta([myfile], source_override=f"NCBI Gene")
+                    gene_seqs, gene_metadata, _ = parse_multiple_fasta([myfile], source_override=f"NCBI Gene",
+                                                                       logger=logger)
                     # source_dict |= dict.fromkeys(map(lambda seq: seq.id, gene_seqs), f"NCBI Gene")
                     # todo: save seqs locally for later if out_dir is given
                     seqs += gene_seqs

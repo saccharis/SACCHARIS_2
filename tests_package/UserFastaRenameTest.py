@@ -5,7 +5,7 @@ import unittest
 from inspect import getsourcefile
 from pathlib import Path
 
-from saccharis.ParseUserSequences import concatenate_multiple_fasta
+from saccharis.utils.FastaHelpers import parse_multiple_fasta
 from saccharis.utils.Formatting import rename_metadata_dict_ids
 from saccharis.utils.UserFastaRename import rename_fasta_file
 
@@ -34,13 +34,14 @@ class UserRenameFastaTestCase(unittest.TestCase):
                          "File contains no valid sequences! Check that the file is in a valid FASTA format.")
 
     def test_merge_files(self):
-        user_path, user_merged_dict, user_seqs = concatenate_multiple_fasta([sheep3_user_testfile,
-                                                                             sheep4_user_testfile],
-                                                                            output_folder=test_out_folder)
+        user_seqs, user_merged_dict, user_path = parse_multiple_fasta([sheep3_user_testfile,
+                                                                       sheep4_user_testfile],
+                                                                      output_folder=test_out_folder)
         new_user_path = rename_fasta_file(user_path)
-        user_merged_dict = rename_metadata_dict_ids(new_user_path, user_merged_dict)
+        renamed_user_merged_dict = rename_metadata_dict_ids(new_user_path, user_merged_dict)
 
-        self.assertEqual(len(user_merged_dict), 10683)
+        # todo: check for correct user ids in both keys and CazymeMetadataRecord Objects
+        self.assertEqual(len(renamed_user_merged_dict), 10683)
 
 
 if __name__ == '__main__':

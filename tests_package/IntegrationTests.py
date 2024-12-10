@@ -12,7 +12,6 @@ from saccharis.Pipeline import single_pipeline
 from saccharis.CazyScrape import Mode
 from saccharis.ChooseAAModel import TreeBuilder
 from saccharis.utils.Formatting import CazymeMetadataRecord
-from saccharis.utils.PipelineErrors import AAModelError
 from saccharis.utils.UserFastaRename import rename_fasta_file
 from saccharis.utils.PipelineErrors import AAModelError, PipelineException
 
@@ -54,7 +53,7 @@ class IntegrationTestCase(unittest.TestCase):
         with open(json_path, 'r', encoding="utf-8") as meta_json:
             cazyme_dict = json.loads(meta_json.read())
             final_metadata_dict = {rec_id: CazymeMetadataRecord(**record) for rec_id, record in cazyme_dict.items()}
-        self.assertTrue(len(final_metadata_dict) >= min_expected_sequence_count)
+        self.assertGreaterEqual(len(final_metadata_dict), min_expected_sequence_count)
         # asserts that there are no exactly overlapping modules from multiple genes
         for record in final_metadata_dict:
             if record.__contains__("<1>"):
@@ -70,30 +69,33 @@ class IntegrationTestCase(unittest.TestCase):
                 self.assertTrue(os.path.isfile(os.path.join(test_out_folder, domain_folder, filename)))
 
     def test_PL9(self):
-        self.run_pipeline("PL9", Mode.CHARACTERIZED, render_trees=True)
+        self.run_pipeline("PL9", Mode.CHARACTERIZED, render_trees=True, min_expected_sequence_count=17)
 
     def test_PL9_raxml(self):
-        self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML, user_files=[small_user_testfile])
+        self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML, user_files=[small_user_testfile],
+                          min_expected_sequence_count=17)
 
     def test_PL9_raxml_ng(self):
         self.run_pipeline("PL9", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML_NG, user_files=[small_user_testfile],
-                          render_trees=True)
+                          render_trees=True, min_expected_sequence_count=17)
 
     def test_GH102_raxml_ng(self):
         self.run_pipeline("GH102", Mode.CHARACTERIZED, tree_program=TreeBuilder.RAXML_NG,
                           user_files=[small_user_testfile], render_trees=True, min_expected_sequence_count=4)
 
     def test_GH5_25_raxml_structure(self):
-        self.run_pipeline("GH5_25", Mode.STRUCTURE, tree_program=TreeBuilder.RAXML, user_files=[small_user_testfile])
+        self.run_pipeline("GH5_25", Mode.STRUCTURE, tree_program=TreeBuilder.RAXML, user_files=[small_user_testfile],
+                          min_expected_sequence_count=6)
 
     def test_GH5_25(self):
-        self.run_pipeline("GH5_25", Mode.CHARACTERIZED)
+        self.run_pipeline("GH5_25", Mode.CHARACTERIZED, min_expected_sequence_count=16)
 
     def test_GH5_4(self):
-        self.run_pipeline("GH5_4", Mode.CHARACTERIZED)
+        self.run_pipeline("GH5_4", Mode.CHARACTERIZED, min_expected_sequence_count=125)
 
     def test_GH5_4_user_seqs(self):
-        self.run_pipeline("GH5_4", Mode.CHARACTERIZED, user_files=[user_test_file_gh5_4])
+        self.run_pipeline("GH5_4", Mode.CHARACTERIZED, user_files=[user_test_file_gh5_4],
+                          min_expected_sequence_count=125)
 
     def test_bad_partial_modeltest_pl9(self):
         out_folder = os.path.join(test_out_folder, "PL9_CHARACTERIZED_ALL_DOMAINS")
