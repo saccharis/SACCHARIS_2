@@ -378,11 +378,6 @@ def cli_config():
     settings_path = default_settings_path
     config_folder = default_folder_config
 
-    # Note: Using both expanduser and abspath so that relative paths with '.' for current working directory
-    # or '~' for user's home folders are saved correctly. Otherwise, ambiguous locations might try to save/load
-    # database files form incorrect locations in the future and cause database installation/update issues.
-    user_data_folder = os.path.abspath(os.path.expanduser(args.user_data_folder))
-
     if args.hmm_eval:
         software_settings["hmm_eval"] = args.hmm_eval
         changes = True
@@ -396,6 +391,10 @@ def cli_config():
         software_settings["raxml_command"] = args.raxml_command
         changes = True
     if args.user_data_folder:
+        # Note: Using both expanduser and abspath so that relative paths with '.' for current working directory
+        # or '~' for user's home folders are saved correctly. Otherwise, ambiguous locations might try to save/load
+        # database files form incorrect locations in the future and cause database installation/update issues.
+        user_data_folder = os.path.abspath(os.path.expanduser(args.user_data_folder))
         if not os.path.exists(user_data_folder):
             print(f"{user_data_folder} folder for SACCHARIS files does not exist!\nPlease choose an existing "
                   f"folder to store SACCHARIS data folder in.")
