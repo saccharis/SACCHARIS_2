@@ -12,6 +12,7 @@ import json
 import os
 import pathlib
 import shutil
+import sys
 import time
 from importlib.metadata import version
 from json import JSONDecodeError
@@ -429,9 +430,15 @@ def cli_config():
             print("Settings: ", json.dumps(software_settings, indent=4))
         if changes:
             print("Successfully updated advanced software_settings!")
+        elif not args.show:
+            print("Settings were not changed! If you want to view current settings, use 'saccharis.config --show' or "
+                  "consult 'saccharis.config --help' for a description of what settings can be changed with this "
+                  "utility.")
     except UserWarning as error:
         print("ERROR", error.args[0])
         print("ERROR: Invalid software_settings, did not save changes.")
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -265,7 +265,7 @@ def ncbi_protein_query(accession_list: list[str], api_key, ncbi_email, ncbi_tool
         except NCBIException as error:
             global ncbi_exception_count
             ncbi_exception_count += 1
-            delay *= 2
+            delay *= 1.2  # this used to be *= 2, but the rate of increase was too steep, large trees never completed
             logger.warning(error.msg)
             logger.warning("MISSING FASTA DATA FROM NCBI")
             if ncbi_exception_count < NCBI_EXCEPTION_MAX_TRIES:
