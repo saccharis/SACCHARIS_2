@@ -1,5 +1,7 @@
 import unittest
+
 from tests_package.CazyTests import CazyTestCase
+from tests_package.ConfigTests import ConfigTestCase
 from tests_package.HelperTests import HelperTestCase
 from tests_package.PruneTests import PruneTestCase
 from tests_package.UserFastaRenameTest import UserRenameFastaTestCase
@@ -19,20 +21,26 @@ def saccharis_test_suite():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
 
+    test_cases = [
+        CazyTestCase,
+        NCBITestCase,
+        DownloadTestCase,
+        PruneTestCase,
+        UserRenameFastaTestCase,
+        UserInputTestCase,
+        AAModelTestCase,
+        HelperTestCase,
+        IntegrationTestCase,
+        GUITestCase,
+        TreeTestCase,
+        RenderingTestCase,
+        ParseTestCase,
+        ConfigTestCase
+    ]
+
     # Add all the test cases to the suite
-    suite.addTest(loader.loadTestsFromTestCase(CazyTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(NCBITestCase))
-    suite.addTest(loader.loadTestsFromTestCase(DownloadTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(PruneTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(UserRenameFastaTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(UserInputTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(AAModelTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(HelperTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(IntegrationTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(GUITestCase))
-    suite.addTest(loader.loadTestsFromTestCase(TreeTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(RenderingTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(ParseTestCase))
+    for test_case in test_cases:
+        suite.addTest(loader.loadTestsFromTestCase(test_case))
     return suite
 
 
