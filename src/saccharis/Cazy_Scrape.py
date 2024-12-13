@@ -337,7 +337,8 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                 cazymes[genbank] = CazymeMetadataRecord(protein_name=protein_name, ec_num=ec_num, org_name=org_name,
                                                         uniprot=uniprot, pdb=pdb, family=family,
                                                         classfamily=family.split('_')[0], subfamily=subfamily,
-                                                        genbank=genbank, protein_id=genbank)
+                                                        genbank=genbank, protein_id=genbank,
+                                                        source_file="Cazy.org website")
                 cazy_added += 1
             else:
                 if genbank is not None and genbank != '' and genbank in cazymes:
@@ -384,7 +385,11 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                 domain = row[1]
                 organism = row[2]
                 genbank = row[3]
-                if genbank not in all_cazymes and genbank not in genbank_duplicates and \
+                source = row[4]
+                if source != "ncbi":
+                    total_count -= 1
+                    continue
+                if valid_genbank_gene(genbank) and genbank not in all_cazymes and genbank not in genbank_duplicates and \
                         genbank is not None and genbank != "":
                     uncharacterized_added += 1
                     try:
@@ -397,7 +402,7 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                     all_cazymes[genbank] = CazymeMetadataRecord(protein_name=f"Uncharacterized {cazyme_class}",
                                                                 org_name=organism, domain=domain, protein_id=genbank,
                                                                 genbank=genbank, classfamily=classfam, subfamily=subfam,
-                                                                family=cazyme_class)
+                                                                family=cazyme_class, source_file="Cazy.org download")
                 # we check genbank not in cazymes to prevent reporting characterized as duplicates
                 elif genbank not in cazymes:
                     uncharacterized_duplicate += 1
@@ -436,6 +441,9 @@ def cazy_query(family, cazy_folder, scrape_mode, get_fragments, verbose, domain_
                 domain = row[1]
                 # organism = row[2]
                 genbank = row[3]
+                source = row[4]
+                if source != "ncbi":
+                    continue
                 if genbank in cazymes:
                     cazymes[genbank].domain = domain
 

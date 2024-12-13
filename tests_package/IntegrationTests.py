@@ -1,9 +1,11 @@
 import json
+import logging
 import shutil
 import sys
 import unittest
 import os
 from inspect import getsourcefile
+from logging import Logger, getLogger
 from pathlib import Path
 from unittest import mock
 
@@ -25,7 +27,11 @@ sheep4_user_testfile = tests_folder / "test_files" / "Sheep_4_protein.fasta"
 
 class IntegrationTestCase(unittest.TestCase):
 
+    root_logger: Logger
+
     def setUp(self) -> None:
+        self.root_logger = getLogger()
+        self.root_logger.setLevel(logging.DEBUG)
         if not os.path.exists(test_out_folder):
             os.mkdir(test_out_folder)
 
@@ -79,6 +85,9 @@ class IntegrationTestCase(unittest.TestCase):
 
     def test_GH5_4(self):
         self.run_pipeline("GH5_4", Mode.CHARACTERIZED)
+
+    def test_pl6_all(self):
+        self.run_pipeline("PL6", Mode.ALL_CAZYMES)
 
     def test_bad_partial_modeltest_pl9(self):
         out_folder = os.path.join(test_out_folder, "PL9_CHARACTERIZED_ALL_DOMAINS")

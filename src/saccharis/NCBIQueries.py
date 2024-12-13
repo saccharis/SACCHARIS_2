@@ -327,9 +327,8 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
     for item in bad_accessions:
         msg = f"NCBI DATA MISSING. Genbank accession: {item.text}"
         logger.debug(msg)
-        if verbose:
-            print("\nWARNING: NCBI DATA MISSING")
-            print("Genbank accession:", item.text, "\n")
+        logger.info("\nWARNING: NCBI DATA MISSING")
+        logger.info("Genbank accession:", item.text, "\n")
         accession_list.remove(item.text)
         valid_accession_count -= 1
 
@@ -403,15 +402,17 @@ def ncbi_single_query(accession_list, api_key=None, ncbi_email=None, ncbi_tool=N
         logger.exception("NCBI query #3 generic exception, did not get efetch result on Entrez API.")
         raise NCBIException("Generic error querying NCBI. NCBI might be down, try again later.") from e
 
+    # Returns empty result if fetch failed
+    if efetch_result.text.__contains__("<ERROR>Empty result - nothing to do</ERROR>"):
+        raise NCBIException("NCBI Fetch failed.")
+        logger.error("NCBI Fetch failed.")
+        return "", 0
+
     if valid_accession_count != result_count:
         msg = f"Incomplete NCBI query FASTA results: {result_count}/{valid_accession_count} returned"
         logger.error(msg)
         raise NCBIException(msg)
 
-    # Returns empty result if fetch failed
-    if efetch_result.text.__contains__("<ERROR>Empty result - nothing to do</ERROR>"):
-        logger.error("NCBI Fetch failed.")
-        return "", 0
 
     # Remove double newline between each of the sequences
     fasta_out = re.sub("\n+", "\n", efetch_result.text)
