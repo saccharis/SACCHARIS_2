@@ -21,20 +21,20 @@ MAX_RETRIES = 10
 DELAY = 30
 CHUNK_SIZE: int = 4096
 
-links_last_updated = "November, 2024"
+links_last_updated = "December, 2025"
 urls_and_process_and_rename = \
-    [("https://bcb.unl.edu/dbCAN2/download/Databases/V13/dbCAN-HMMdb-V13.txt", "hmmpress", "dbCAN.txt"),
+    [("https://bcb.unl.edu/dbCAN2/download/Databases/V14/dbCAN-HMMdb-V14.txt", "hmmpress", "dbCAN.txt"),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa", "makeblastdb", None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz", "tar", None),
-     ("https://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08252022.tsv", None, None),
-     ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_07-01-2022.xlsx", None, None),
-     ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_07-01-2022.txt", None, None),
+     ("https://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08262025.tsv", None, None),
+     ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_12-12-2023.xlsx", None, None),
+     ("http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_12-12-2023.txt", None, None),
      ("https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN_sub.hmm", "hmmpress", None),
-     ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/tcdb.fa", "diamond", None),
-     ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-1.hmm", "hmmpress", None),
-     ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-2.hmm", "hmmpress", None),
-     ("https://bcb.unl.edu/dbCAN2/download/Databases/V12/stp.hmm", "hmmpress", None),
-     ("https://bcb.unl.edu/dbCAN2/download/Databases/V13/CAZyDB.07142024.fa", "diamond", "CAZy.fa")
+     ("https://bcb.unl.edu/dbCAN2/download/Databases/tcdb.fa", "diamond", None),
+     ("https://bcb.unl.edu/dbCAN2/download/Databases/tf-1.hmm", "hmmpress", None),
+     ("https://bcb.unl.edu/dbCAN2/download/Databases/tf-2.hmm", "hmmpress", None),
+     ("https://bcb.unl.edu/dbCAN2/download/Databases/stp.hmm", "hmmpress", None),
+     ("https://bcb.unl.edu/dbCAN2/download/Databases/V14/CAZyDB.07242025.fa", "diamond", "CAZy.fa")
      ]
 
 files_to_skip_deletion = ["dbCAN.txt"]
